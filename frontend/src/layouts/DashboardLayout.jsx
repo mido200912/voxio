@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -11,10 +11,29 @@ const DashboardLayout = () => {
     const { logout, user } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const location = useLocation();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth <= 768) {
+                setIsSidebarOpen(false);
+            } else {
+                setIsSidebarOpen(true);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
+    };
+
+    const handleNavItemClick = () => {
+        if (window.innerWidth <= 768) {
+            setIsSidebarOpen(false);
+        }
     };
 
     const isActive = (path) => {
@@ -23,11 +42,21 @@ const DashboardLayout = () => {
 
     return (
         <div className="dashboard-layout">
+            {/* Mobile Overlay */}
+            {isSidebarOpen && (
+                <div className="sidebar-overlay mobile-only" onClick={() => setIsSidebarOpen(false)}></div>
+            )}
+
             {/* Sidebar */}
             <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
                 <div className="sidebar-header">
-                    <img src="/logo.png" alt="Aithor" className="sidebar-logo" />
-                    {isSidebarOpen && <span className="logo-text">Aithor</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <img src="/logo.png" alt="Aithor" className="sidebar-logo" />
+                        {isSidebarOpen && <span className="logo-text">Aithor</span>}
+                    </div>
+                    <button className="close-sidebar-btn mobile-only" onClick={() => setIsSidebarOpen(false)}>
+                        <i className="fas fa-times"></i>
+                    </button>
                 </div>
 
                 <div className="sidebar-user">
@@ -45,37 +74,37 @@ const DashboardLayout = () => {
                 <nav className="sidebar-nav">
                     <ul>
                         <li>
-                            <Link to="/dashboard" className={`nav-item ${isActive('/dashboard')}`}>
+                            <Link to="/dashboard" className={`nav-item ${isActive('/dashboard')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-home"></i>
                                 {isSidebarOpen && <span>{t.dashboard.home}</span>}
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/inbox" className={`nav-item ${isActive('/dashboard/inbox')}`}>
+                            <Link to="/dashboard/inbox" className={`nav-item ${isActive('/dashboard/inbox')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-inbox"></i>
                                 {isSidebarOpen && <span>{t.dashboard.inbox}</span>}
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/ai-training" className={`nav-item ${isActive('/dashboard/ai-training')}`}>
+                            <Link to="/dashboard/ai-training" className={`nav-item ${isActive('/dashboard/ai-training')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-brain"></i>
                                 {isSidebarOpen && <span>{t.dashboard.training}</span>}
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/model-test" className={`nav-item ${isActive('/dashboard/model-test')}`}>
+                            <Link to="/dashboard/model-test" className={`nav-item ${isActive('/dashboard/model-test')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-robot"></i>
                                 {isSidebarOpen && <span>{t.dashboard.modelTest}</span>}
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/integrations" className={`nav-item ${isActive('/dashboard/integrations')}`}>
+                            <Link to="/dashboard/integrations" className={`nav-item ${isActive('/dashboard/integrations')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-plug"></i>
                                 {isSidebarOpen && <span>{t.dashboard.integrations}</span>}
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/settings" className={`nav-item ${isActive('/dashboard/settings')}`}>
+                            <Link to="/dashboard/settings" className={`nav-item ${isActive('/dashboard/settings')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-cog"></i>
                                 {isSidebarOpen && <span>{t.dashboard.settings}</span>}
                             </Link>
