@@ -262,7 +262,7 @@ const Integrations = () => {
 {`<script 
   src="https://aithor0.vercel.app/widget.js" 
   data-api-key="${JSON.parse(localStorage.getItem('user'))?.apiKey || 'YOUR_API_KEY'}" 
-  data-base-url="https://aithor0.vercel.app"
+  data-base-url="https://aithor-v1.vercel.app"
 ></script>`}
                         </code>
                     </pre>
