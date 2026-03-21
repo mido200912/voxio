@@ -19,9 +19,10 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import AboutUs from './pages/AboutUs';
 import Blog from './pages/Blog';
-import Careers from './pages/Careers';
 import Docs from './pages/Docs';
 import Support from './pages/Support';
+import AgentsExplorer, { AgentChat } from './pages/AgentsExplorer';
+import ChatWidget from './pages/ChatWidget';
 import './App.css';
 
 function App() {
@@ -42,9 +43,11 @@ function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/about" element={<AboutUs />} />
                 <Route path="/blog" element={<Blog />} />
-                <Route path="/careers" element={<Careers />} />
                 <Route path="/docs" element={<Docs />} />
                 <Route path="/support" element={<Support />} />
+                <Route path="/agents" element={<AgentsExplorer />} />
+                <Route path="/agents/:apiKey" element={<AgentChat />} />
+                <Route path="/widget/:apiKey" element={<ChatWidget />} />
                 {/* Dashboard routes */}
                 <Route path="/dashboard" element={<DashboardLayout />}>
                   <Route index element={<DashboardHome />} />

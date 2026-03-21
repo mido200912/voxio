@@ -42,7 +42,7 @@ const Footer = () => {
                         <ul>
                             <li><Link to="/about">{t.footer.aboutUs}</Link></li>
                             <li><Link to="/blog">{t.footer.blog}</Link></li>
-                            <li><Link to="/careers">{t.footer.careers}</Link></li>
+                            <li><a href="https://form-aithor.vercel.app/" target="_blank" rel="noopener noreferrer">{t.footer.careers}</a></li>
                             <li><Link to="/terms">{t.footer.terms}</Link></li>
                         </ul>
                     </div>

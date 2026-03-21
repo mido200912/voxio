@@ -160,3 +160,33 @@
     gap: 1rem;
     margin-top: 2rem;
 }
+
+.widget-code-preview {
+    margin-top: 1rem;
+    background: #1e1e1e;
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    position: relative;
+    overflow-x: auto;
+}
+
+.widget-code-preview pre {
+    margin: 0;
+    color: #ce9178;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    direction: ltr;
+}
+
+.widget-code-preview code {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.section-divider {
+    border-top: 1px dashed var(--color-border);
+    margin: 3rem 0;
+    opacity: 0.5;
+}

@@ -1,70 +1,167 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
+import './LegalPages.css';
 
 const Support = () => {
-    const { language } = useLanguage();
-    const isAr = language === 'ar';
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
+  const t = (en, ar) => (isAr ? ar : en);
+  const [openFaq, setOpenFaq] = useState(null);
 
-    return (
-        <div dir={isAr ? 'rtl' : 'ltr'} style={{ padding: '60px 20px', maxWidth: '900px', margin: '0 auto', lineHeight: '1.9', color: 'var(--text-primary)' }}>
-            <Link to="/" style={{ color: 'var(--primary-color)', textDecoration: 'none', marginBottom: '30px', display: 'inline-block' }}>
-                ← {isAr ? 'العودة للرئيسية' : 'Back to Home'}
-            </Link>
-            <h1 style={{ fontSize: '2.8rem', fontWeight: 'bold', marginBottom: '10px' }}>
-                {isAr ? 'الدعم الفني' : 'Support'}
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '40px', fontSize: '1.1rem' }}>
-                {isAr ? 'فريقنا جاهز لمساعدتك في أي وقت' : 'Our team is ready to help you at any time.'}
-            </p>
+  const channels = [
+    {
+      icon: 'fa-envelope',
+      title: t('Email Support', 'دعم البريد الإلكتروني'),
+      desc: t('Usually reply within 24 hours, often much faster.', 'نرد عادةً خلال ٢٤ ساعة، وكثيراً أسرع من ذلك.'),
+      linkLabel: 'aithor049@gmail.com',
+      linkHref: 'mailto:aithor049@gmail.com',
+      external: true,
+    },
+    {
+      icon: 'fa-book-open',
+      title: t('Documentation', 'التوثيق'),
+      desc: t('Detailed API reference, guides and code examples.', 'مرجع API مفصل وأدلة وأمثلة برمجية.'),
+      linkLabel: t('Open Docs', 'فتح التوثيق'),
+      linkHref: '/docs',
+      external: false,
+    },
+    {
+      icon: 'fa-comments',
+      title: t('Live Chat', 'محادثة فورية'),
+      desc: t('Chat with our AI bot on the homepage — powered by Aithor itself!', 'تحدث مع بوتنا على الرئيسية — مدعوم بـ Aithor نفسه!'),
+      linkLabel: t('Go to Home', 'الذهاب للرئيسية'),
+      linkHref: '/',
+      external: false,
+    },
+  ];
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '25px', marginBottom: '50px' }}>
-                <div style={{ padding: '30px', borderRadius: '16px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📧</div>
-                    <h3 style={{ fontWeight: 'bold', marginBottom: '10px' }}>{isAr ? 'البريد الإلكتروني' : 'Email Support'}</h3>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '15px' }}>
-                        {isAr ? 'راسلنا وسنرد خلال 24 ساعة' : 'Email us and we\'ll respond within 24 hours.'}
-                    </p>
-                    <a href="mailto:aithor049@gmail.com" style={{ color: 'var(--primary-color)', fontWeight: '600', textDecoration: 'none' }}>
-                        aithor049@gmail.com
-                    </a>
-                </div>
-                <div style={{ padding: '30px', borderRadius: '16px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>💬</div>
-                    <h3 style={{ fontWeight: 'bold', marginBottom: '10px' }}>{isAr ? 'المحادثة الفورية' : 'Live Chat'}</h3>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '15px' }}>
-                        {isAr ? 'تحدث مع بوتنا الذكي الآن من الصفحة الرئيسية' : 'Chat with our AI bot now from the Home page.'}
-                    </p>
-                    <Link to="/" style={{ color: 'var(--primary-color)', fontWeight: '600', textDecoration: 'none' }}>
-                        {isAr ? 'الذهاب للرئيسية' : 'Go to Home'}
-                    </Link>
-                </div>
-            </div>
+  const faqs = [
+    {
+      q: t('How do I get started with Aithor?', 'كيف أبدأ استخدام Aithor؟'),
+      a: t('Register a free account, complete your company profile during onboarding, then upload your knowledge base (PDFs, docs) to train your AI bot.', 'سجّل حساباً مجانياً، أكمل ملف شركتك خلال الإعداد، ثم ارفع قاعدة المعرفة (PDFs، وثائق) لتدريب بوتك.'),
+    },
+    {
+      q: t('Does Aithor support Arabic?', 'هل يدعم Aithor اللغة العربية؟'),
+      a: t('Yes. Aithor is Arabic-first. The platform UI supports RTL and the AI model (Meta Llama 3.3 70B) responds fluently in both Arabic and English.', 'نعم. صُمم Aithor مع الأولوية للعربية. الواجهة تدعم RTL ونموذج الذكاء الاصطناعي (Meta Llama 3.3 70B) يرد بطلاقة بالعربية والإنجليزية.'),
+    },
+    {
+      q: t('Where do I find my API key?', 'أين أجد مفتاح الـ API الخاص بي؟'),
+      a: t('Login → Dashboard → Settings → API Key section. Your 48-character key is there. Keep it confidential.', 'سجّل الدخول → لوحة التحكم → الإعدادات → قسم مفتاح الـ API. مفتاحك المكون من ٤٨ حرفاً هناك. احتفظ به سرياً.'),
+    },
+    {
+      q: t("I'm getting a 500 error. What do I do?", 'أحصل على خطأ 500. ماذا أفعل؟'),
+      a: t('A 500 error usually means the AI service timed out or your OpenRouter API key quota is exhausted. Check your key, ensure it has credits, then restart the backend server.', 'خطأ 500 يعني عادةً انتهاء مهلة الذكاء الاصطناعي أو استنفاد حصة OpenRouter. تحقق من مفتاحك وتأكد من وجود أرصدة، ثم أعد تشغيل الخادم.'),
+    },
+    {
+      q: t('Can I embed the chatbot in my website?', 'هل يمكنني تضمين البوت في موقعي؟'),
+      a: t('Yes! Add a single <script> tag with your API key config and the Aithor widget appears on any webpage instantly.', 'نعم! أضف علامة <script> واحدة مع إعدادات مفتاح الـ API ويظهر ودجت Aithor فوراً.'),
+    },
+    {
+      q: t('How do I delete my account?', 'كيف أحذف حسابي؟'),
+      a: t('Email aithor049@gmail.com with subject "Account Deletion". We permanently delete all your data within 30 days.', 'راسل aithor049@gmail.com بموضوع "حذف الحساب". نحذف جميع بياناتك بشكل دائم خلال ٣٠ يوماً.'),
+    },
+  ];
 
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '600', marginTop: '20px' }}>
-                {isAr ? '❓ الأسئلة الشائعة' : '❓ FAQ'}
-            </h2>
-            {[
-                {
-                    q: isAr ? 'كيف أبدأ استخدام Aithor؟' : 'How do I start using Aithor?',
-                    a: isAr ? 'قم بالتسجيل وإنشاء حساب، ثم أضف بيانات شركتك وابدأ في الربط مع قنوات التواصل.' : 'Register and create an account, then add your company data and start connecting with communication channels.'
-                },
-                {
-                    q: isAr ? 'هل يدعم البوت اللغة العربية؟' : 'Does the bot support Arabic?',
-                    a: isAr ? 'نعم، البوت يدعم العربية والإنجليزية بشكل كامل.' : 'Yes, the bot fully supports both Arabic and English.'
-                },
-                {
-                    q: isAr ? 'كيف أتحصل على مفتاح API الخاص بي؟' : 'How do I get my API key?',
-                    a: isAr ? 'بعد تسجيل الدخول، اذهب لصفحة الإعدادات وستجد مفتاح الـ API جاهزاً.' : 'After logging in, go to the Settings page and you will find your API key ready.'
-                },
-            ].map((item, i) => (
-                <div key={i} style={{ marginTop: '25px', padding: '20px 25px', borderRadius: '12px', background: 'var(--card-bg)', border: '1px solid var(--border-color)' }}>
-                    <h3 style={{ fontWeight: '700', marginBottom: '8px' }}>{item.q}</h3>
-                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{item.a}</p>
-                </div>
-            ))}
+  return (
+    <div className="lp-page" dir={isAr ? 'rtl' : 'ltr'}>
+      <div className="lp-topbar">
+        <Link to="/" className="lp-logo">
+          <i className="fas fa-arrow-right" />
+          {t('Back to Home', 'الرئيسية')}
+        </Link>
+      </div>
+
+      <div className="lp-hero">
+        <div className="lp-hero-inner">
+          <div className="lp-badge">
+            <i className="fas fa-life-ring" />
+            {t('Support', 'الدعم')}
+          </div>
+          <h1>{t("We're here to help", 'نحن هنا للمساعدة')}</h1>
+          <p className="lp-hero-desc">
+            {t(
+              'Get help via email, browse our FAQ, or dive into the documentation.',
+              'احصل على المساعدة عبر البريد الإلكتروني، أو تصفح الأسئلة الشائعة، أو اقرأ التوثيق.'
+            )}
+          </p>
         </div>
-    );
+      </div>
+
+      <div className="lp-container">
+
+        {/* CHANNELS */}
+        <div style={{ paddingTop: '3rem' }}>
+          <div className="lp-support-cards">
+            {channels.map((c, i) => (
+              <div key={i} className="lp-support-card">
+                <div className="lp-support-icon"><i className={`fas ${c.icon}`} /></div>
+                <h3>{c.title}</h3>
+                <p>{c.desc}</p>
+                {c.external ? (
+                  <a href={c.linkHref} className="lp-support-link">
+                    {c.linkLabel}
+                    <i className="fas fa-arrow-left" />
+                  </a>
+                ) : (
+                  <Link to={c.linkHref} className="lp-support-link">
+                    {c.linkLabel}
+                    <i className="fas fa-arrow-left" />
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="lp-section">
+          <div className="lp-section-label">
+            <i className="fas fa-circle-question" />
+            {t('FAQ', 'الأسئلة الشائعة')}
+          </div>
+          <div className="lp-section-title">{t('Frequently Asked Questions', 'الأسئلة الأكثر شيوعاً')}</div>
+          <p className="lp-section-sub">
+            {t('Quick answers to the questions we get most often.', 'إجابات سريعة للأسئلة التي نتلقاها أكثر.')}
+          </p>
+          <div className="lp-faq-list">
+            {faqs.map((faq, i) => (
+              <div
+                key={i}
+                className={`lp-faq-item ${openFaq === i ? 'open' : ''}`}
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              >
+                <div className="lp-faq-q">
+                  <span>{faq.q}</span>
+                  <div className="lp-faq-chevron">
+                    <i className="fas fa-chevron-down" />
+                  </div>
+                </div>
+                {openFaq === i && <div className="lp-faq-a">{faq.a}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="lp-cta-block">
+          <h2>{t('Still need help?', 'لا تزال بحاجة للمساعدة؟')}</h2>
+          <p>{t('Our team is happy to help you get set up and running.', 'فريقنا سعيد بمساعدتك في الإعداد والتشغيل.')}</p>
+          <div className="lp-cta-btns">
+            <a href="mailto:aithor049@gmail.com" className="lp-btn-primary">
+              <i className="fas fa-envelope" />
+              {t('Email Us', 'راسلنا')}
+            </a>
+            <Link to="/docs" className="lp-btn-secondary">
+              <i className="fas fa-book-open" />
+              {t('Read the Docs', 'اقرأ التوثيق')}
+            </Link>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
 };
 
 export default Support;

@@ -221,6 +221,56 @@ const Integrations = () => {
                 {t.dashboard.integrationsPage.subtitle}
             </motion.p>
 
+            {/* NEW: Web Widget Section (Not locked) */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="widget-integration-section"
+            >
+                <div className="integration-item connected" style={{ marginBottom: '20px', cursor: 'default' }}>
+                    <div className="integration-icon" style={{ backgroundColor: '#6C63FF15', color: '#6C63FF' }}>
+                        <i className="fas fa-code"></i>
+                    </div>
+                    <div className="integration-info">
+                        <h3>{t.language === 'ar' ? 'ودجت الموقع (Web Widget)' : 'Web Widget'}</h3>
+                        <p>{t.language === 'ar' ? 'أضف شات بوت Aithor لموقعك الإلكتروني بضغطة واحدة.' : 'Add Aithor chatbot to your website with a single script.'}</p>
+                    </div>
+                    <div className="integration-action">
+                        <button 
+                            className="btn btn-primary"
+                            onClick={() => {
+                                const btn = document.getElementById('copy-widget-btn');
+                                const apiKey = JSON.parse(localStorage.getItem('user'))?.apiKey || 'YOUR_API_KEY';
+                                const code = `<script \n  src="https://aithor0.vercel.app/widget.js" \n  data-api-key="${apiKey}" \n  data-base-url="https://aithor0.vercel.app"\n></script>`;
+                                navigator.clipboard.writeText(code);
+                                const originalText = btn.innerText;
+                                btn.innerText = t.language === 'ar' ? 'تم النسخ!' : 'Copied!';
+                                setTimeout(() => btn.innerText = originalText, 2000);
+                            }}
+                            id="copy-widget-btn"
+                        >
+                            <i className="fas fa-copy" style={{ marginInlineEnd: '8px' }}></i>
+                            {t.language === 'ar' ? 'نسخ الكود' : 'Copy Code'}
+                        </button>
+                    </div>
+                </div>
+                
+                <div className="widget-code-preview">
+                    <pre>
+                        <code>
+{`<script 
+  src="https://aithor0.vercel.app/widget.js" 
+  data-api-key="${JSON.parse(localStorage.getItem('user'))?.apiKey || 'YOUR_API_KEY'}" 
+  data-base-url="https://aithor0.vercel.app"
+></script>`}
+                        </code>
+                    </pre>
+                </div>
+            </motion.div>
+
+            <div className="section-divider" style={{ margin: '40px 0', borderTop: '1px dashed var(--border-color)', opacity: 0.5 }}></div>
+
             {loading ? (
                 <p style={{ textAlign: 'center', padding: '40px' }}>{t.dashboard.integrationsPage.loading}</p>
             ) : (

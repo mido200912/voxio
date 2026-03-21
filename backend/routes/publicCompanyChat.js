@@ -10,13 +10,15 @@ const router = express.Router();
  */
 router.post("/chat", async (req, res) => {
   try {
-    const { companyApiKey, prompt } = req.body;
+    const { companyApiKey, apiKey, prompt: bodyPrompt, message } = req.body;
+    const finalApiKey = companyApiKey || apiKey;
+    const prompt = bodyPrompt || message;
 
-    if (!companyApiKey || !prompt)
+    if (!finalApiKey || !prompt)
       return res.status(400).json({ success: false, error: "Missing parameters" });
 
     // ✅ احضار الشركة بناءً على الـ API Key
-    const company = await Company.findOne({ apiKey: companyApiKey });
+    const company = await Company.findOne({ apiKey: finalApiKey });
     if (!company)
       return res.status(404).json({ success: false, error: "Invalid company API key" });
 
@@ -59,7 +61,7 @@ Language: Respond in the same language as the customer's query (Arabic or Englis
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "google/gemini-2.0-flash-exp",
+        model: "meta-llama/llama-3.3-70b-instruct",
         messages: [
           { role: "system", content: context },
           { role: "user", content: prompt },

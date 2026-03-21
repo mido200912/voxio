@@ -115,6 +115,19 @@ const Navbar = () => {
                             {t.nav.contact}
                         </a>
                     </li>
+                    <li>
+                        <a
+                            href="/agents"
+                            className="nav-link nav-link-agents"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                navigate('/agents');
+                                setIsMobileMenuOpen(false);
+                            }}
+                        >
+                             {language === 'ar' ? 'الوكلاء' : 'Agents'}
+                        </a>
+                    </li>
                     <li className="mobile-only">
                         <div className="mobile-controls">
                             <button
