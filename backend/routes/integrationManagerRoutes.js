@@ -97,4 +97,39 @@ router.patch('/:id/toggle', requireAuth, async (req, res) => {
     }
 });
 
+// @route   POST /api/integration-manager/whatsapp
+// @desc    Manually configure WhatsApp
+// @access  Private
+router.post('/whatsapp', requireAuth, async (req, res) => {
+    try {
+        const { phoneNumberId, accessToken } = req.body;
+        
+        if (!phoneNumberId || !accessToken) {
+            return res.status(400).json({ error: 'Phone Number ID and Access Token are required' });
+        }
+
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        const integration = await Integration.findOneAndUpdate(
+            { company: company._id, platform: 'whatsapp' },
+            {
+                credentials: {
+                    phoneNumberId,
+                    accessToken
+                },
+                isActive: true
+            },
+            { new: true, upsert: true }
+        );
+
+        res.json({ message: 'WhatsApp integrated successfully', integration });
+    } catch (error) {
+        console.error('WhatsApp integration error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 export default router;

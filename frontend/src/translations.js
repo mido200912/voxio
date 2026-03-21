@@ -220,7 +220,14 @@ export const translations = {
                 errorConnect: 'حدث خطأ أثناء الربط',
                 errorGen: 'حدث خطأ',
                 confirmDisconnect: 'هل أنت متأكد من إلغاء الربط؟',
-                errorDisconnect: 'حدث خطأ أثناء إلغاء الربط'
+                errorDisconnect: 'حدث خطأ أثناء إلغاء الربط',
+                whatsappModalTitle: 'ربط واتساب',
+                whatsappPhoneNumberId: 'معرف رقم الهاتف (Phone Number ID)',
+                whatsappAccessToken: 'رمز الوصول (Access Token)',
+                whatsappSave: 'حفظ وربط',
+                whatsappCancel: 'إلغاء',
+                whatsappHelp: 'يمكنك الحصول على هذه البيانات من لوحة تحكم مطوري Meta.',
+                whatsappConfigSuccess: 'تم ضبط إعدادات واتساب بنجاح'
             },
             modelTestPage: {
                 title: 'اختبار النموذج',
@@ -479,7 +486,14 @@ export const translations = {
                 errorConnect: 'Error connecting integration',
                 errorGen: 'An error occurred',
                 confirmDisconnect: 'Are you sure you want to disconnect?',
-                errorDisconnect: 'Error disconnecting integration'
+                errorDisconnect: 'Error disconnecting integration',
+                whatsappModalTitle: 'WhatsApp Integration',
+                whatsappPhoneNumberId: 'Phone Number ID',
+                whatsappAccessToken: 'Access Token',
+                whatsappSave: 'Save & Connect',
+                whatsappCancel: 'Cancel',
+                whatsappHelp: 'Get these details from the Meta Developer Dashboard.',
+                whatsappConfigSuccess: 'WhatsApp configured successfully'
             },
             modelTestPage: {
                 title: 'Model Test',

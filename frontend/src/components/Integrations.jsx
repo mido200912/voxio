@@ -9,33 +9,33 @@ const Integrations = () => {
             name: 'Facebook Messenger',
             description: t.integrations.messengerDesc,
             icon: 'fa-facebook-f',
-            status: t.integrations.available,
+            status: t.integrations.soon,
             className: 'facebook',
-            available: true
+            available: false
         },
         {
             name: 'Instagram DMs',
             description: t.integrations.instagramDesc,
             icon: 'fa-instagram',
-            status: t.integrations.available,
+            status: t.integrations.soon,
             className: 'instagram',
-            available: true
+            available: false
         },
         {
             name: 'WhatsApp Business',
             description: t.integrations.whatsappDesc,
             icon: 'fa-whatsapp',
-            status: t.integrations.available,
+            status: t.integrations.soon,
             className: 'whatsapp',
-            available: true
+            available: false
         },
         {
             name: 'Shopify',
             description: t.integrations.shopifyDesc,
             icon: 'fa-shopify',
-            status: t.integrations.available,
+            status: t.integrations.soon,
             className: 'shopify',
-            available: true
+            available: false
         },
         {
             name: 'Telegram',

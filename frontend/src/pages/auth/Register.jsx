@@ -120,6 +120,10 @@ const Register = () => {
                     <p>
                         {t.auth.haveAccount} <Link to="/login">{t.auth.loginLink}</Link>
                     </p>
+                    <div className="legal-links" style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '15px', fontSize: '0.9rem' }}>
+                        <Link to="/terms" style={{ color: 'var(--text-secondary)' }}>{t.footer.terms}</Link>
+                        <Link to="/privacy" style={{ color: 'var(--text-secondary)' }}>{t.footer.privacy}</Link>
+                    </div>
                 </div>
             </div>
         </div>

@@ -8,6 +8,8 @@ const Integrations = () => {
     const { t } = useLanguage();
     const [integrations, setIntegrations] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showWhatsappModal, setShowWhatsappModal] = useState(false);
+    const [whatsappData, setWhatsappData] = useState({ phoneNumberId: '', accessToken: '' });
     const [availableIntegrations, setAvailableIntegrations] = useState([
         {
             id: 'facebook',
@@ -15,7 +17,7 @@ const Integrations = () => {
             icon: 'facebook-f',
             color: '#1877f2',
             descKey: 'messengerDesc',
-            available: true
+            available: false
         },
         {
             id: 'whatsapp',
@@ -23,7 +25,7 @@ const Integrations = () => {
             icon: 'whatsapp',
             color: '#25d366',
             descKey: 'whatsappDesc',
-            available: true
+            available: false
         },
         {
             id: 'shopify',
@@ -31,7 +33,7 @@ const Integrations = () => {
             icon: 'shopify',
             color: '#96bf48',
             descKey: 'shopifyDesc',
-            available: true
+            available: false
         },
         {
             id: 'instagram',
@@ -39,7 +41,7 @@ const Integrations = () => {
             icon: 'instagram',
             color: '#e4405f',
             descKey: 'instagramDesc',
-            available: true
+            available: false
         },
         {
             id: 'tiktok',
@@ -47,7 +49,7 @@ const Integrations = () => {
             icon: 'tiktok',
             color: '#000000',
             descKey: 'tiktokDesc',
-            available: true
+            available: false
         }
     ]);
 
@@ -102,8 +104,8 @@ const Integrations = () => {
             const userStr = localStorage.getItem('user');
             const user = userStr ? JSON.parse(userStr) : null;
 
-            // For Meta (Facebook/Instagram/WhatsApp)
-            if (integration.id === 'facebook' || integration.id === 'whatsapp' || integration.id === 'instagram') {
+            // For Meta (Facebook/Instagram)
+            if (integration.id === 'facebook' || integration.id === 'instagram') {
                 // Redirect to Meta OAuth flow
                 const companyRes = await axios.get(`${BACKEND_URL}/company`, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -111,6 +113,10 @@ const Integrations = () => {
                 const companyId = companyRes.data._id;
 
                 window.location.href = `${BACKEND_URL}/integrations/meta/login?companyId=${companyId}`;
+            }
+            // For WhatsApp Manual Flow
+            else if (integration.id === 'whatsapp') {
+                setShowWhatsappModal(true);
             }
             // For TikTok
             else if (integration.id === 'tiktok') {
@@ -135,6 +141,22 @@ const Integrations = () => {
             }
         } catch (error) {
             console.error('Error connecting integration:', error);
+            alert(t.dashboard.integrationsPage.errorConnect);
+        }
+    };
+
+    const handleWhatsappSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.post(`${BACKEND_URL}/integration-manager/whatsapp`, whatsappData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert(`✅ ${t.dashboard.integrationsPage.whatsappConfigSuccess || 'WhatsApp configured successfully'}`);
+            setShowWhatsappModal(false);
+            setWhatsappData({ phoneNumberId: '', accessToken: '' });
+            fetchIntegrations();
+        } catch (error) {
+            console.error('Error configuring WhatsApp:', error);
             alert(t.dashboard.integrationsPage.errorConnect);
         }
     };
@@ -202,12 +224,52 @@ const Integrations = () => {
             {loading ? (
                 <p style={{ textAlign: 'center', padding: '40px' }}>{t.dashboard.integrationsPage.loading}</p>
             ) : (
-                <motion.div
-                    className="integrations-list"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                >
+                <div style={{ position: 'relative' }}>
+                    {/* Locked Overlay Start */}
+                    <div className="locked-overlay" style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 10,
+                        WebkitBackdropFilter: 'blur(8px)',
+                        backdropFilter: 'blur(8px)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '20px',
+                        border: '1px solid rgba(255,255,255,0.7)',
+                        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+                        padding: '20px',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{
+                            width: '80px', height: '80px', borderRadius: '50%',
+                            background: 'var(--primary-color)', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center',
+                            marginBottom: '20px', color: '#fff', fontSize: '2rem',
+                            boxShadow: '0 10px 25px var(--primary-glow)'
+                        }}>
+                            <i className="fas fa-lock"></i>
+                        </div>
+                        <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '10px', fontWeight: 'bold' }}>
+                            {t.language === 'ar' ? 'قريباً جداً' : 'Coming Soon'}
+                        </h2>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '400px' }}>
+                            {t.language === 'ar' 
+                                ? 'هذا القسم قيد التطوير حالياً وسيتم إطلاق روبوتات تيليجرام وتكاملات المنصات الأخرى قريباً.' 
+                                : 'This section is currently under development. Telegram bots and other integrations will be launched soon.'}
+                        </p>
+                    </div>
+                    {/* Locked Overlay End */}
+
+                    <motion.div
+                        className="integrations-list"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        style={{ pointerEvents: 'none' }} // Disable pointer events underneath
+                    >
                     {availableIntegrations.map(integration => {
                         const status = getIntegrationStatus(integration.id);
 
@@ -252,7 +314,48 @@ const Integrations = () => {
                             </motion.div>
                         );
                     })}
-                </motion.div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* WhatsApp Modal */}
+            {showWhatsappModal && (
+                <div className="modal-overlay" onClick={() => setShowWhatsappModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h2>{t.dashboard.integrationsPage.whatsappModalTitle || 'WhatsApp Integration'}</h2>
+                        <form onSubmit={handleWhatsappSubmit} className="whatsapp-form">
+                            <div className="form-group">
+                                <label>{t.dashboard.integrationsPage.whatsappPhoneNumberId || 'Phone Number ID'}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={whatsappData.phoneNumberId}
+                                    onChange={(e) => setWhatsappData({ ...whatsappData, phoneNumberId: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t.dashboard.integrationsPage.whatsappAccessToken || 'Access Token'}</label>
+                                <textarea
+                                    required
+                                    rows="3"
+                                    value={whatsappData.accessToken}
+                                    onChange={(e) => setWhatsappData({ ...whatsappData, accessToken: e.target.value })}
+                                ></textarea>
+                            </div>
+                            <p className="help-text" style={{ fontSize: '0.9rem', color: '#666', marginBottom: '20px' }}>
+                                {t.dashboard.integrationsPage.whatsappHelp || 'Get these details from the Meta Developer Dashboard.'}
+                            </p>
+                            <div className="modal-actions">
+                                <button type="button" className="btn btn-outline" onClick={() => setShowWhatsappModal(false)}>
+                                    {t.dashboard.integrationsPage.whatsappCancel || 'Cancel'}
+                                </button>
+                                <button type="submit" className="btn btn-primary">
+                                    {t.dashboard.integrationsPage.whatsappSave || 'Save & Connect'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );

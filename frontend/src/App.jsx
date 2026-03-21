@@ -15,6 +15,8 @@ import AiTraining from './pages/dashboard/AiTraining';
 import Integrations from './pages/dashboard/Integrations';
 import ModelTest from './pages/dashboard/ModelTest';
 import Settings from './pages/dashboard/Settings';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import './App.css';
 
 function App() {
@@ -31,6 +33,8 @@ function App() {
                 <Route path="/onboarding/profile" element={<OnboardingProfile />} />
                 <Route path="/onboarding/knowledge" element={<OnboardingKnowledge />} />
                 <Route path="/onboarding/connect" element={<OnboardingConnect />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
                 {/* Dashboard routes */}
                 <Route path="/dashboard" element={<DashboardLayout />}>
                   <Route index element={<DashboardHome />} />
