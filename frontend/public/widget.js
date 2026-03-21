@@ -3,6 +3,7 @@
     const script = document.currentScript;
     const apiKey = script.getAttribute('data-api-key');
     const baseUrl = script.getAttribute('data-base-url') || 'https://aithor0.vercel.app';
+    const primaryColor = script.getAttribute('data-primary-color') || '#000';
     
     if (!apiKey) {
         console.error('Aithor Widget Error: data-api-key is missing from the script tag.');
@@ -30,8 +31,8 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: #000;
-            color: #fff;
+            background: ${primaryColor};
+            color: ${primaryColor === '#c8ff00' ? '#000' : '#fff'};
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             cursor: pointer;
             display: flex;
