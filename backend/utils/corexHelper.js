@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 /**
  * Helper for CoreSys API
  * Parses the response from CoreSys which may return nested JSON strings.
@@ -25,4 +27,58 @@ export function extractCorexReply(data, fallback = "لم أتمكن من الر�
   }
 
   return raw || fallback;
+}
+
+/**
+ * Unified AI Request Handler
+ * Tries CoreSys first, falls back to OpenRouter if API limits are hit or server fails.
+ */
+export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.") {
+    let reply = null;
+
+    try {
+        const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
+        const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
+        const requestUrl = `${apiUrl}?key=${aiApiKey}&act=assistant&a=${encodeURIComponent(fullQuestion)}`;
+
+        const aiResponse = await axios.get(requestUrl, { timeout: 30000 });
+        reply = extractCorexReply(aiResponse.data, null);
+
+        // CoreSys Error Check
+        if (reply && typeof reply === 'string' && (reply.includes('daily limit') || reply.includes('{"success":false'))) {
+            throw new Error('CoreSys API limit reached'); 
+        }
+    } catch (error) {
+        console.log(`🔄 CoreSys failed, falling back to OpenRouter... (${error.message})`);
+        reply = null;
+    }
+
+    // OpenRouter Fallback
+    if (!reply) {
+        const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+        if (openRouterApiKey) {
+            try {
+                const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+                    model: "google/gemini-2.5-flash", 
+                    messages: [{ role: "user", content: fullQuestion }]
+                }, {
+                    headers: {
+                        "Authorization": `Bearer ${openRouterApiKey}`,
+                        "Content-Type": "application/json"
+                    },
+                    timeout: 30000
+                });
+                
+                if (fallbackResponse.data?.choices?.length > 0) {
+                    reply = fallbackResponse.data.choices[0].message.content;
+                }
+            } catch (fallbackError) {
+                console.error('❌ OpenRouter Fallback failed too:', fallbackError.response?.data || fallbackError.message);
+            }
+        } else {
+            console.warn('⚠️ No OPENROUTER_API_KEY defined for fallback.');
+        }
+    }
+
+    return reply || fallbackText;
 }

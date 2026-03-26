@@ -4,7 +4,7 @@ import crypto from "crypto";
 import Company from "../models/company.js";
 import { requireAuth } from "../middleware/auth.js";
 import { verifyApiKey } from "../middleware/verifyApiKey.js";
-import { extractCorexReply } from "../utils/corexHelper.js";
+import { extractCorexReply, fetchAiResponse } from "../utils/corexHelper.js";
 
 const router = express.Router();
 
@@ -271,15 +271,9 @@ router.post("/external-request", async (req, res) => {
     if (company.mission) context += ` Mission: ${company.mission}.`;
     context += ` Respond in Arabic, using a professional and helpful tone.`;
 
-    // إرسال الطلب إلى نموذج الذكاء الاصطناعي عبر CoreSys API
+    // إرسال الطلب لنموذج الذكاء الاصطناعي مع نظام Fallback
     const fullQuestion = `${context}\n\nUser Question:\n${message}`;
-    const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-    const apiAccessKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
-    const requestUrl = `${apiUrl}?key=${apiAccessKey}&act=assistant&a=${encodeURIComponent(fullQuestion)}`;
-    
-    const aiResponse = await axios.get(requestUrl);
-
-    const reply = extractCorexReply(aiResponse.data, "عذرًا، لم أتمكن من معالجة الطلب الآن.");
+    const reply = await fetchAiResponse(fullQuestion, "عذرًا، لم أتمكن من معالجة الطلب الآن.");
 
     // حفظ الطلب والرد في قاعدة البيانات
     company.requests.push({

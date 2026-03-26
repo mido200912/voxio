@@ -2,7 +2,7 @@
 import express from "express";
 import axios from "axios";
 import Company from "../models/company.js";
-import { extractCorexReply } from "../utils/corexHelper.js";
+import { extractCorexReply, fetchAiResponse } from "../utils/corexHelper.js";
 
 const router = express.Router();
 
@@ -58,15 +58,11 @@ ${company.customInstructions || "Respond to customers naturally and professional
 Language: Respond in the same language as the customer's query (Arabic or English).
 `;
 
-    // ✅ إرسال الطلب لموديل CoreSys بدلاً من OpenRouter
+    // ✅ إرسال الطلب لموديل AI بدلاً من OpenRouter واستخدام Fallback
     const fullQuestion = `${context}\n\nUser Question:\n${prompt}`;
-    const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-    const apiAccessKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
-    const requestUrl = `${apiUrl}?key=${apiAccessKey}&act=assistant&a=${encodeURIComponent(fullQuestion)}`;
     
-    const response = await axios.get(requestUrl);
-
-    const reply = extractCorexReply(response.data, "لم يتم الحصول على رد من الذكاء الاصطناعي.");
+    // استخدام الدالة الموحدة المدمج بها Fallback
+    const reply = await fetchAiResponse(fullQuestion, "لم يتم الحصول على رد من الذكاء الاصطناعي.");
     // 💾 حفظ المحادثة في قاعدة البيانات
     const CompanyChat = (await import("../models/CompanyChat.js")).default;
 

@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { extractCorexReply } from '../utils/corexHelper.js';
+import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
 
 const router = express.Router();
 
@@ -39,13 +39,8 @@ router.post('/', async (req, res) => {
         const { prompt } = req.body;
 
         const fullQuestion = `${AITHOR_CONTEXT}\n\nUser Question:\n${prompt}`;
-        const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-        const apiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
-        const requestUrl = `${apiUrl}?key=${apiKey}&act=assistant&a=${encodeURIComponent(fullQuestion)}`;
-
-        const response = await axios.get(requestUrl);
-
-        const reply = extractCorexReply(response.data, "عذراً، أواجه مشكلة تقنية حالياً.");
+        // استخدام الدالة الموحدة المدمج بها Fallback
+        const reply = await fetchAiResponse(fullQuestion, "عذراً، أواجه مشكلة تقنية حالياً.");
         res.json({ reply });
 
     } catch (error) {

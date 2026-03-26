@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Integration from '../models/Integration.js';
 import Company from '../models/company.js';
-import { extractCorexReply } from '../utils/corexHelper.js';
+import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
 
 // تتبع الرسائل المعالجة لمنع التكرار
 // ⚠️ ملاحظة للإنتاج: في بيئة العمل الحقيقية (Production)، يفضل استخدام Redis لتخزين processedMessages
@@ -79,15 +79,9 @@ export const handleWhatsAppMessage = async (body) => {
 تحدث بالعربية وكأنك ممثل حقيقي للشركة. كن مفيداً ومهذباً.
                         `.trim();
 
-                        // إرسال الطلب للذكاء الاصطناعي عبر CoreSys API
                         const fullQuestion = `${context}\n\nUser Question:\n${messageText}`;
-                        const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-                        const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
-                        const requestUrl = `${apiUrl}?key=${aiApiKey}&act=assistant&a=${encodeURIComponent(fullQuestion)}`;
-
-                        const aiResponse = await axios.get(requestUrl, { timeout: 30000 });
-
-                        const reply = extractCorexReply(aiResponse.data, "عذراً، لم أتمكن من معالجة طلبك.");
+                        // إرسال الطلب للذكاء الاصطناعي مع نظام البديل (Fallback)
+                        const reply = await fetchAiResponse(fullQuestion);
 
                         console.log(`🤖 AI Reply: "${reply}"`);
 
@@ -209,12 +203,8 @@ export const handleTelegramWebhook = async (req, res) => {
         `.trim();
 
         const fullQuestion = `${context}\n\nUser Question:\n${text}`;
-        const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-        const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
-        const requestUrl = `${apiUrl}?key=${aiApiKey}&act=assistant&a=${encodeURIComponent(fullQuestion)}`;
-
-        const aiResponse = await axios.get(requestUrl, { timeout: 30000 });
-        const reply = extractCorexReply(aiResponse.data, "عذراً، لم أتمكن من معالجة طلبك حالياً.");
+        // إرسال الطلب للذكاء الاصطناعي مع نظام البديل (Fallback)
+        const reply = await fetchAiResponse(fullQuestion);
 
         // Save messages to DB (Chat History)
         const CompanyChat = (await import('../models/CompanyChat.js')).default;

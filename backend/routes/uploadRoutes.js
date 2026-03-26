@@ -3,7 +3,7 @@ import axios from 'axios';
 import { upload } from '../config/cloudinary.js';
 import Company from '../models/company.js';
 import { requireAuth as protect } from '../middleware/auth.js';
-import { extractCorexReply } from '../utils/corexHelper.js';
+import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
 
 const router = express.Router();
 
@@ -52,13 +52,8 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
 
 الرد يجب أن يكون نصاً منظماً وجاهزاً للاستخدام في الدعم الآلي للعملاء.`;
 
-            const apiUrl = process.env.COREX_API_URL || 'https://dev-c7z.pantheonsite.io/CoreSys/chat.php';
-            const apiKey = process.env.COREX_API_KEY || 'AITHORV1_6F85B401ED';
-            const requestUrl = `${apiUrl}?key=${apiKey}&act=assistant&a=${encodeURIComponent(extractionPrompt)}`;
-
-            const aiResponse = await axios.get(requestUrl, { timeout: 30000 });
-
-            const extractedText = extractCorexReply(aiResponse.data, '');
+            // استخدام الدالة الموحدة المدمج بها Fallback
+            const extractedText = await fetchAiResponse(extractionPrompt, '');
 
             if (extractedText) {
                 // ✨ Append to existing knowledge (don't replace)

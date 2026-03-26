@@ -2,7 +2,7 @@ import express from "express";
 import axios from "axios";
 import { requireAuth } from "../middleware/auth.js";
 import Company from "../models/company.js";
-import { extractCorexReply } from "../utils/corexHelper.js";
+import { extractCorexReply, fetchAiResponse } from "../utils/corexHelper.js";
 
 const router = express.Router();
 
@@ -54,15 +54,10 @@ router.post("/", requireAuth, async (req, res) => {
       context = parts.join("\n");
     }
 
-    // إرسال الطلب إلى CoreSys API
     const fullQuestion = `${context}\n\nUser Question:\n${prompt}`;
-    const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-    const apiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
-    const requestUrl = `${apiUrl}?key=${apiKey}&act=assistant&a=${encodeURIComponent(fullQuestion)}`;
     
-    const response = await axios.get(requestUrl);
-    
-    const reply = extractCorexReply(response.data);
+    // استخدام الدالة الموحدة المدمج بها Fallback
+    const reply = await fetchAiResponse(fullQuestion, "حدث خطأ أثناء الاتصال بالذكاء الاصطناعي.");
     res.json({ reply });
 
   } catch (error) {
