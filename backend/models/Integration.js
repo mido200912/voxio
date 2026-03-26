@@ -37,9 +37,22 @@ const integrationSchema = mongoose.Schema({
             default: false
         },
         commands: [{
-            command: String,
-            description: String,
-            category: String
+            command: String,      // e.g. "shopping"
+            description: String,  // shown in bot menu
+            category: String,     // dashboard category label
+            type: {
+                type: String,
+                enum: ['ai', 'fixed_message', 'product_menu'],
+                default: 'ai'
+            },
+            // For fixed_message: send this text to the user
+            message: String,
+            // For product_menu: show these as inline buttons
+            products: [{
+                name: String,
+                price: String,
+                description: String
+            }]
         }]
     }
 }, {

@@ -14,7 +14,8 @@ const Integrations = () => {
     // Telegram State
     const [showTelegramModal, setShowTelegramModal] = useState(false);
     const [telegramData, setTelegramData] = useState({ botToken: '', commands: [] });
-    const [newCommand, setNewCommand] = useState({ command: '', category: '' });
+    const [newCommand, setNewCommand] = useState({ command: '', description: '', category: '', type: 'ai', message: '', products: [] });
+    const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '' });
 
     const [availableIntegrations, setAvailableIntegrations] = useState([
         {
@@ -181,17 +182,27 @@ const Integrations = () => {
 
     const addTelegramCommand = () => {
         if (!newCommand.command || !newCommand.category) return;
-        setTelegramData({
-            ...telegramData,
-            commands: [...telegramData.commands, newCommand]
-        });
-        setNewCommand({ command: '', category: '' });
+        setTelegramData({ ...telegramData, commands: [...telegramData.commands, { ...newCommand }] });
+        setNewCommand({ command: '', description: '', category: '', type: 'ai', message: '', products: [] });
+        setNewProduct({ name: '', price: '', description: '' });
     };
 
     const removeTelegramCommand = (index) => {
         const updated = [...telegramData.commands];
         updated.splice(index, 1);
         setTelegramData({ ...telegramData, commands: updated });
+    };
+
+    const addProductToCommand = () => {
+        if (!newProduct.name) return;
+        setNewCommand({ ...newCommand, products: [...(newCommand.products || []), { ...newProduct }] });
+        setNewProduct({ name: '', price: '', description: '' });
+    };
+
+    const removeProductFromCommand = (idx) => {
+        const updated = [...newCommand.products];
+        updated.splice(idx, 1);
+        setNewCommand({ ...newCommand, products: updated });
     };
 
     const handleWhatsappSubmit = async (e) => {
@@ -436,54 +447,102 @@ const Integrations = () => {
                             </div>
 
                             <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-                                <h3 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>
-                                    {t.language === 'ar' ? 'الأوامر المخصصة (اختياري)' : 'Custom Commands (Optional)'}
+                                <h3 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>
+                                    {t.language === 'ar' ? '⚙️ الأوامر المخصصة' : '⚙️ Custom Commands'}
                                 </h3>
-                                <p style={{ fontSize: '0.85rem', color: '#777', marginBottom: '15px' }}>
-                                    {t.language === 'ar' 
-                                        ? 'حدد أوامر تظهر للعميل في قائمة البوت (مثال: /shopping). أي عميل يضغط على الأمر، سيتم حفظ طلبه ضمن التصنيف الذي تحدده هنا لمتابعته من قسم Telegram.' 
-                                        : 'Set commands for the Telegram bot menu (e.g. /shopping). Requests via these commands will be categorized accordingly in the dashboard.'}
+                                <p style={{ fontSize: '0.82rem', color: '#888', marginBottom: '15px' }}>
+                                    {t.language === 'ar' ? 'أضف أوامر للبوت (مثال: /shopping) مع تحديد نوع ردّه.' : 'Add bot commands (e.g. /shopping) and define how it responds.'}
                                 </p>
 
-                                {/* List of added commands */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+                                {/* Added commands list */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                                     {telegramData.commands.map((cmd, idx) => (
-                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8f9fa', padding: '10px', borderRadius: '8px' }}>
-                                            <span style={{ fontWeight: 600, color: '#26A5E4' }}>/{cmd.command.replace('/','')} <span style={{color: '#999', fontWeight: 400}}>→ {cmd.category}</span></span>
-                                            <button type="button" onClick={() => removeTelegramCommand(idx)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                                <i className="fas fa-trash"></i>
+                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0f8ff', padding: '10px 14px', borderRadius: '10px', border: '1px solid #26A5E430' }}>
+                                            <div>
+                                                <span style={{ fontWeight: 700, color: '#26A5E4' }}>/{cmd.command}</span>
+                                                <span style={{ color: '#888', marginInlineStart: '8px', fontSize: '0.82rem' }}>[{cmd.type}]</span>
+                                                <span style={{ color: '#555', marginInlineStart: '8px', fontSize: '0.82rem' }}>→ {cmd.category}</span>
+                                                {cmd.products?.length > 0 && <span style={{ marginInlineStart: '8px', fontSize: '0.78rem', color: '#26A5E4' }}>{cmd.products.length} منتج</span>}
+                                            </div>
+                                            <button type="button" onClick={() => removeTelegramCommand(idx)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                                <i className="fas fa-trash" />
                                             </button>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Add new command form */}
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
-                                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                                        <label>{t.language === 'ar' ? 'الأمر' : 'Command'}</label>
-                                        <input
-                                            type="text"
-                                            placeholder="shopping"
-                                            value={newCommand.command}
-                                            onChange={(e) => setNewCommand({ ...newCommand, command: e.target.value })}
-                                        />
+                                {/* New command builder */}
+                                <div style={{ background: '#fafafa', border: '1px dashed #ccc', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                        <div className="form-group" style={{ flex: '1 1 120px', marginBottom: 0 }}>
+                                            <label style={{ fontSize: '0.82rem' }}>{t.language === 'ar' ? 'الأمر (بدون /)' : 'Command (no /)'}</label>
+                                            <input type="text" placeholder="shopping" value={newCommand.command}
+                                                onChange={e => setNewCommand({ ...newCommand, command: e.target.value })} />
+                                        </div>
+                                        <div className="form-group" style={{ flex: '1 1 120px', marginBottom: 0 }}>
+                                            <label style={{ fontSize: '0.82rem' }}>{t.language === 'ar' ? 'التصنيف' : 'Category'}</label>
+                                            <input type="text" placeholder={t.language === 'ar' ? 'المبيعات' : 'Sales'} value={newCommand.category}
+                                                onChange={e => setNewCommand({ ...newCommand, category: e.target.value })} />
+                                        </div>
+                                        <div className="form-group" style={{ flex: '1 1 140px', marginBottom: 0 }}>
+                                            <label style={{ fontSize: '0.82rem' }}>{t.language === 'ar' ? 'نوع الرد' : 'Response Type'}</label>
+                                            <select value={newCommand.type} onChange={e => setNewCommand({ ...newCommand, type: e.target.value })}
+                                                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', background: 'white' }}>
+                                                <option value="ai">{t.language === 'ar' ? '🤖 رد ذكاء اصطناعي' : '🤖 AI Reply'}</option>
+                                                <option value="fixed_message">{t.language === 'ar' ? '💬 رسالة ثابتة' : '💬 Fixed Message'}</option>
+                                                <option value="product_menu">{t.language === 'ar' ? '🛍️ قائمة منتجات' : '🛍️ Product Menu'}</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                                        <label>{t.language === 'ar' ? 'التصنيف في الداش بورد' : 'Dashboard Category'}</label>
-                                        <input
-                                            type="text"
-                                            placeholder={t.language === 'ar' ? 'المبيعات' : 'Sales'}
-                                            value={newCommand.category}
-                                            onChange={(e) => setNewCommand({ ...newCommand, category: e.target.value })}
-                                        />
-                                    </div>
-                                    <button 
-                                        type="button" 
-                                        className="btn btn-outline" 
-                                        onClick={addTelegramCommand}
-                                        style={{ height: '42px', padding: '0 15px' }}
-                                    >
-                                        <i className="fas fa-plus"></i>
+
+                                    {/* Fixed message input */}
+                                    {newCommand.type !== 'ai' && (
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label style={{ fontSize: '0.82rem' }}>
+                                                {newCommand.type === 'fixed_message'
+                                                    ? (t.language === 'ar' ? 'الرسالة الثابتة' : 'Fixed Message Text')
+                                                    : (t.language === 'ar' ? 'نص قبل قائمة المنتجات (اختياري)' : 'Intro text before menu (optional)')}
+                                            </label>
+                                            <textarea rows="2" value={newCommand.message}
+                                                placeholder={t.language === 'ar' ? 'مرحباً! هذه قائمة خدماتنا...' : 'Hello! Here are our services...'}
+                                                onChange={e => setNewCommand({ ...newCommand, message: e.target.value })}
+                                                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', resize: 'vertical' }} />
+                                        </div>
+                                    )}
+
+                                    {/* Product menu builder */}
+                                    {newCommand.type === 'product_menu' && (
+                                        <div style={{ background: 'white', borderRadius: '10px', padding: '12px', border: '1px solid #e0e0e0' }}>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '10px', color: '#333' }}>
+                                                {t.language === 'ar' ? '🛍️ إضافة منتجات (ستظهر كأزرار)' : '🛍️ Add Products (shown as buttons)'}
+                                            </div>
+                                            {newCommand.products?.map((p, i) => (
+                                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f0f8ff', borderRadius: '8px', marginBottom: '6px' }}>
+                                                    <span style={{ fontSize: '0.85rem' }}><b>{p.name}</b>{p.price && ` - ${p.price}`}</span>
+                                                    <button type="button" onClick={() => removeProductFromCommand(i)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>
+                                                        <i className="fas fa-times" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                                                <input type="text" placeholder={t.language === 'ar' ? 'اسم المنتج' : 'Product name'} value={newProduct.name}
+                                                    onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
+                                                    style={{ flex: '1 1 130px', padding: '7px 10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.85rem' }} />
+                                                <input type="text" placeholder={t.language === 'ar' ? 'السعر (اختياري)' : 'Price (optional)'} value={newProduct.price}
+                                                    onChange={e => setNewProduct({ ...newProduct, price: e.target.value })}
+                                                    style={{ flex: '0 1 110px', padding: '7px 10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.85rem' }} />
+                                                <button type="button" onClick={addProductToCommand}
+                                                    style={{ padding: '7px 14px', background: '#26A5E4', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                    <i className="fas fa-plus" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button type="button" onClick={addTelegramCommand}
+                                        style={{ alignSelf: 'flex-start', padding: '8px 20px', background: '#26A5E4', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }}>
+                                        <i className="fas fa-plus" style={{ marginInlineEnd: '6px' }} />
+                                        {t.language === 'ar' ? 'إضافة الأمر' : 'Add Command'}
                                     </button>
                                 </div>
                             </div>
