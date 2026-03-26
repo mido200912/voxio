@@ -196,12 +196,16 @@ export const handleTelegramWebhook = async (req, res) => {
         const company = integration.company;
         const botToken = integration.credentials.botToken;
 
+        // ── Normalize text for matching ──────────────────────────────────────
+        const cleanText = text.trim().toLowerCase().replace('/', '');
+        
         // ── Match Command ────────────────────────────────────────────────────
         const commandConfig = (integration.settings?.commands || []).find(c =>
-            text === `/${c.command}` || text.startsWith(`/${c.command} `) || text === c.command
+            cleanText === c.command || text.startsWith(`/${c.command} `) || text === `/${c.command}`
         );
 
         if (commandConfig) {
+            console.log(`🎯 Command matched: ${commandConfig.command} | Type: ${commandConfig.type}`);
             const cmdType = commandConfig.type || 'ai';
 
             // Save incoming command to chat history

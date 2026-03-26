@@ -185,6 +185,12 @@ router.post('/telegram', requireAuth, async (req, res) => {
             return res.status(400).json({ error: tgErrMsg });
         }
 
+        // Sanitize commands for DB storage
+        const sanitizedSettingsCommands = (commands || []).map(c => ({
+            ...c,
+            command: c.command.toLowerCase().replace(/[^a-z0-9_]/g, '') // Save clean name
+        }));
+
         const integration = await Integration.findOneAndUpdate(
             { company: company._id, platform: 'telegram' },
             {
@@ -192,7 +198,7 @@ router.post('/telegram', requireAuth, async (req, res) => {
                     botToken
                 },
                 settings: {
-                    commands: commands || []
+                    commands: sanitizedSettingsCommands
                 },
                 isActive: true
             },
