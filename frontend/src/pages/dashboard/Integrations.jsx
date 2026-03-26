@@ -181,8 +181,15 @@ const Integrations = () => {
     };
 
     const addTelegramCommand = () => {
-        if (!newCommand.command || !newCommand.category) return;
-        setTelegramData({ ...telegramData, commands: [...telegramData.commands, { ...newCommand }] });
+        if (!newCommand.command) return;
+        
+        console.log("Current built command:", newCommand);
+        
+        setTelegramData(prev => ({ 
+            ...prev, 
+            commands: [...prev.commands, { ...newCommand }] 
+        }));
+
         setNewCommand({ command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] });
         setNewProduct({ name: '', price: '', description: '' });
     };
@@ -195,7 +202,10 @@ const Integrations = () => {
 
     const addProductToCommand = () => {
         if (!newProduct.name) return;
-        setNewCommand({ ...newCommand, products: [...(newCommand.products || []), { ...newProduct }] });
+        setNewCommand(prev => ({ 
+            ...prev, 
+            products: [...(prev.products || []), { ...newProduct }] 
+        }));
         setNewProduct({ name: '', price: '', description: '' });
     };
 
