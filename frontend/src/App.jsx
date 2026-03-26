@@ -5,9 +5,11 @@ import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
 import OnboardingProfile from './pages/onboarding/Profile';
 import OnboardingKnowledge from './pages/onboarding/Knowledge';
 import OnboardingConnect from './pages/onboarding/Connect';
+import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardHome from './pages/dashboard/Home';
 import Inbox from './pages/dashboard/Inbox';
@@ -36,6 +38,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/onboarding/profile" element={<OnboardingProfile />} />
                 <Route path="/onboarding/knowledge" element={<OnboardingKnowledge />} />
                 <Route path="/onboarding/connect" element={<OnboardingConnect />} />
@@ -49,7 +52,7 @@ function App() {
                 <Route path="/agents/:apiKey" element={<AgentChat />} />
                 <Route path="/widget/:apiKey" element={<ChatWidget />} />
                 {/* Dashboard routes */}
-                <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route index element={<DashboardHome />} />
                   <Route path="inbox" element={<Inbox />} />
                   <Route path="ai-training" element={<AiTraining />} />

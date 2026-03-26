@@ -6,10 +6,19 @@ import { motion } from 'framer-motion';
 import './Settings.css';
 
 const Settings = () => {
-    const { user } = useAuth();
+    const { user, changePassword } = useAuth();
     const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [pwdSaving, setPwdSaving] = useState(false);
+
+    // Password Change State
+    const [pwdData, setPwdData] = useState({
+        oldPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [pwdError, setPwdError] = useState('');
 
     // API Key State
     const [apiKey, setApiKey] = useState('');
@@ -101,6 +110,27 @@ const Settings = () => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const handlePwdChange = (e) => {
+        setPwdData({ ...pwdData, [e.target.name]: e.target.value });
+        setPwdError('');
+    };
+
+    const handleSavePassword = async () => {
+        if (!pwdData.oldPassword || !pwdData.newPassword) return setPwdError('All fields are required');
+        if (pwdData.newPassword.length < 8) return setPwdError('New password must be at least 8 chars');
+        if (pwdData.newPassword !== pwdData.confirmPassword) return setPwdError('New passwords do not match');
+
+        setPwdSaving(true);
+        const success = await changePassword(pwdData.oldPassword, pwdData.newPassword);
+        if (success) {
+            alert('✅ Password changed successfully');
+            setPwdData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+        } else {
+            alert('❌ Failed to change password. Check your old password.');
+        }
+        setPwdSaving(false);
     };
 
     if (loading) return <div className="loading-state">{t.dashboard.settingsPage.loading}</div>;
@@ -242,6 +272,61 @@ const Settings = () => {
                             <i className="fas fa-exclamation-triangle"></i>
                             <p>{t.dashboard.settingsPage.apiKeyWarning}</p>
                         </div>
+                    </div>
+                </motion.div>
+
+                {/* Change Password Section */}
+                <motion.div variants={itemVariants} className="card full-width">
+                    <div className="card-header">
+                        <i className="fas fa-lock"></i>
+                        <h3>Change Password</h3>
+                    </div>
+                    <div className="card-body">
+                        {pwdError && <p style={{color: 'red', marginBottom: '10px'}}>{pwdError}</p>}
+                        
+                        <div className="form-group">
+                            <label>Current Password</label>
+                            <input
+                                type="password"
+                                name="oldPassword"
+                                value={pwdData.oldPassword}
+                                onChange={handlePwdChange}
+                                className="settings-input"
+                                placeholder="Enter your current password"
+                            />
+                        </div>
+                        <div className="form-row">
+                            <div className="form-group half">
+                                <label>New Password</label>
+                                <input
+                                    type="password"
+                                    name="newPassword"
+                                    value={pwdData.newPassword}
+                                    onChange={handlePwdChange}
+                                    className="settings-input"
+                                    placeholder="Enter new password"
+                                />
+                            </div>
+                            <div className="form-group half">
+                                <label>Confirm New Password</label>
+                                <input
+                                    type="password"
+                                    name="confirmPassword"
+                                    value={pwdData.confirmPassword}
+                                    onChange={handlePwdChange}
+                                    className="settings-input"
+                                    placeholder="Confirm new password"
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleSavePassword}
+                            disabled={pwdSaving}
+                        >
+                            {pwdSaving ? 'Updating...' : 'Update Password'}
+                        </button>
                     </div>
                 </motion.div>
             </motion.div>

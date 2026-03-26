@@ -49,14 +49,19 @@ export const AuthProvider = ({ children }) => {
         setError(null);
         try {
             const response = await axios.post(`${BACKEND_URL}/auth/login`, { email, password });
-            const { user, token } = response.data;
+            
+            // Check if backend requests OTP
+            if (response.data.step === 'otp_required') {
+                return { step: 'otp_required', email: response.data.email };
+            }
 
+            // Fallback for direct login (if no OTP configured / older flow)
+            const { user, token } = response.data;
             setUser(user);
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user)); // ✨ Save user to localStorage
+            localStorage.setItem('user', JSON.stringify(user));
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-            return true;
+            return { step: 'done' };
         } catch (err) {
             console.error('Login Error:', err);
             const msg = err.response?.data?.error || err.response?.data?.message || err.message;
@@ -65,6 +70,29 @@ export const AuthProvider = ({ children }) => {
             if (err.message === "Network Error") {
                 setError("لا يمكن الاتصال بالخادم. تأكد من تشغيل الباك اند في terminal اخر.");
             }
+            return { step: 'error' };
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const verifyOtp = async (email, otp) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/verify-otp`, { email, otp });
+            const { user, token } = response.data;
+
+            setUser(user);
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+            return true;
+        } catch (err) {
+            console.error('OTP Verify Error:', err);
+            const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+            setError(msg);
             return false;
         } finally {
             setLoading(false);
@@ -76,14 +104,17 @@ export const AuthProvider = ({ children }) => {
         setError(null);
         try {
             const response = await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password });
-            const { user, token } = response.data;
+            if (response.data.step === 'otp_required') {
+                return { step: 'otp_required', email: response.data.email };
+            }
 
+            const { user, token } = response.data;
             setUser(user);
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user)); // ✨ Save user to localStorage
+            localStorage.setItem('user', JSON.stringify(user));
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-            return true;
+            return { step: 'done' };
         } catch (err) {
             console.error('Register Error:', err);
             const msg = err.response?.data?.error || err.response?.data?.message || err.message;
@@ -92,6 +123,51 @@ export const AuthProvider = ({ children }) => {
             if (err.message === "Network Error") {
                 setError("لا يمكن الاتصال بالخادم. تأكد من تشغيل الباك اند في terminal اخر.");
             }
+            return { step: 'error' };
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const forgotPassword = async (email) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/forgot-password`, { email });
+            return response.data; // e.g. { step: "otp_required", email }
+        } catch (err) {
+            console.error('Forgot Password Error:', err);
+            setError(err.response?.data?.error || err.response?.data?.message || err.message);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resetPassword = async (email, otp, newPassword) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/reset-password`, { email, otp, newPassword });
+            return response.data;
+        } catch (err) {
+            console.error('Reset Password Error:', err);
+            setError(err.response?.data?.error || err.response?.data?.message || err.message);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const changePassword = async (oldPassword, newPassword) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/change-password`, { oldPassword, newPassword });
+            return true;
+        } catch (err) {
+            console.error('Change Password Error:', err);
+            setError(err.response?.data?.error || err.response?.data?.message || err.message);
             return false;
         } finally {
             setLoading(false);
@@ -106,7 +182,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, error, login, register, logout, isAuthChecked }}>
+        <AuthContext.Provider value={{ 
+            user, loading, error, setError,
+            login, verifyOtp, register, logout, isAuthChecked,
+            forgotPassword, resetPassword, changePassword
+        }}>
             {children}
         </AuthContext.Provider>
     );

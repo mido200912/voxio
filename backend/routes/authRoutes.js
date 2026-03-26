@@ -3,6 +3,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import User from "../models/User.js";
+import sendEmail from "../utils/sendEmail.js";
+import { generateOtpEmail } from "../utils/emailTemplate.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 router.use(cookieParser()); // ✅ ضروري لقراءة الكوكيز
@@ -31,7 +34,8 @@ const sendRefreshCookie = (res, token) => {
 // register
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    let { name, email, password } = req.body;
+    email = email?.trim();
     if (!name || !email || !password)
       return res.status(400).json({ error: "Missing fields" });
 
@@ -46,14 +50,43 @@ router.post("/register", async (req, res) => {
     if (exists) return res.status(400).json({ error: "Email already exists" });
 
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hash });
+    // Generate 6-digit OTP for registration
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Create unverified user with OTP
+    const user = await User.create({ 
+      name, 
+      email, 
+      password: hash,
+      otp,
+      otpExpires: Date.now() + 10 * 60 * 1000, // 10 minutes
+      isVerified: false
+    });
 
-    const { accessToken, refreshToken } = generateTokens(user._id);
-    sendRefreshCookie(res, refreshToken);
+    // Try sending email
+    try {
+      const message = `Your confirmation OTP is: ${otp}\nIt is valid for 10 minutes.`;
+      const html = generateOtpEmail(
+        "Welcome to Aithor!",
+        "Please use the verification code below to complete your registration.",
+        otp
+      );
+      await sendEmail({
+        email: user.email,
+        subject: "AiThor - Confirm Your Account",
+        message,
+        html
+      });
+      console.log(`✅ OTP sent to ${user.email}`); 
+    } catch (err) {
+      console.error("❌ Email sending failed.", err.message);
+      console.log(`⚠️ (Fallback) The OTP for ${user.email} is: ${otp}`);
+    }
 
     res.json({
-      user: { id: user._id, name: user.name, email: user.email },
-      token: accessToken, // ✅ مش accessToken أو أي اسم تاني
+      message: "OTP sent to email",
+      step: "otp_required",
+      email: user.email
     });
 
 
@@ -62,10 +95,11 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// login
+// login -> Step 1: verifies password and sends OTP
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    email = email?.trim();
     if (!email || !password)
       return res.status(400).json({ error: "Missing fields" });
 
@@ -75,15 +109,164 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: "Invalid credentials" });
 
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    // Try sending email
+    try {
+      const message = `Your login OTP is: ${otp}\nIt is valid for 10 minutes.`;
+      const html = generateOtpEmail(
+        "Login Verification",
+        "Please use the verification code below to login to your account.",
+        otp
+      );
+      await sendEmail({
+        email: user.email,
+        subject: "AiThor - Login OTP",
+        message,
+        html
+      });
+      console.log(`✅ OTP sent to ${user.email}`); // For debug if needed
+    } catch (err) {
+      console.error("❌ Email sending failed. Are SMTP credentials set in .env?", err.message);
+      console.log(`⚠️ (Fallback) The OTP for ${user.email} is: ${otp}`);
+    }
+
+    res.json({
+      message: "OTP sent to email",
+      step: "otp_required",
+      email: user.email
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// verify-otp -> Step 2: validates OTP and returns tokens
+router.post("/verify-otp", async (req, res) => {
+  try {
+    let { email, otp } = req.body;
+    email = email?.trim();
+    if (!email || !otp) return res.status(400).json({ error: "Missing email or OTP" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: "Invalid request" });
+
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    if (user.otpExpires < Date.now()) {
+      return res.status(400).json({ error: "OTP has expired. Please login again." });
+    }
+
+    // Clear OTP logic upon successful verify
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    user.isVerified = true; // For registration
+    await user.save();
+
     const { accessToken, refreshToken } = generateTokens(user._id);
     sendRefreshCookie(res, refreshToken);
 
     res.json({
       user: { id: user._id, name: user.name, email: user.email },
-      token: accessToken, // ✅ مش accessToken أو أي اسم تاني
+      token: accessToken,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
+// forgot-password
+router.post("/forgot-password", async (req, res) => {
+  try {
+    let { email } = req.body;
+    email = email?.trim();
+    if (!email) return res.status(400).json({ error: "Missing email" });
 
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: "Email not found" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    try {
+      const message = `Your password reset OTP is: ${otp}\nIt is valid for 10 minutes.`;
+      const html = generateOtpEmail(
+        "Password Reset Request",
+        "Please use the verification code below to reset your password.",
+        otp
+      );
+      await sendEmail({
+        email: user.email,
+        subject: "AiThor - Password Reset OTP",
+        message,
+        html
+      });
+      console.log(`✅ Reset OTP sent to ${user.email}`);
+    } catch (err) {
+      console.error("❌ Email sending failed.", err.message);
+      console.log(`⚠️ (Fallback) Reset OTP for ${user.email} is: ${otp}`);
+    }
+
+    res.json({ message: "OTP sent", step: "otp_required", email: user.email });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// reset-password
+router.post("/reset-password", async (req, res) => {
+  try {
+    let { email, otp, newPassword } = req.body;
+    email = email?.trim();
+    if (!email || !otp || !newPassword) return res.status(400).json({ error: "Missing fields" });
+    if (newPassword.length < 8) return res.status(400).json({ error: "Password must be at least 8 chars" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: "Invalid request" });
+
+    if (!user.otp || user.otp !== otp) return res.status(400).json({ error: "Invalid OTP" });
+    if (user.otpExpires < Date.now()) return res.status(400).json({ error: "OTP expired" });
+
+    // Valid OTP, hash new password
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.password = hash;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    res.json({ message: "Password updated successfully. You can now login." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// change-password (from inside dashboard)
+router.post("/change-password", requireAuth, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) return res.status(400).json({ error: "Missing fields" });
+    if (newPassword.length < 8) return res.status(400).json({ error: "New password must be at least 8 chars" });
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ error: "Incorrect old password" });
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.password = hash;
+    await user.save();
+
+    res.json({ message: "Password changed successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import fs from "fs";
 import path from "path";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import chatRoutes from "./routes/chatRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
@@ -32,6 +34,22 @@ app.use('/api/integrations/meta/data-deletion', express.raw({ type: '*/*' }));
 
 // ✅ إعداد JSON Body
 app.use(express.json());
+
+// ✅ إعداد حماية أكبر للموقع (Security Middlewares)
+// 1. Set security HTTP headers
+app.use(helmet());
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
+
+// security plugins are trimmed down since xss-clean and mongoSanitize are fundamentally incompatible with Express 5 req.query.
+
+// 5. Limit requests from same API (apply limit after body parse is fine or before, but trust proxy is needed if deployed)
+app.set('trust proxy', 1); // crucial for rate-limit and IP tracking behind proxies
+const limiter = rateLimit({
+    max: 100, // 100 requests per windowMs
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    message: "Too many requests from this IP, please try again in 15 minutes!"
+});
+app.use('/api', limiter);
 
 // ✅ اتصال قاعدة البيانات
 const connectDB = async () => {

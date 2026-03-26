@@ -7,14 +7,16 @@ import './Auth.css';
 
 const Register = () => {
     const { t } = useLanguage();
-    const { register, loading, error } = useAuth();
+    const { register, verifyOtp, loading, error } = useAuth();
     const navigate = useNavigate();
 
+    const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        otp: ''
     });
 
     const [errors, setErrors] = useState({});
@@ -32,12 +34,14 @@ const Register = () => {
         }
     };
 
-    const validate = () => {
+    const validateStep1 = () => {
         const newErrors = {};
+        const emailTrimmed = formData.email.trim();
+        
         if (!formData.name) newErrors.name = t.auth.errors.required;
 
-        if (!formData.email) newErrors.email = t.auth.errors.required;
-        else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = t.auth.errors.email;
+        if (!emailTrimmed) newErrors.email = t.auth.errors.required;
+        else if (!/^\S+@\S+\.\S+$/.test(emailTrimmed)) newErrors.email = t.auth.errors.email;
 
         if (!formData.password) newErrors.password = t.auth.errors.required;
         else if (formData.password.length < 8) newErrors.password = t.auth.errors.passwordLength;
@@ -49,17 +53,41 @@ const Register = () => {
         return newErrors;
     };
 
-    const handleSubmit = async (e) => {
+    const validateStep2 = () => {
+        const newErrors = {};
+        if (!formData.otp) newErrors.otp = t.auth.errors.required;
+        else if (formData.otp.length < 6) newErrors.otp = "OTP must be at least 6 digits";
+        return newErrors;
+    };
+
+    const handleRegisterSubmit = async (e) => {
         e.preventDefault();
-        const validationErrors = validate();
+        const validationErrors = validateStep1();
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
 
-        const success = await register(formData.name, formData.email, formData.password);
-        if (success) {
+        const emailTrimmed = formData.email.trim();
+        const result = await register(formData.name, emailTrimmed, formData.password);
+        if (result?.step === 'otp_required') {
+            setStep(2);
+        } else if (result?.step === 'done') {
             navigate('/onboarding/profile'); // Navigate to onboarding after register
+        }
+    };
+
+    const handleOtpSubmit = async (e) => {
+        e.preventDefault();
+        const validationErrors = validateStep2();
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
+
+        const success = await verifyOtp(formData.email, formData.otp);
+        if (success) {
+            navigate('/onboarding/profile');
         }
     };
 
@@ -67,64 +95,84 @@ const Register = () => {
         <div className="auth-container">
             <div className="auth-card animate-fade-in">
                 <div className="auth-header">
-                    <h2>{t.auth.registerTitle}</h2>
-                    <p>{t.auth.createAccountDesc}</p>
+                    <h2>{step === 1 ? t.auth.registerTitle : "Account Verification"}</h2>
+                    <p>{step === 1 ? t.auth.createAccountDesc : "Please check your email for the confirmation OTP code."}</p>
                 </div>
 
                 {error && <div className="auth-error">{error}</div>}
 
-                <form onSubmit={handleSubmit}>
-                    <Input
-                        label={t.auth.nameLabel}
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        error={errors.name}
-                        required
-                    />
-                    <Input
-                        label={t.auth.emailLabel}
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        error={errors.email}
-                        required
-                    />
-                    <Input
-                        label={t.auth.passwordLabel}
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        error={errors.password}
-                        required
-                    />
-                    <Input
-                        label={t.auth.confirmPasswordLabel}
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        error={errors.confirmPassword}
-                        required
-                    />
+                {step === 1 ? (
+                    <form onSubmit={handleRegisterSubmit}>
+                        <Input
+                            label={t.auth.nameLabel}
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            error={errors.name}
+                            required
+                        />
+                        <Input
+                            label={t.auth.emailLabel}
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            error={errors.email}
+                            required
+                        />
+                        <Input
+                            label={t.auth.passwordLabel}
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            error={errors.password}
+                            required
+                        />
+                        <Input
+                            label={t.auth.confirmPasswordLabel}
+                            type="password"
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            error={errors.confirmPassword}
+                            required
+                        />
 
-                    <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-                        {loading ? '...' : t.auth.registerButton}
-                    </button>
-                </form>
+                        <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+                            {loading ? '...' : t.auth.registerButton}
+                        </button>
+                    </form>
+                ) : (
+                    <form onSubmit={handleOtpSubmit}>
+                        <Input
+                            label="OTP Code from Email"
+                            type="text"
+                            name="otp"
+                            value={formData.otp}
+                            onChange={handleChange}
+                            error={errors.otp}
+                            required
+                        />
 
-                <div className="auth-footer">
-                    <p>
-                        {t.auth.haveAccount} <Link to="/login">{t.auth.loginLink}</Link>
-                    </p>
-                    <div className="legal-links" style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '15px', fontSize: '0.9rem' }}>
-                        <Link to="/terms" style={{ color: 'var(--text-secondary)' }}>{t.footer.terms}</Link>
-                        <Link to="/privacy" style={{ color: 'var(--text-secondary)' }}>{t.footer.privacy}</Link>
+                        <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+                            {loading ? 'Verifying...' : 'Verify Email & Create Account'}
+                        </button>
+                    </form>
+                )}
+
+                {step === 1 && (
+                    <div className="auth-footer">
+                        <p>
+                            {t.auth.haveAccount} <Link to="/login">{t.auth.loginLink}</Link>
+                        </p>
+                        <div className="legal-links" style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '15px', fontSize: '0.9rem' }}>
+                            <Link to="/terms" style={{ color: 'var(--text-secondary)' }}>{t.footer.terms}</Link>
+                            <Link to="/privacy" style={{ color: 'var(--text-secondary)' }}>{t.footer.privacy}</Link>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
