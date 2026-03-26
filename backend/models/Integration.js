@@ -8,7 +8,7 @@ const integrationSchema = mongoose.Schema({
     },
     platform: {
         type: String,
-        enum: ['facebook', 'instagram', 'whatsapp', 'shopify'],
+        enum: ['facebook', 'instagram', 'whatsapp', 'shopify', 'telegram'],
         required: true
     },
     credentials: {
@@ -16,9 +16,10 @@ const integrationSchema = mongoose.Schema({
         refreshToken: String,
         pageId: String,
         adAccountId: String,
-        userAccessToken: String, // For Meta long-lived user token
-        phoneNumberId: String, // For WhatsApp Business Phone Number ID
+        userAccessToken: String, // For Meta
+        phoneNumberId: String, // For WhatsApp
         shopUrl: String, // For Shopify
+        botToken: String, // For Telegram
         webhookSecret: String,
         expiresAt: Date
     },
@@ -34,7 +35,12 @@ const integrationSchema = mongoose.Schema({
         syncProducts: {
             type: Boolean,
             default: false
-        }
+        },
+        commands: [{
+            command: String,
+            description: String,
+            category: String
+        }]
     }
 }, {
     timestamps: true

@@ -15,6 +15,7 @@ import DashboardHome from './pages/dashboard/Home';
 import Inbox from './pages/dashboard/Inbox';
 import AiTraining from './pages/dashboard/AiTraining';
 import Integrations from './pages/dashboard/Integrations';
+import TelegramTab from './pages/dashboard/TelegramTab';
 import ModelTest from './pages/dashboard/ModelTest';
 import Settings from './pages/dashboard/Settings';
 import Terms from './pages/Terms';
@@ -58,6 +59,7 @@ function App() {
                   <Route path="ai-training" element={<AiTraining />} />
                   <Route path="model-test" element={<ModelTest />} />
                   <Route path="integrations" element={<Integrations />} />
+                  <Route path="telegram" element={<TelegramTab />} />
                   <Route path="settings" element={<Settings />} />
                 </Route>
               </Routes>

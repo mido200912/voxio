@@ -143,3 +143,108 @@ export const handleWhatsAppMessage = async (body) => {
         throw error;
     }
 };
+
+/**
+ * معالج الرسائل الواردة من Telegram
+ * يتعرف على الأوامر المخصصة (Custom Commands) أو يرد بالذكاء الاصطناعي
+ */
+export const handleTelegramWebhook = async (req, res) => {
+    try {
+        const { companyId } = req.params;
+        const body = req.body;
+
+        if (!body.message) return res.sendStatus(200);
+
+        const chatId = body.message.chat.id;
+        let text = body.message.text || '';
+        const user = body.message.from?.username || body.message.from?.first_name || 'مستخدم تليجرام';
+
+        // Check if message is already processed using message.message_id
+        const messageId = `tg_${body.message.message_id}`;
+        if (processedMessages.has(messageId)) return res.sendStatus(200);
+        processedMessages.add(messageId);
+        if (processedMessages.size > 1000) processedMessages.delete(processedMessages.values().next().value);
+
+        const integration = await Integration.findOne({
+            company: companyId,
+            platform: 'telegram',
+            isActive: true
+        }).populate('company');
+
+        if (!integration || !integration.company) {
+            console.warn(`Telegram integration not found for company ${companyId}`);
+            return res.sendStatus(200);
+        }
+
+        const company = integration.company;
+        const botToken = integration.credentials.botToken;
+
+        // Check for custom commands first (e.g. /shopping)
+        const commandConfig = integration.settings?.commands?.find(c => text.startsWith(`/${c.command}`) || text.startsWith(c.command));
+
+        if (commandConfig) {
+            // Save as Categorized Request (to appear in specific dashboard tab)
+            company.requests.push({
+                customerName: user,
+                product: commandConfig.category || 'تليجرام',
+                message: text,
+                date: new Date()
+            });
+            await company.save();
+
+            // Reply to user acknowledging the command
+            await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                chat_id: chatId,
+                text: `تم استلام طلبك في قسم: ${commandConfig.category || commandConfig.description}. سنتواصل معك قريباً!`
+            });
+            return res.sendStatus(200);
+        }
+
+        // Regular message -> Forward to AI
+        const context = `
+أنت مساعد ذكي تمثل شركة "${company.name}".
+المجال: ${company.industry || "غير محدد"}.
+وصف الشركة: ${company.description || "لا يوجد وصف"}.
+تحدث بالعربية بأسلوب مهذب ومفيد عبر تليجرام.
+        `.trim();
+
+        const fullQuestion = `${context}\n\nUser Question:\n${text}`;
+        const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
+        const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
+        const requestUrl = `${apiUrl}?key=${aiApiKey}&act=assistant&a=${encodeURIComponent(fullQuestion)}`;
+
+        const aiResponse = await axios.get(requestUrl, { timeout: 30000 });
+        const reply = extractCorexReply(aiResponse.data, "عذراً، لم أتمكن من معالجة طلبك حالياً.");
+
+        // Save messages to DB (Chat History)
+        const CompanyChat = (await import('../models/CompanyChat.js')).default;
+        
+        await CompanyChat.create({
+            company: company._id,
+            user: chatId.toString(),
+            text: text,
+            sender: 'user',
+            platform: 'telegram'
+        });
+
+        // Reply via Telegram
+        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            chat_id: chatId,
+            text: reply
+        });
+
+        // Save AI reply to DB
+        await CompanyChat.create({
+            company: company._id,
+            user: chatId.toString(),
+            text: reply,
+            sender: 'ai',
+            platform: 'telegram'
+        });
+
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('Error handling Telegram Webhook:', error.message);
+        res.sendStatus(500);
+    }
+};

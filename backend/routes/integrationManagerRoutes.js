@@ -1,4 +1,5 @@
 import express from 'express';
+import axios from 'axios';
 import { requireAuth } from '../middleware/auth.js';
 import Integration from '../models/Integration.js';
 import Company from '../models/company.js';
@@ -129,6 +130,67 @@ router.post('/whatsapp', requireAuth, async (req, res) => {
     } catch (error) {
         console.error('WhatsApp integration error:', error);
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// @route   POST /api/integration-manager/telegram
+// @desc    Manually configure Telegram with Bot Token and Custom Commands
+// @access  Private
+router.post('/telegram', requireAuth, async (req, res) => {
+    try {
+        const { botToken, commands } = req.body;
+        
+        if (!botToken) {
+            return res.status(400).json({ error: 'Telegram Bot Token is required' });
+        }
+
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        // Set webhook for the bot
+        const webhookUrl = `${process.env.BASE_URL}/api/integrations/webhooks/telegram/${company._id}`;
+        
+        try {
+            await axios.post(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+                url: webhookUrl
+            });
+
+            // Set custom commands on Telegram
+            if (commands && commands.length > 0) {
+                const tgCommands = commands.map(c => ({
+                    command: c.command.replace('/', ''), // Telegram API expects command without slash
+                    description: c.description || c.category || "Custom command"
+                }));
+
+                await axios.post(`https://api.telegram.org/bot${botToken}/setMyCommands`, {
+                    commands: tgCommands
+                });
+            }
+        } catch (tgError) {
+            console.error('Failed to configure Telegram API:', tgError.response?.data || tgError.message);
+            return res.status(400).json({ error: 'Invalid Telegram Bot Token or Telegram API error' });
+        }
+
+        const integration = await Integration.findOneAndUpdate(
+            { company: company._id, platform: 'telegram' },
+            {
+                credentials: {
+                    botToken
+                },
+                settings: {
+                    commands: commands || []
+                },
+                isActive: true
+            },
+            { new: true, upsert: true }
+        );
+
+        res.json({ message: 'Telegram configured and Webhook linked successfully!', integration });
+    } catch (error) {
+        console.error('Telegram integration error:', error);
+        res.status(500).json({ error: 'Server error configure Telegram' });
     }
 });
 

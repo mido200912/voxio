@@ -104,6 +104,12 @@ const DashboardLayout = () => {
                             </Link>
                         </li>
                         <li>
+                            <Link to="/dashboard/telegram" className={`nav-item ${isActive('/dashboard/telegram')}`} onClick={handleNavItemClick}>
+                                <i className="fab fa-telegram-plane"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'تليجرام' : 'Telegram'}</span>}
+                            </Link>
+                        </li>
+                        <li>
                             <Link to="/dashboard/settings" className={`nav-item ${isActive('/dashboard/settings')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-cog"></i>
                                 {isSidebarOpen && <span>{t.dashboard.settings}</span>}

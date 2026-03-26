@@ -10,15 +10,13 @@ const Integrations = () => {
     const [loading, setLoading] = useState(true);
     const [showWhatsappModal, setShowWhatsappModal] = useState(false);
     const [whatsappData, setWhatsappData] = useState({ phoneNumberId: '', accessToken: '' });
+    
+    // Telegram State
+    const [showTelegramModal, setShowTelegramModal] = useState(false);
+    const [telegramData, setTelegramData] = useState({ botToken: '', commands: [] });
+    const [newCommand, setNewCommand] = useState({ command: '', category: '' });
+
     const [availableIntegrations, setAvailableIntegrations] = useState([
-        {
-            id: 'facebook',
-            name: 'Facebook Messenger',
-            icon: 'facebook-f',
-            color: '#1877f2',
-            descKey: 'messengerDesc',
-            available: false
-        },
         {
             id: 'whatsapp',
             name: 'WhatsApp Business',
@@ -26,6 +24,14 @@ const Integrations = () => {
             color: '#25d366',
             descKey: 'whatsappDesc',
             available: false
+        },
+        {
+            id: 'telegram',
+            name: 'Telegram Bot',
+            icon: 'telegram',
+            color: '#26A5E4',
+            descKey: 'telegramDesc',
+            available: true
         },
         {
             id: 'shopify',
@@ -41,6 +47,14 @@ const Integrations = () => {
             icon: 'instagram',
             color: '#e4405f',
             descKey: 'instagramDesc',
+            available: false
+        },
+        {
+            id: 'facebook',
+            name: 'Facebook Messenger',
+            icon: 'facebook-f',
+            color: '#1877f2',
+            descKey: 'messengerDesc',
             available: false
         },
         {
@@ -139,10 +153,45 @@ const Integrations = () => {
 
                 window.location.href = `${BACKEND_URL}/integrations/shopify/login?shop=${shopUrl}&companyId=${companyId}`;
             }
+            // For Telegram
+            else if (integration.id === 'telegram') {
+                setShowTelegramModal(true);
+            }
         } catch (error) {
             console.error('Error connecting integration:', error);
-            alert(t.dashboard.integrationsPage.errorConnect);
+            alert(t.dashboard.integrationsPage.errorConnect || 'Error connecting. Try again later.');
         }
+    };
+
+    const handleTelegramSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.post(`${BACKEND_URL}/integration-manager/telegram`, telegramData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert(t.language === 'ar' ? 'تم ربط تليجرام بنجاح!' : 'Telegram connected successfully!');
+            setShowTelegramModal(false);
+            setTelegramData({ botToken: '', commands: [] });
+            fetchIntegrations();
+        } catch (error) {
+            console.error('Error configuring Telegram:', error);
+            alert(t.language === 'ar' ? 'حدث خطأ. تأكد من البوت توكن.' : 'Validation failed. Check your bot token.');
+        }
+    };
+
+    const addTelegramCommand = () => {
+        if (!newCommand.command || !newCommand.category) return;
+        setTelegramData({
+            ...telegramData,
+            commands: [...telegramData.commands, newCommand]
+        });
+        setNewCommand({ command: '', category: '' });
+    };
+
+    const removeTelegramCommand = (index) => {
+        const updated = [...telegramData.commands];
+        updated.splice(index, 1);
+        setTelegramData({ ...telegramData, commands: updated });
     };
 
     const handleWhatsappSubmit = async (e) => {
@@ -275,50 +324,11 @@ const Integrations = () => {
                 <p style={{ textAlign: 'center', padding: '40px' }}>{t.dashboard.integrationsPage.loading}</p>
             ) : (
                 <div style={{ position: 'relative' }}>
-                    {/* Locked Overlay Start */}
-                    <div className="locked-overlay" style={{
-                        position: 'absolute',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 10,
-                        WebkitBackdropFilter: 'blur(8px)',
-                        backdropFilter: 'blur(8px)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '20px',
-                        border: '1px solid rgba(255,255,255,0.7)',
-                        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-                        padding: '20px',
-                        textAlign: 'center'
-                    }}>
-                        <div style={{
-                            width: '80px', height: '80px', borderRadius: '50%',
-                            background: 'var(--primary-color)', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            marginBottom: '20px', color: '#fff', fontSize: '2rem',
-                            boxShadow: '0 10px 25px var(--primary-glow)'
-                        }}>
-                            <i className="fas fa-lock"></i>
-                        </div>
-                        <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '10px', fontWeight: 'bold' }}>
-                            {t.language === 'ar' ? 'قريباً جداً' : 'Coming Soon'}
-                        </h2>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '400px' }}>
-                            {t.language === 'ar' 
-                                ? 'هذا القسم قيد التطوير حالياً وسيتم إطلاق روبوتات تيليجرام وتكاملات المنصات الأخرى قريباً.' 
-                                : 'This section is currently under development. Telegram bots and other integrations will be launched soon.'}
-                        </p>
-                    </div>
-                    {/* Locked Overlay End */}
-
                     <motion.div
                         className="integrations-list"
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
-                        style={{ pointerEvents: 'none' }} // Disable pointer events underneath
                     >
                     {availableIntegrations.map(integration => {
                         const status = getIntegrationStatus(integration.id);
@@ -400,6 +410,89 @@ const Integrations = () => {
                                     {t.dashboard.integrationsPage.whatsappCancel || 'Cancel'}
                                 </button>
                                 <button type="submit" className="btn btn-primary">
+                                    {t.dashboard.integrationsPage.whatsappSave || 'Save & Connect'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Telegram Modal */}
+            {showTelegramModal && (
+                <div className="modal-overlay" onClick={() => setShowTelegramModal(false)}>
+                    <div className="modal-content telegram-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+                        <h2>{t.language === 'ar' ? 'إعداد تليجرام' : 'Telegram Setup'}</h2>
+                        <form onSubmit={handleTelegramSubmit} className="whatsapp-form">
+                            <div className="form-group">
+                                <label>{t.language === 'ar' ? 'Bot Token (احصل عليه من @BotFather)' : 'Bot Token (from @BotFather)'}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="123456789:ABCDefghIJKlmnoPQRstUVwxYZ"
+                                    value={telegramData.botToken}
+                                    onChange={(e) => setTelegramData({ ...telegramData, botToken: e.target.value })}
+                                />
+                            </div>
+
+                            <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+                                <h3 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>
+                                    {t.language === 'ar' ? 'الأوامر المخصصة (اختياري)' : 'Custom Commands (Optional)'}
+                                </h3>
+                                <p style={{ fontSize: '0.85rem', color: '#777', marginBottom: '15px' }}>
+                                    {t.language === 'ar' 
+                                        ? 'حدد أوامر تظهر للعميل في قائمة البوت (مثال: /shopping). أي عميل يضغط على الأمر، سيتم حفظ طلبه ضمن التصنيف الذي تحدده هنا لمتابعته من قسم Telegram.' 
+                                        : 'Set commands for the Telegram bot menu (e.g. /shopping). Requests via these commands will be categorized accordingly in the dashboard.'}
+                                </p>
+
+                                {/* List of added commands */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+                                    {telegramData.commands.map((cmd, idx) => (
+                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8f9fa', padding: '10px', borderRadius: '8px' }}>
+                                            <span style={{ fontWeight: 600, color: '#26A5E4' }}>/{cmd.command.replace('/','')} <span style={{color: '#999', fontWeight: 400}}>→ {cmd.category}</span></span>
+                                            <button type="button" onClick={() => removeTelegramCommand(idx)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Add new command form */}
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+                                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                                        <label>{t.language === 'ar' ? 'الأمر' : 'Command'}</label>
+                                        <input
+                                            type="text"
+                                            placeholder="shopping"
+                                            value={newCommand.command}
+                                            onChange={(e) => setNewCommand({ ...newCommand, command: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                                        <label>{t.language === 'ar' ? 'التصنيف في الداش بورد' : 'Dashboard Category'}</label>
+                                        <input
+                                            type="text"
+                                            placeholder={t.language === 'ar' ? 'المبيعات' : 'Sales'}
+                                            value={newCommand.category}
+                                            onChange={(e) => setNewCommand({ ...newCommand, category: e.target.value })}
+                                        />
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-outline" 
+                                        onClick={addTelegramCommand}
+                                        style={{ height: '42px', padding: '0 15px' }}
+                                    >
+                                        <i className="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="modal-actions" style={{ marginTop: '30px' }}>
+                                <button type="button" className="btn btn-outline" onClick={() => setShowTelegramModal(false)}>
+                                    {t.dashboard.integrationsPage.whatsappCancel || 'Cancel'}
+                                </button>
+                                <button type="submit" className="btn btn-primary" style={{ background: '#26A5E4', borderColor: '#26A5E4' }}>
                                     {t.dashboard.integrationsPage.whatsappSave || 'Save & Connect'}
                                 </button>
                             </div>

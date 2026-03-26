@@ -11,6 +11,7 @@ import {
     tiktokLogin,
     tiktokCallback
 } from '../controllers/integrationController.js';
+import { handleTelegramWebhook } from '../controllers/webhookHandler.js';
 
 const router = express.Router();
 
@@ -45,6 +46,10 @@ router.get('/webhooks/meta', metaWebhook);
 
 // @route POST /api/integrations/webhooks/shopify
 router.post('/webhooks/shopify', shopifyWebhook);
+
+// @route POST /api/integrations/webhooks/telegram/:companyId
+// Webhook for Telegram messages specific to a company
+router.post('/webhooks/telegram/:companyId', handleTelegramWebhook);
 
 // 🖥️ No-Code Widget Script
 // @route GET /api/integrations/widget/script.js
