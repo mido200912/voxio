@@ -6,7 +6,7 @@ const CompanyChatSchema = new mongoose.Schema(
     user: { type: String, required: true }, // Customer name or phone number
     text: { type: String, required: true },
     sender: { type: String, enum: ['user', 'ai'], default: 'user' },
-    platform: { type: String, enum: ['web', 'whatsapp', 'facebook', 'instagram'], default: 'web' },
+    platform: { type: String, enum: ['web', 'whatsapp', 'facebook', 'instagram', 'telegram'], default: 'web' },
   },
   { timestamps: true }
 );
