@@ -6,6 +6,9 @@ import { fetchAiResponse } from '../utils/corexHelper.js';
 // تتبع الرسائل المعالجة لمنع التكرار
 const processedMessages = new Set();
 
+// تتبع حالات الطلب المؤقتة
+const orderSessions = {}; 
+
 // ─── Helper: send Telegram message ──────────────────────────────────────────
 async function tgSend(botToken, chatId, text, extra = {}) {
     await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -151,22 +154,19 @@ export const handleTelegramWebhook = async (req, res) => {
                     callback_query_id: cb.id
                 }).catch(() => {});
 
-                // Save order as a company request
-                company.requests.push({
-                    customerName: user,
-                    product: productName,
-                    message: `طلب منتج: ${productName} - من العميل: @${user} (Chat ID: ${chatId})`,
-                    date: new Date()
-                });
-                await company.save();
+                // Start Order Session - Instead of saving immediately, wait for phone number
+                orderSessions[chatId] = { 
+                    productName, 
+                    customerName: user, 
+                    userId, 
+                    successMessage: commandConfig.successMessage, 
+                    timestamp: Date.now() 
+                };
 
-                // Save to chat history
-                await saveChatMsg(company._id, userId, `طلب منتج: ${productName}`, 'user');
-
-                // Reply to user
-                const confirmMsg = `✅ تم استلام طلبك بنجاح!\n\n🛍️ المنتج: <b>${productName}</b>\n👤 الاسم: @${user}\n\nسيتواصل معك فريقنا قريباً!`;
-                await tgSend(botToken, chatId, confirmMsg);
-                await saveChatMsg(company._id, userId, confirmMsg, 'ai');
+                // Reply to user requesting phone number
+                const requestPhoneMsg = `جميل جداً! أنت اخترت: <b>${productName}</b>.\n\nمن فضلك أرسل <b>رقم الموبايل</b> الخاص بك (11 رقم) لتأكيد طلبك وسنتواصل معك فوراً. 📱`;
+                await tgSend(botToken, chatId, requestPhoneMsg);
+                await saveChatMsg(companyId, userId, requestPhoneMsg, 'ai');
             }
 
             return res.sendStatus(200);
@@ -195,6 +195,43 @@ export const handleTelegramWebhook = async (req, res) => {
 
         const company = integration.company;
         const botToken = integration.credentials.botToken;
+
+        // ── CHECK: Order Session (Waiting for phone) ────────────────────────
+        if (orderSessions[chatId]) {
+            const session = orderSessions[chatId];
+            const phoneRegex = /^[0-9]{11}$/;
+            const isValidPhone = phoneRegex.test(text.trim());
+
+            if (!isValidPhone) {
+                const errorMsg = `❌ ده مش رقم و لازم الرقم يتكون من 11 رقم بالضبط.\n\nمن فضلك أرسل الرقم الصحيح لطلب: ${session.productName}`;
+                await tgSend(botToken, chatId, errorMsg);
+                return res.sendStatus(200);
+            }
+
+            // Phone is valid! Complete the order
+            const phoneNumber = text.trim();
+            company.requests.push({
+                customerName: `${session.customerName} (${phoneNumber})`,
+                product: session.productName,
+                message: `📦 طلب جديد!\nالمنتج: ${session.productName}\nالعميل: @${session.customerName}\nرقم الموبايل: ${phoneNumber}`,
+                date: new Date()
+            });
+            await company.save();
+
+            await saveChatMsg(company._id, userId, `رقم الموبايل: ${phoneNumber}`, 'user');
+            
+            // Send Confirmation (Custom or Default fallback)
+            let confirmMsg = session.successMessage || `✅ تم بنجاح طلب <b>${session.productName}</b>!\n\nسيتواصل معك فريقنا قريباً على الرقم: ${phoneNumber}\nشكراً لك! 🙏`;
+            
+            // Replace generic placeholders if user used them
+            confirmMsg = confirmMsg.replace('{{product}}', session.productName).replace('{{phone}}', phoneNumber);
+
+            await tgSend(botToken, chatId, confirmMsg);
+            await saveChatMsg(company._id, userId, confirmMsg, 'ai');
+
+            delete orderSessions[chatId];
+            return res.sendStatus(200);
+        }
 
         // ── Normalize text for matching ──────────────────────────────────────
         const cleanText = text.trim().toLowerCase().replace('/', '');
