@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { motion } from 'framer-motion';
@@ -16,6 +16,10 @@ const Integrations = () => {
     const [telegramData, setTelegramData] = useState({ botToken: '', commands: [] });
     const [newCommand, setNewCommand] = useState({ command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] });
     const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '' });
+
+    // useRef always holds the LATEST value - immune to stale closures
+    const newCommandRef = useRef(newCommand);
+    useEffect(() => { newCommandRef.current = newCommand; }, [newCommand]);
 
     const [availableIntegrations, setAvailableIntegrations] = useState([
         {
@@ -154,11 +158,13 @@ const Integrations = () => {
     const handleTelegramSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Auto-include the current unsaved command if user forgot to click "Add Command"
+            // Read from REF (always latest) not from state (may be stale)
+            const currentCmd = newCommandRef.current;
             let finalCommands = [...telegramData.commands];
-            if (newCommand.command && newCommand.command.trim() !== '') {
-                console.log("⚠️ Auto-including unsaved command:", JSON.stringify(newCommand));
-                finalCommands.push({ ...newCommand });
+            
+            // Auto-include the current unsaved command
+            if (currentCmd.command && currentCmd.command.trim() !== '') {
+                finalCommands.push({ ...currentCmd });
             }
 
             const payload = {
@@ -166,18 +172,19 @@ const Integrations = () => {
                 commands: finalCommands
             };
 
-            // Show what we're sending (TEMP DEBUG - remove later)
+            // Debug alert to verify products
             const productCounts = finalCommands.map(c => `/${c.command}: ${(c.products || []).length} products`).join('\n');
             console.log("📤 Final payload:", JSON.stringify(payload, null, 2));
-            alert(`Sending ${finalCommands.length} command(s):\n${productCounts}`);
 
             await axios.post(`${BACKEND_URL}/integration-manager/telegram`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert(t.language === 'ar' ? 'تم ربط تليجرام بنجاح!' : 'Telegram connected successfully!');
+            alert(t.language === 'ar' ? `تم ربط تليجرام بنجاح! ✅\n${productCounts}` : `Telegram connected! ✅\n${productCounts}`);
             setShowTelegramModal(false);
             setTelegramData({ botToken: '', commands: [] });
-            setNewCommand({ command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] });
+            const emptyCmd = { command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] };
+            setNewCommand(emptyCmd);
+            newCommandRef.current = emptyCmd;
             fetchIntegrations();
         } catch (error) {
             console.error('Error configuring Telegram:', error);
@@ -185,9 +192,13 @@ const Integrations = () => {
         }
     };
 
-    // ─── ALL state updates use functional form to prevent stale closure bugs ───
+    // ─── ALL state updates sync the ref immediately ───
     const updateNewCommand = (field, value) => {
-        setNewCommand(prev => ({ ...prev, [field]: value }));
+        setNewCommand(prev => {
+            const updated = { ...prev, [field]: value };
+            newCommandRef.current = updated; // Always sync ref
+            return updated;
+        });
     };
 
     const addProductToCommand = () => {
@@ -198,20 +209,26 @@ const Integrations = () => {
         const productToAdd = { name: newProduct.name, price: newProduct.price, description: newProduct.description };
         setNewCommand(prev => {
             const updated = { ...prev, products: [...(prev.products || []), productToAdd] };
-            console.log(`📦 Product added! Total products now: ${updated.products.length}`, updated.products);
+            // Sync the ref IMMEDIATELY so it's always up-to-date
+            newCommandRef.current = updated;
+            console.log(`📦 Product added! Total: ${updated.products.length}`, updated.products);
             return updated;
         });
         setNewProduct({ name: '', price: '', description: '' });
     };
 
     const addTelegramCommand = () => {
-        if (!newCommand.command) return;
-        console.log("✅ Adding command:", JSON.stringify(newCommand));
+        // Read from REF (always latest) not from state
+        const currentCmd = newCommandRef.current;
+        if (!currentCmd.command) return;
+        console.log("✅ Adding command from ref:", JSON.stringify(currentCmd));
         setTelegramData(prev => ({
             ...prev,
-            commands: [...prev.commands, { ...newCommand }]
+            commands: [...prev.commands, { ...currentCmd }]
         }));
-        setNewCommand({ command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] });
+        const emptyCmd = { command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] };
+        setNewCommand(emptyCmd);
+        newCommandRef.current = emptyCmd;
         setNewProduct({ name: '', price: '', description: '' });
     };
 
@@ -223,10 +240,11 @@ const Integrations = () => {
     };
 
     const removeProductFromCommand = (idx) => {
-        setNewCommand(prev => ({
-            ...prev,
-            products: prev.products.filter((_, i) => i !== idx)
-        }));
+        setNewCommand(prev => {
+            const updated = { ...prev, products: prev.products.filter((_, i) => i !== idx) };
+            newCommandRef.current = updated;
+            return updated;
+        });
     };
 
     const handleWhatsappSubmit = async (e) => {
