@@ -154,15 +154,30 @@ const Integrations = () => {
     const handleTelegramSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Log payload before sending
-            console.log("📤 Sending to backend:", JSON.stringify(telegramData, null, 2));
-            
-            await axios.post(`${BACKEND_URL}/integration-manager/telegram`, telegramData, {
+            // Auto-include the current unsaved command if user forgot to click "Add Command"
+            let finalCommands = [...telegramData.commands];
+            if (newCommand.command && newCommand.command.trim() !== '') {
+                console.log("⚠️ Auto-including unsaved command:", JSON.stringify(newCommand));
+                finalCommands.push({ ...newCommand });
+            }
+
+            const payload = {
+                botToken: telegramData.botToken,
+                commands: finalCommands
+            };
+
+            // Show what we're sending (TEMP DEBUG - remove later)
+            const productCounts = finalCommands.map(c => `/${c.command}: ${(c.products || []).length} products`).join('\n');
+            console.log("📤 Final payload:", JSON.stringify(payload, null, 2));
+            alert(`Sending ${finalCommands.length} command(s):\n${productCounts}`);
+
+            await axios.post(`${BACKEND_URL}/integration-manager/telegram`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert(t.language === 'ar' ? 'تم ربط تليجرام بنجاح!' : 'Telegram connected successfully!');
             setShowTelegramModal(false);
             setTelegramData({ botToken: '', commands: [] });
+            setNewCommand({ command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] });
             fetchIntegrations();
         } catch (error) {
             console.error('Error configuring Telegram:', error);
@@ -176,11 +191,16 @@ const Integrations = () => {
     };
 
     const addProductToCommand = () => {
-        if (!newProduct.name) return;
-        setNewCommand(prev => ({
-            ...prev,
-            products: [...(prev.products || []), { name: newProduct.name, price: newProduct.price, description: newProduct.description }]
-        }));
+        if (!newProduct.name) {
+            alert(t.language === 'ar' ? 'اكتب اسم المنتج الأول!' : 'Enter product name first!');
+            return;
+        }
+        const productToAdd = { name: newProduct.name, price: newProduct.price, description: newProduct.description };
+        setNewCommand(prev => {
+            const updated = { ...prev, products: [...(prev.products || []), productToAdd] };
+            console.log(`📦 Product added! Total products now: ${updated.products.length}`, updated.products);
+            return updated;
+        });
         setNewProduct({ name: '', price: '', description: '' });
     };
 
