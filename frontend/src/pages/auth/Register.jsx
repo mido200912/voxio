@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/Input';
@@ -7,8 +7,33 @@ import './Auth.css';
 
 const Register = () => {
     const { t } = useLanguage();
-    const { register, verifyOtp, loading, error } = useAuth();
+    const { register, verifyOtp, googleLogin, loading, error } = useAuth();
     const navigate = useNavigate();
+
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    // Initialize Google Login
+    useEffect(() => {
+        if (GOOGLE_CLIENT_ID) {
+            const script = document.createElement('script');
+            script.src = "https://accounts.google.com/gsi/client";
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+
+            script.onload = () => {
+                window.google?.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleResponse
+                });
+            };
+        }
+    }, []);
+
+    const handleGoogleResponse = async (response) => {
+        const success = await googleLogin(response.credential);
+        if (success) navigate('/dashboard');
+    };
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -143,6 +168,25 @@ const Register = () => {
                         <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
                             {loading ? '...' : t.auth.registerButton}
                         </button>
+
+                        <div className="social-divider">
+                            <span>{t.language === 'ar' ? 'أو سجل بواسطة' : 'Or continue with'}</span>
+                        </div>
+
+                        <div className="social-login-buttons">
+                            {/* Google Button Container */}
+                            <div 
+                                id="google-login-btn"
+                                className="g_id_signin"
+                                data-type="standard"
+                                data-shape="rectangular"
+                                data-theme="outline"
+                                data-text="signup_with"
+                                data-size="large"
+                                data-logo_alignment="left"
+                                data-width="100%"
+                            ></div>
+                        </div>
                     </form>
                 ) : (
                     <form onSubmit={handleOtpSubmit}>

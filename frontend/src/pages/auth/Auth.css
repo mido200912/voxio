@@ -78,3 +78,52 @@
 .auth-footer a:hover {
     text-decoration: underline;
 }
+
+/* Social Login Styles */
+.social-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0;
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+}
+
+.social-divider::before,
+.social-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.social-divider span {
+    padding: 0 10px;
+}
+
+.social-login-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.github-btn {
+    background: #24292e !important;
+    color: white !important;
+    border: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.github-btn:hover {
+    background: #1b1f23 !important;
+}
+
+.g_id_signin {
+    width: 100% !important;
+}
+
+.g_id_signin iframe {
+    width: 100% !important;
+}

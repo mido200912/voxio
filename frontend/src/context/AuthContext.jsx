@@ -174,6 +174,26 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const googleLogin = async (idToken) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/google-login`, { idToken });
+            const { user, token } = response.data;
+            setUser(user);
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            return true;
+        } catch (err) {
+            console.error('Google Login Error:', err);
+            setError(err.response?.data?.error || "Google authentication failed");
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const logout = () => {
         setUser(null);
         localStorage.removeItem('token');
@@ -185,7 +205,8 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{ 
             user, loading, error, setError,
             login, verifyOtp, register, logout, isAuthChecked,
-            forgotPassword, resetPassword, changePassword
+            forgotPassword, resetPassword, changePassword,
+            googleLogin
         }}>
             {children}
         </AuthContext.Provider>

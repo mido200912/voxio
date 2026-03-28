@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import axios from "axios";
 import User from "../models/User.js";
 import sendEmail from "../utils/sendEmail.js";
 import { generateOtpEmail } from "../utils/emailTemplate.js";
@@ -290,6 +291,7 @@ router.post("/refresh", (req, res) => {
   }
 });
 
+
 // logout
 router.post("/logout", (req, res) => {
   res.clearCookie("refreshToken", {
@@ -299,5 +301,45 @@ router.post("/logout", (req, res) => {
   });
   res.json({ message: "Logged out" });
 });
+
+// Google Login/Register (Direct Token Verification)
+router.post("/google-login", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ error: "Missing ID Token" });
+
+    // Verify token with Google
+    const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    const { email, name, sub: googleId, picture } = googleRes.data;
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      user = await User.create({
+        name,
+        email,
+        googleId,
+        isVerified: true
+      });
+    }
+
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    sendRefreshCookie(res, refreshToken);
+
+    res.json({
+      user: { id: user._id, name: user.name, email: user.email, picture },
+      token: accessToken
+    });
+  } catch (err) {
+    console.error("Google login error:", err.response?.data || err.message);
+    res.status(400).json({ error: "Invalid Google token" });
+  }
+});
+
 
 export default router;
