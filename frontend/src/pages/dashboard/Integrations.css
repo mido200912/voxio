@@ -29,6 +29,10 @@
     border-color: #10b981;
 }
 
+.integration-item.paused {
+    border-color: #f59e0b;
+}
+
 .integration-icon {
     width: 60px;
     height: 60px;
@@ -66,6 +70,10 @@
     box-shadow: 0 0 0 2px var(--color-card-bg);
 }
 
+.status-dot.paused {
+    background: #f59e0b;
+}
+
 [dir="rtl"] .status-dot {
     right: auto;
     left: 1rem;
@@ -77,6 +85,26 @@
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.8rem;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+
+.btn-outline:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .btn-danger {

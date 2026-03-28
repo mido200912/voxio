@@ -169,7 +169,7 @@ const Integrations = () => {
     const getIntegrationStatus = (platformId) => {
         const integration = integrations.find(int => int.platform === platformId);
         if (!integration) return 'disconnected';
-        return integration.isActive ? 'connected' : 'disconnected';
+        return integration.isActive ? 'connected' : 'paused';
     };
 
     const handleConnect = async (integration) => {
@@ -341,9 +341,32 @@ const Integrations = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchIntegrations();
+            const action = integration.isActive ? 
+                (t.language === 'ar' ? 'إيقاف مؤقت' : 'Paused') : 
+                (t.language === 'ar' ? 'تفعيل' : 'Activated');
+            showToast('info', action, `${integration.platform} ${action}`);
         } catch (error) {
             console.error('Error toggling integration:', error);
             showToast('error', t.language === 'ar' ? 'خطأ' : 'Error', t.dashboard.integrationsPage.errorGen);
+        }
+    };
+
+    const handleEdit = (platformId) => {
+        const integration = integrations.find(int => int.platform === platformId);
+        if (!integration) return;
+
+        if (platformId === 'telegram') {
+            setTelegramData({
+                botToken: integration.settings?.botToken || integration.credentials?.botToken || '',
+                commands: integration.settings?.commands || []
+            });
+            setShowTelegramModal(true);
+        } else if (platformId === 'whatsapp') {
+            setWhatsappData({
+                phoneNumberId: integration.credentials?.phoneNumberId || '',
+                accessToken: integration.credentials?.accessToken || ''
+            });
+            setShowWhatsappModal(true);
         }
     };
 
@@ -469,22 +492,31 @@ const Integrations = () => {
                                 <div className="integration-action">
                                     {!integration.available ? (
                                         <span className="badge badge-gray">{t.integrations.soon}</span>
-                                    ) : status === 'connected' ? (
-                                        <>
+                                    ) : (status === 'connected' || status === 'paused') ? (
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                             <button
-                                                className="btn btn-outline"
+                                                className={`btn ${status === 'paused' ? 'btn-success' : 'btn-outline'}`}
                                                 onClick={() => handleToggle(integration.id)}
                                             >
-                                                {t.dashboard.integrationsPage.pause}
+                                                {status === 'paused' ? 
+                                                    (t.language === 'ar' ? 'تفعيل' : 'Resume') : 
+                                                    (t.dashboard.integrationsPage.pause || 'Pause')
+                                                }
+                                            </button>
+                                            <button
+                                                className="btn btn-primary"
+                                                onClick={() => handleEdit(integration.id)}
+                                            >
+                                                <i className="fas fa-edit" style={{ marginInlineEnd: '4px' }}></i>
+                                                {t.language === 'ar' ? 'تعديل' : 'Edit'}
                                             </button>
                                             <button
                                                 className="btn btn-danger"
-                                                style={{ marginInlineEnd: '10px' }}
                                                 onClick={() => handleDisconnect(integration.id)}
                                             >
                                                 {t.dashboard.integrationsPage.disconnect}
                                             </button>
-                                        </>
+                                        </div>
                                     ) : (
                                         <button
                                             className="btn btn-primary"
@@ -495,6 +527,7 @@ const Integrations = () => {
                                     )}
                                 </div>
                                 {status === 'connected' && <div className="status-dot"></div>}
+                                {status === 'paused' && <div className="status-dot paused"></div>}
                             </motion.div>
                         );
                     })}
