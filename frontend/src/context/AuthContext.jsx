@@ -179,16 +179,16 @@ export const AuthProvider = ({ children }) => {
         setError(null);
         try {
             const response = await axios.post(`${BACKEND_URL}/auth/google-login`, { idToken });
-            const { user, token } = response.data;
+            const { user, token, isNew } = response.data;
             setUser(user);
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            return true;
+            return { success: true, isNew };
         } catch (err) {
             console.error('Google Login Error:', err);
             setError(err.response?.data?.error || "Google authentication failed");
-            return false;
+            return { success: false };
         } finally {
             setLoading(false);
         }

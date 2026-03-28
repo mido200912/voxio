@@ -313,6 +313,7 @@ router.post("/google-login", async (req, res) => {
     const { email, name, sub: googleId, picture } = googleRes.data;
 
     let user = await User.findOne({ email });
+    let isNew = false;
 
     if (user) {
       if (!user.googleId) {
@@ -320,6 +321,7 @@ router.post("/google-login", async (req, res) => {
         await user.save();
       }
     } else {
+      isNew = true;
       user = await User.create({
         name,
         email,
@@ -333,7 +335,8 @@ router.post("/google-login", async (req, res) => {
 
     res.json({
       user: { id: user._id, name: user.name, email: user.email, picture },
-      token: accessToken
+      token: accessToken,
+      isNew
     });
   } catch (err) {
     console.error("Google login error:", err.response?.data || err.message);

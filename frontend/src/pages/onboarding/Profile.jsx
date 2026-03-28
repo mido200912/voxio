@@ -41,8 +41,8 @@ const OnboardingProfile = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            // Navigate to next step
-            navigate('/onboarding/knowledge');
+            // Navigate to Dashboard directly
+            navigate('/dashboard');
         } catch (error) {
             console.error("Error updating profile:", error);
             alert("حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.");
@@ -142,7 +142,7 @@ const OnboardingProfile = () => {
                             className="btn btn-primary btn-block"
                             disabled={loading}
                         >
-                            {loading ? 'جاري الحفظ...' : 'حفظ ومتابعة (1/2)'}
+                            {loading ? 'جاري الحفظ...' : 'حفظ وإكمال الإعداد'}
                         </button>
                     </div>
                 </form>

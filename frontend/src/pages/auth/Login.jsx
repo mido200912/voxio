@@ -41,8 +41,14 @@ const Login = () => {
     }, []);
 
     const handleGoogleResponse = async (response) => {
-        const success = await googleLogin(response.credential);
-        if (success) navigate('/dashboard');
+        const result = await googleLogin(response.credential);
+        if (result.success) {
+            if (result.isNew) {
+                navigate('/onboarding/profile');
+            } else {
+                navigate('/dashboard');
+            }
+        }
     };
 
     const [step, setStep] = useState(1);
