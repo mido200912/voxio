@@ -30,7 +30,13 @@ router.post("/", requireAuth, async (req, res) => {
 
     if (company) {
       const parts = [
-        `You are an AI assistant representing the company "${company.name || 'N/A'}".`,
+        `You are a specialized AI assistant representing the company "${company.name || 'N/A'}".`,
+        "",
+        "🔴 CRITICAL INSTRUCTIONS:",
+        "1. DO NOT ANSWER any questions outside your company scope. You are only programmed to help with this company's products, services, and information.",
+        "2. If a user asks you for general tasks (e.g., 'make me a website', 'write a general code', 'tell me a joke') or anything unrelated to this company, YOU MUST REFUSE.",
+        "3. REFUSAL MESSAGE (in Arabic or English, matching user language): 'عذراً، لا يمكنني القيام بذلك. أنا مبرمج للإجابة فقط على الاستفسارات المتعلقة بخدمات ومنتجات هذه الشركة ومساعدة عملائها.'",
+        "4. DO NOT explain why or give general advice. Just refuse politely as per instruction #3.",
         "",
         "Company Information:",
         `- Industry: ${company.industry || "N/A"}`,
@@ -42,13 +48,13 @@ router.post("/", requireAuth, async (req, res) => {
         "Available Products/Services:",
         productsInfo || "No specific products listed.",
         "",
-        "Knowledge Base (Important - Use this information to answer questions):",
+        "Knowledge Base (Use only this for factual answers):",
         knowledgeContext,
         "",
-        "Custom Instructions (CRITICAL - Follow these exactly):",
-        company.customInstructions || "Respond to customers naturally and professionally, based only on the information provided above.",
+        "Custom Instructions (Follow these exactly):",
+        company.customInstructions || "Respond to customers naturally and professionally.",
         "",
-        "Language: Respond in the language of the user's prompt (default to Arabic if applicable)."
+        "Language: Respond in the user's language (Arabic/English)."
       ];
 
       context = parts.join("\n");
