@@ -16,8 +16,10 @@ const serviceAccount = {
 };
 
 let db;
+let firebaseInitError = null;
 try {
     if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+        firebaseInitError = new Error('Missing FIREBASE_* environment variables.');
         console.error('❌ Firebase Error: Missing FIREBASE_* environment variables.');
     } else {
         // Initialize Firebase
@@ -31,8 +33,9 @@ try {
         }
     }
 } catch (error) {
+    firebaseInitError = error;
     console.error('Firebase Initialization Error:', error);
 }
 
-export { db };
+export { db, firebaseInitError };
 export default admin;

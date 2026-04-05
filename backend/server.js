@@ -173,6 +173,27 @@ app.get('/widget.js', (req, res) => {
     res.send(widgetCode);
 });
 
+// 🩺 Health check endpoint to diagnose Vercel Environment Variables
+app.get('/api/health', async (req, res) => {
+    try {
+        const { db, firebaseInitError } = await import('./config/firebase.js');
+        res.json({
+            status: "ok",
+            dbInitialized: !!db,
+            firebaseError: firebaseInitError ? firebaseInitError.message || firebaseInitError.toString() : null,
+            envKeys: {
+                hasProjectId: !!process.env.FIREBASE_PROJECT_ID,
+                hasEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+                hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+                privateKeyLength: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.length : 0,
+                privateKeyStartsWith: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.substring(0, 30) : null
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message, stack: err.stack });
+    }
+});
+
 // ✅ التعامل مع الأخطاء
 app.use((err, req, res, next) => {
     console.error("Error:", err.message);
