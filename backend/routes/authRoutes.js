@@ -7,10 +7,9 @@ import sendEmail from "../utils/sendEmail.js";
 import { generateOtpEmail } from "../utils/emailTemplate.js";
 import { requireAuth } from "../middleware/auth.js";
 import { cacheDelete } from "../utils/cache.js";
-import admin from "../config/firebase.js";
 
 const router = express.Router();
-router.use(cookieParser()); // ✅ ضروري لقراءة الكوكيز
+router.use(cookieParser());
 
 // توليد التوكنات
 const generateTokens = (userId) => {
@@ -53,20 +52,17 @@ router.post("/register", async (req, res) => {
 
     // ⚡ bcrypt rounds 8 = still secure, 4x faster than rounds 10
     const hash = await bcrypt.hash(password, 8);
-    // Generate 6-digit OTP for registration
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Create unverified user with OTP
     const user = await User.create({ 
       name, 
       email, 
       password: hash,
       otp,
-      otpExpires: Date.now() + 10 * 60 * 1000, // 10 minutes
+      otpExpires: Date.now() + 10 * 60 * 1000,
       isVerified: false
     });
 
-    // Try sending email
     try {
       const message = `Your confirmation OTP is: ${otp}\nIt is valid for 10 minutes.`;
       const html = generateOtpEmail(
@@ -92,13 +88,12 @@ router.post("/register", async (req, res) => {
       email: user.email
     });
 
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// login -> Step 1: verifies password and sends OTP
+// login
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
@@ -112,13 +107,11 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: "Invalid credentials" });
 
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.otp = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.otpExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    // Try sending email
     try {
       const message = `Your login OTP is: ${otp}\nIt is valid for 10 minutes.`;
       const html = generateOtpEmail(
@@ -132,7 +125,7 @@ router.post("/login", async (req, res) => {
         message,
         html
       });
-      console.log(`✅ OTP sent to ${user.email}`); // For debug if needed
+      console.log(`✅ OTP sent to ${user.email}`);
     } catch (err) {
       console.error("❌ Email sending failed. Are SMTP credentials set in .env?", err.message);
       console.log(`⚠️ (Fallback) The OTP for ${user.email} is: ${otp}`);
@@ -149,7 +142,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// verify-otp -> Step 2: validates OTP and returns tokens
+// verify-otp
 router.post("/verify-otp", async (req, res) => {
   try {
     let { email, otp } = req.body;
@@ -167,10 +160,9 @@ router.post("/verify-otp", async (req, res) => {
       return res.status(400).json({ error: "OTP has expired. Please login again." });
     }
 
-    // Clear OTP logic upon successful verify
     user.otp = undefined;
     user.otpExpires = undefined;
-    user.isVerified = true; // For registration
+    user.isVerified = true;
     await user.save();
 
     const { accessToken, refreshToken } = generateTokens(user._id);
@@ -239,8 +231,7 @@ router.post("/reset-password", async (req, res) => {
     if (!user.otp || user.otp !== otp) return res.status(400).json({ error: "Invalid OTP" });
     if (user.otpExpires < Date.now()) return res.status(400).json({ error: "OTP expired" });
 
-    // Valid OTP, hash new password
-    // ⚡ bcrypt rounds 8 = still secure, 4x faster than rounds 10
+    // ⚡ bcrypt rounds 8
     const hash = await bcrypt.hash(newPassword, 8);
     user.password = hash;
     user.otp = undefined;
@@ -266,7 +257,7 @@ router.post("/change-password", requireAuth, async (req, res) => {
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) return res.status(400).json({ error: "Incorrect old password" });
 
-    // ⚡ bcrypt rounds 8 = still secure, 4x faster than rounds 10
+    // ⚡ bcrypt rounds 8
     const hash = await bcrypt.hash(newPassword, 8);
     user.password = hash;
     await user.save();
@@ -295,7 +286,6 @@ router.post("/refresh", (req, res) => {
   }
 });
 
-
 // logout
 router.post("/logout", (req, res) => {
   res.clearCookie("refreshToken", {
@@ -306,20 +296,29 @@ router.post("/logout", (req, res) => {
   res.json({ message: "Logged out" });
 });
 
-// Google Login/Register (Firebase Admin SDK - faster than axios tokeninfo)
+// Google Login/Register - uses google-auth-library to verify Google OAuth id_tokens
 router.post("/google-login", async (req, res) => {
   try {
     const { idToken } = req.body;
     if (!idToken) return res.status(400).json({ error: "Missing ID Token" });
 
-    // ⚡ Use Firebase Admin SDK verifyIdToken - no extra HTTP call to Google
-    let decodedToken;
+    // ✅ google-auth-library correctly verifies Google OAuth ID tokens
+    let email, name, googleId, picture;
     try {
-      decodedToken = await admin.auth().verifyIdToken(idToken);
+      const { OAuth2Client } = await import('google-auth-library');
+      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      email = payload.email;
+      name = payload.name;
+      googleId = payload.sub;
+      picture = payload.picture;
     } catch (e) {
       return res.status(400).json({ error: "Invalid Google token", details: e.message });
     }
-    const { email, name, uid: googleId, picture } = decodedToken;
 
     let user = await User.findOne({ email });
     let isNew = false;
@@ -327,18 +326,12 @@ router.post("/google-login", async (req, res) => {
     if (user) {
       if (!user.googleId) {
         user.googleId = googleId;
-        // Invalidate user cache so next request gets fresh data
         cacheDelete(`user:${user._id}`);
         await user.save();
       }
     } else {
       isNew = true;
-      user = await User.create({
-        name,
-        email,
-        googleId,
-        isVerified: true
-      });
+      user = await User.create({ name, email, googleId, isVerified: true });
     }
 
     const { accessToken, refreshToken } = generateTokens(user._id);
