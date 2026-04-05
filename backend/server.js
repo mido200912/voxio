@@ -90,6 +90,32 @@ app.use('/api', limiter);
 // ✅ تم إزالة اتصال MongoDB لأنه تم التحويل إلى Firebase
 
 // ✅ Routes 
+app.get('/api/ping', (req, res) => {
+    res.json({ message: "pong", time: new Date() });
+});
+
+// 🩺 Health check endpoint (TOP LEVEL)
+app.get('/api/health', async (req, res) => {
+    try {
+        const { db, firebaseInitError } = await import('./config/firebase.js');
+        res.json({
+            status: "ready",
+            dbInitialized: !!db,
+            firebaseError: firebaseInitError ? firebaseInitError.message : null,
+            envKeys: {
+                hasProjectId: !!process.env.FIREBASE_PROJECT_ID,
+                hasEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+                hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+                privateKeyLength: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.length : 0,
+                hasGoogleId: !!process.env.GOOGLE_CLIENT_ID,
+                googleIdStart: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) : 'null'
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Health check crash", details: err.message });
+    }
+});
+
 app.use("/api/chat", chatRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
