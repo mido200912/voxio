@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import helmet from "helmet";
@@ -16,7 +16,6 @@ import chatHistoryRoutes from "./routes/chatHistoryRoutes.js";
 import integrationManagerRoutes from "./routes/integrationManagerRoutes.js";
 import aithorChatRoutes from "./routes/aithorChatRoutes.js";
 
-dotenv.config();
 const app = express();
 
 // ✅ إعداد CORS
