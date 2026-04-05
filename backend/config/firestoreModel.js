@@ -3,7 +3,11 @@ import { db } from './firebase.js';
 export class FirestoreModel {
   constructor(collectionName) {
     this.collectionName = collectionName;
-    this.collection = db.collection(collectionName);
+  }
+
+  get collection() {
+    if (!db) throw new Error("Firestore database is not initialized. Check your environment variables.");
+    return db.collection(this.collectionName);
   }
 
   async findById(id) {

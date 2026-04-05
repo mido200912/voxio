@@ -15,20 +15,23 @@ const serviceAccount = {
     universe_domain: "googleapis.com"
 };
 
-if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
-    console.error('❌ Firebase Error: Missing FIREBASE_* environment variables in .env');
-    process.exit(1);
-}
-
-// Initialize Firebase
 let db;
-if (!admin.apps.length) {
-    const app = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-    db = app.firestore();
-} else {
-    db = admin.firestore();
+try {
+    if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+        console.error('❌ Firebase Error: Missing FIREBASE_* environment variables.');
+    } else {
+        // Initialize Firebase
+        if (!admin.apps.length) {
+            const app = admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+            db = app.firestore();
+        } else {
+            db = admin.firestore();
+        }
+    }
+} catch (error) {
+    console.error('Firebase Initialization Error:', error);
 }
 
 export { db };
