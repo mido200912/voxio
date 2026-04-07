@@ -35,16 +35,18 @@ router.get('/conversations', requireAuth, async (req, res) => {
             }
         }
 
+        const isArabic = true; // Defaulting to Arabic for names
         const formattedConversations = Object.entries(userMap)
-            .map(([uid, data]) => ({
+            .sort((a, b) => new Date(a[1].updatedAt).getTime() - new Date(b[1].updatedAt).getTime()) // Sort oldest first to assign numbers
+            .map(([uid, data], index) => ({
                 id: uid,
-                name: uid,
+                name: data.platform === 'web' ? `${isArabic ? 'زائر' : 'Visitor'} ${index + 1}` : uid,
                 lastMessage: data.lastMessage,
                 time: data.updatedAt,
                 unread: 0,
                 platform: data.platform || 'web'
             }))
-            .sort((a, b) => new Date(b.time) - new Date(a.time));
+            .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()); // Sort newest first for display
 
         res.json(formattedConversations);
     } catch (error) {

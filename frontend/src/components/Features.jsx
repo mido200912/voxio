@@ -55,7 +55,7 @@ const Features = () => {
                 <div className="section-header">
                     <span className="section-badge">{t.features.badge}</span>
                     <h2 className="section-title">
-                        {t.features.titleStart} <span className="gradient-text">Aithor</span>?
+                        {t.features.titleStart} <span className="gradient-text">VOXIO</span>?
                     </h2>
                     <p className="section-description">
                         {t.features.description}

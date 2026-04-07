@@ -156,7 +156,7 @@ router.post('/telegram', requireAuth, async (req, res) => {
         }
 
         // Set webhook for the bot
-        const baseUrl = process.env.BASE_URL || 'https://aithor0.vercel.app';
+        const baseUrl = process.env.BASE_URL || 'https://voxio1.vercel.app';
         if (!baseUrl) {
             console.error('❌ BASE_URL is missing in environment variables');
             return res.status(500).json({ error: 'Server configuration error (BASE_URL missing)' });
@@ -237,6 +237,50 @@ router.post('/telegram', requireAuth, async (req, res) => {
     }
 });
 
+// @route   POST /api/integration-manager/website
+// @desc    Manually configure Web Chatbot Commands
+// @access  Private
+router.post('/website', requireAuth, async (req, res) => {
+    try {
+        const { commands } = req.body;
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        const sanitizedSettingsCommands = (commands || []).map(c => ({
+            command: (c.command || '').toLowerCase().replace(/[^a-z0-9_]/g, ''),
+            description: c.description || c.category || '',
+            category: c.category || '',
+            type: c.type || 'ai',
+            message: c.message || '',
+            successMessage: c.successMessage || '',
+            products: c.products || []
+        }));
+
+        let integration = await Integration.findOne({ company: company._id, platform: 'website' });
+        
+        if (!integration) {
+            integration = await Integration.create({
+                company: company._id,
+                platform: 'website',
+                credentials: {},
+                settings: { commands: sanitizedSettingsCommands },
+                isActive: true
+            });
+        } else {
+            integration.settings = { commands: sanitizedSettingsCommands };
+            integration.isActive = true;
+            await integration.save();
+        }
+
+        res.json({ message: 'Website commands configured successfully!', integration });
+    } catch (error) {
+        console.error('Website integration error:', error);
+        res.status(500).json({ error: 'Server error configure Website' });
+    }
+});
+
 // @route   POST /api/integration-manager/request-reveal-otp
 // @desc    Send OTP to user email to reveal sensitive bot token
 // @access  Private
@@ -258,7 +302,7 @@ router.post('/request-reveal-otp', requireAuth, async (req, res) => {
 
         await sendEmail({
             email: user.email,
-            subject: "AiThor Security - Bot Token Access",
+            subject: "VOXIO Security - Bot Token Access",
             message: `Your verification code is: ${otp}`,
             html
         });

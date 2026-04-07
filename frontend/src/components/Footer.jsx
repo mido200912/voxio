@@ -11,8 +11,8 @@ const Footer = () => {
                 <div className="footer-content">
                     <div className="footer-section">
                         <div className="footer-logo">
-                            <img src="/logo.png" alt="Aithor Logo" />
-                            <span>Aithor</span>
+                            <img src="/logo.png" alt="VOXIO Logo" />
+                            <span>VOXIO</span>
                         </div>
                         <p>{t.footer.description}</p>
                     </div>
@@ -42,14 +42,14 @@ const Footer = () => {
                         <ul>
                             <li><Link to="/about">{t.footer.aboutUs}</Link></li>
                             <li><Link to="/blog">{t.footer.blog}</Link></li>
-                            <li><a href="https://form-aithor.vercel.app/" target="_blank" rel="noopener noreferrer">{t.footer.careers}</a></li>
+                            <li><a href="https://form-voxio.vercel.app/" target="_blank" rel="noopener noreferrer">{t.footer.careers}</a></li>
                             <li><Link to="/terms">{t.footer.terms}</Link></li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="footer-bottom">
-                    <p>&copy; 2026 Aithor. {t.footer.rights}</p>
+                    <p>&copy; 2026 VOXIO. {t.footer.rights}</p>
                     <div className="footer-links">
                         <Link to="/privacy">{t.footer.privacy}</Link>
                         <Link to="/terms">{t.footer.terms}</Link>

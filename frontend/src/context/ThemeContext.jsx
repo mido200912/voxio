@@ -4,13 +4,13 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    const savedTheme = localStorage.getItem('aithor-theme');
+    const savedTheme = localStorage.getItem('voxio-theme');
     return savedTheme || 'light';
   });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('aithor-theme', theme);
+    localStorage.setItem('voxio-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

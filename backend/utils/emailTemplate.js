@@ -22,7 +22,7 @@ export const generateOtpEmail = (title, text, otp) => {
   <div class="wrapper">
     <div class="email-container">
       <div class="header">
-        <h1>Aithor</h1>
+        <h1>VOXIO</h1>
       </div>
       <div class="content">
         <h2 class="title">${title}</h2>
@@ -33,7 +33,7 @@ export const generateOtpEmail = (title, text, otp) => {
         <p class="text" style="font-size: 13px; margin-bottom: 0;">This code is valid for 10 minutes.<br/>If you didn't request this, you can safely ignore this email.</p>
       </div>
       <div class="footer">
-        <p>&copy; ${new Date().getFullYear()} Aithor Security System.<br/>All rights reserved.</p>
+        <p>&copy; ${new Date().getFullYear()} VOXIO Security System.<br/>All rights reserved.</p>
       </div>
     </div>
   </div>

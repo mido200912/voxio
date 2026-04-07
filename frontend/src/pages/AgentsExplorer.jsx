@@ -45,8 +45,8 @@ const AgentsExplorer = () => {
       {/* ── TOP BAR ── */}
       <nav className="ae-topbar">
         <Link to="/" className="ae-topbar-logo">
-          <img src="/logo.png" alt="Aithor" />
-          <span>Aithor</span>
+          <img src="/logo.png" alt="VOXIO" />
+          <span>VOXIO</span>
         </Link>
         <div className="ae-topbar-center">
           <i className="fas fa-robot" />
@@ -115,7 +115,7 @@ const AgentsExplorer = () => {
               <i className="fas fa-robot" />
             </div>
             <h3>{search ? `لا توجد نتائج لـ "${search}"` : 'لا توجد شركات مسجّلة بعد'}</h3>
-            <p>كن أول من يُنشئ وكيلاً ذكياً على Aithor</p>
+            <p>كن أول من يُنشئ وكيلاً ذكياً على VOXIO</p>
             <Link to="/register" className="ae-empty-btn">
               <i className="fas fa-plus" />
               أنشئ وكيلك الآن
@@ -185,7 +185,7 @@ const AgentsExplorer = () => {
       {/* ── FOOTER ── */}
       <div className="ae-footer">
         <span>Powered by</span>
-        <Link to="/"><img src="/logo.png" alt="Aithor" /> Aithor</Link>
+        <Link to="/"><img src="/logo.png" alt="VOXIO" /> VOXIO</Link>
         <span className="ae-footer-sep">·</span>
         <Link to="/register">
           <i className="fas fa-plus" />

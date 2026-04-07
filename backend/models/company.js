@@ -5,10 +5,19 @@ class CompanyModel extends FirestoreModel {
   async create(data) {
     const defaultData = {
       apiKey: crypto.randomBytes(24).toString("hex"),
+      slug: data.name ? data.name.toLowerCase().replace(/ /g, "-") : `company-${Date.now()}`,
       requests: [],
       knowledgeBase: [],
       extractedKnowledge: "",
       customInstructions: "",
+      websiteConfig: {
+        themeColor: "#4f46e5",
+        backgroundColor: "#000000",
+        welcomeMessage: "Hello! How can I help you today?",
+        botName: data.name || "Assistant",
+        layout: "centered",
+        font: "Inter"
+      },
       ...data
     };
     return super.create(defaultData);

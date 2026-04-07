@@ -37,7 +37,7 @@ const HowItWorks = () => {
                 <div className="section-header">
                     <span className="section-badge">{t.howItWorks.badge}</span>
                     <h2 className="section-title">
-                        {t.howItWorks.titleStart} <span className="gradient-text">Aithor</span>?
+                        {t.howItWorks.titleStart} <span className="gradient-text">VOXIO</span>?
                     </h2>
                     <p className="section-description">
                         {t.howItWorks.description}

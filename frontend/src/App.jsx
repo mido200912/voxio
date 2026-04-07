@@ -16,6 +16,7 @@ import Inbox from './pages/dashboard/Inbox';
 import AiTraining from './pages/dashboard/AiTraining';
 import Integrations from './pages/dashboard/Integrations';
 import TelegramTab from './pages/dashboard/TelegramTab';
+import WebsiteTab from './pages/dashboard/WebsiteTab';
 import ModelTest from './pages/dashboard/ModelTest';
 import Settings from './pages/dashboard/Settings';
 import Terms from './pages/Terms';
@@ -26,6 +27,8 @@ import Docs from './pages/Docs';
 import Support from './pages/Support';
 import AgentsExplorer, { AgentChat } from './pages/AgentsExplorer';
 import ChatWidget from './pages/ChatWidget';
+import ChatbotEditor from './pages/dashboard/ChatbotEditor';
+import ChatPage from './pages/ChatPage';
 import './App.css';
 
 function App() {
@@ -52,6 +55,7 @@ function App() {
                 <Route path="/agents" element={<AgentsExplorer />} />
                 <Route path="/agents/:apiKey" element={<AgentChat />} />
                 <Route path="/widget/:apiKey" element={<ChatWidget />} />
+                <Route path="/chat/:slug" element={<ChatPage />} />
                 {/* Dashboard routes */}
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route index element={<DashboardHome />} />
@@ -60,7 +64,9 @@ function App() {
                   <Route path="model-test" element={<ModelTest />} />
                   <Route path="integrations" element={<Integrations />} />
                   <Route path="telegram" element={<TelegramTab />} />
+                  <Route path="website-chat" element={<WebsiteTab />} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="chatbot-editor" element={<ChatbotEditor />} />
                 </Route>
               </Routes>
             </div>

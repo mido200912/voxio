@@ -37,15 +37,15 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
     let reply = null;
 
     // ✂️ Truncate question for GET requests to avoid 414 URL Too Long error
-    // Each Arabic char is ~6 bytes encoded, so 3000 chars is safe (~18KB)
-    const truncatedQuestion = fullQuestion.length > 3000 ? fullQuestion.substring(0, 3000) + "..." : fullQuestion;
+    // Increased limit for website editor prompts that include full HTML/CSS
+    const truncatedQuestion = fullQuestion.length > 15000 ? fullQuestion.substring(0, 15000) + "..." : fullQuestion;
 
     try {
         const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-        const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
+        const aiApiKey = process.env.COREX_API_KEY || "VOXIOV1_6F85B401ED";
         const requestUrl = `${apiUrl}?key=${aiApiKey}&act=assistant&a=${encodeURIComponent(truncatedQuestion)}`;
 
-        const aiResponse = await axios.get(requestUrl, { timeout: 30000 });
+        const aiResponse = await axios.get(requestUrl, { timeout: 60000 });
         reply = extractCorexReply(aiResponse.data, null);
 
         if (reply && typeof reply === 'string' && (reply.includes('daily limit') || reply.includes('{"success":false'))) {
@@ -69,7 +69,7 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                         "Authorization": `Bearer ${openRouterApiKey}`,
                         "Content-Type": "application/json"
                     },
-                    timeout: 30000
+                    timeout: 60000
                 });
                 
                 if (fallbackResponse.data?.choices?.length > 0) {
@@ -82,4 +82,53 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
     }
 
     return reply || fallbackText;
+}
+
+/**
+ * Dedicated AI function for the Website Designer (Corex Editor)
+ * Uses OpenRouter POST directly — no URL truncation, sends the FULL code context.
+ * Falls back to CoreSys if OpenRouter fails.
+ */
+export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallbackText = "Failed to generate design.") {
+    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+    
+    // Try OpenRouter FIRST (POST = no URL length limits = full code context)
+    if (openRouterApiKey) {
+        try {
+            console.log("🎨 Designer AI: Sending to OpenRouter (POST)...");
+            const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+                model: "google/gemini-2.0-flash-001",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt }
+                ],
+                temperature: 0.7,
+                max_tokens: 8000
+            }, {
+                headers: {
+                    "Authorization": `Bearer ${openRouterApiKey}`,
+                    "Content-Type": "application/json"
+                },
+                timeout: 90000
+            });
+            
+            if (response.data?.choices?.length > 0) {
+                const reply = response.data.choices[0].message.content;
+                console.log("🎨 Designer AI: Got response, length:", reply.length);
+                return reply;
+            }
+        } catch (err) {
+            console.error("🎨 Designer AI OpenRouter failed:", err.response?.data || err.message);
+        }
+    }
+    
+    // Fallback to CoreSys (GET - will truncate, but better than nothing)
+    try {
+        const fullQuestion = systemPrompt + "\n\nUser request: " + userPrompt;
+        return await fetchAiResponse(fullQuestion, fallbackText);
+    } catch (err) {
+        console.error("🎨 Designer AI CoreSys fallback also failed:", err.message);
+    }
+    
+    return fallbackText;
 }

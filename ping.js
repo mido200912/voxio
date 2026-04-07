@@ -1,7 +1,7 @@
 async function ping() {
   while(true) {
     try {
-      const res = await fetch('https://aithor0.vercel.app/api/health');
+      const res = await fetch('https://voxio1.vercel.app/api/health');
       if (res.ok) {
         const data = await res.json();
         if (data.dbInitialized !== undefined) {

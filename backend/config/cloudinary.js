@@ -14,7 +14,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'aithor_knowledge_base',
+        folder: 'voxio_knowledge_base',
         allowed_formats: ['pdf', 'doc', 'docx', 'txt'],
         resource_type: 'raw' // Important for non-image files like PDFs
     },

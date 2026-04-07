@@ -363,30 +363,30 @@ const getWidgetScript = async (req, res) => {
       // Inject CSS for animations
       const style = document.createElement('style');
       style.textContent = \`
-        @keyframes aithor-fadeIn {
+        @keyframes voxio-fadeIn {
           from { opacity: 0; transform: scale(0.8) translateY(20px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        @keyframes aithor-pulse {
+        @keyframes voxio-pulse {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.05); }
         }
-        .aithor-chat-bubble {
-          animation: aithor-pulse 2s infinite ease-in-out;
+        .voxio-chat-bubble {
+          animation: voxio-pulse 2s infinite ease-in-out;
         }
-        .aithor-chat-bubble:hover {
+        .voxio-chat-bubble:hover {
           transform: scale(1.1) !important;
           animation: none;
         }
-        .aithor-chat-window {
-          animation: aithor-fadeIn 0.3s ease-out;
+        .voxio-chat-window {
+          animation: voxio-fadeIn 0.3s ease-out;
         }
       \`;
       document.head.appendChild(style);
 
       // Create Chat Bubble with gradient
       const bubble = document.createElement('div');
-      bubble.className = 'aithor-chat-bubble';
+      bubble.className = 'voxio-chat-bubble';
       bubble.style.cssText = \`
         position: fixed;
         bottom: 24px;
@@ -411,7 +411,7 @@ const getWidgetScript = async (req, res) => {
       
       // Create Chat Window
       const chatWindow = document.createElement('div');
-      chatWindow.className = 'aithor-chat-window';
+      chatWindow.className = 'voxio-chat-window';
       chatWindow.style.cssText = \`
         position: fixed;
         bottom: 100px;
@@ -440,10 +440,10 @@ const getWidgetScript = async (req, res) => {
       \`;
       header.innerHTML = \`
         <div>
-          <div style="font-weight: 600; font-size: 18px;">AiThor Support</div>
+          <div style="font-weight: 600; font-size: 18px;">VOXIO Support</div>
           <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">We're here to help!</div>
         </div>
-        <button id="aithor-close-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+        <button id="voxio-close-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
           </svg>
@@ -472,7 +472,7 @@ const getWidgetScript = async (req, res) => {
         border-top: 1px solid #eee;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       \`;
-      footer.innerHTML = 'Powered by <strong style="color: #667eea;">AiThor</strong>';
+      footer.innerHTML = 'Powered by <strong style="color: #667eea;">VOXIO</strong>';
       chatWindow.appendChild(footer);
 
       document.body.appendChild(bubble);
@@ -490,17 +490,17 @@ const getWidgetScript = async (req, res) => {
       });
 
       // Close button
-      document.getElementById('aithor-close-btn').addEventListener('click', (e) => {
+      document.getElementById('voxio-close-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         chatWindow.style.display = 'none';
         bubble.style.transform = 'scale(1)';
       });
 
       // Close button hover effect
-      document.getElementById('aithor-close-btn').addEventListener('mouseenter', function() {
+      document.getElementById('voxio-close-btn').addEventListener('mouseenter', function() {
         this.style.background = 'rgba(255,255,255,0.3)';
       });
-      document.getElementById('aithor-close-btn').addEventListener('mouseleave', function() {
+      document.getElementById('voxio-close-btn').addEventListener('mouseleave', function() {
         this.style.background = 'rgba(255,255,255,0.2)';
       });
     })();

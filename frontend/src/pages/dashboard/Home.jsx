@@ -34,6 +34,8 @@ const DashboardHome = () => {
         };
 
         fetchAnalytics();
+        const interval = setInterval(fetchAnalytics, 30000); // Heartbeat every 30s
+        return () => clearInterval(interval);
     }, []);
 
     if (loading) return <div className="loading-state">{t.dashboard.homePage.loading}</div>;
@@ -47,6 +49,12 @@ const DashboardHome = () => {
     const itemVariants = {
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0 }
+    };
+
+    const formatTime = (val) => {
+        if (!val) return '';
+        const d = val?._seconds ? new Date(val._seconds * 1000) : new Date(val);
+        return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
     };
 
     return (
@@ -115,7 +123,7 @@ const DashboardHome = () => {
                                     <p>{activity.details}</p>
                                 </div>
                                 <span className="activity-time">
-                                    {new Date(activity.time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                                    {formatTime(activity.time)}
                                 </span>
                             </div>
                         ))}

@@ -28,27 +28,27 @@ const Blog = () => {
       cat: 'tutorial', icon: 'fa-plug',
       date: t('Feb 28, 2026', '٢٨ فبراير ٢٠٢٦'), readTime: t('8 min', '٨ د'),
       title: t('Connect WhatsApp Business to Your Store in 5 Steps', 'ربط WhatsApp Business بمتجرك في ٥ خطوات'),
-      desc: t('Step-by-step guide to connecting Aithor to WhatsApp and letting the AI handle customer queries automatically.', 'دليل خطوة بخطوة لربط Aithor بـ WhatsApp وجعل الذكاء الاصطناعي يتعامل مع استفسارات العملاء تلقائياً.'),
+      desc: t('Step-by-step guide to connecting VOXIO to WhatsApp and letting the AI handle customer queries automatically.', 'دليل خطوة بخطوة لربط VOXIO بـ WhatsApp وجعل الذكاء الاصطناعي يتعامل مع استفسارات العملاء تلقائياً.'),
       tag: t('Tutorials', 'شروحات'),
     },
     {
       cat: 'business', icon: 'fa-chart-bar',
       date: t('Jan 20, 2026', '٢٠ يناير ٢٠٢٦'), readTime: t('6 min', '٦ د'),
       title: t('E-commerce + AI: The Perfect Partnership', 'التجارة الإلكترونية والذكاء الاصطناعي: تكامل مثالي'),
-      desc: t('How Aithor\'s Shopify integration lets you handle product questions, order tracking, and complaints via AI.', 'كيف يتيح تكامل Aithor مع Shopify معالجة أسئلة المنتجات وتتبع الطلبات عبر الذكاء الاصطناعي.'),
+      desc: t('How VOXIO\'s Shopify integration lets you handle product questions, order tracking, and complaints via AI.', 'كيف يتيح تكامل VOXIO مع Shopify معالجة أسئلة المنتجات وتتبع الطلبات عبر الذكاء الاصطناعي.'),
       tag: t('Business', 'أعمال'),
     },
     {
       cat: 'ai', icon: 'fa-brain',
       date: t('Jan 5, 2026', '٥ يناير ٢٠٢٦'), readTime: t('10 min', '١٠ د'),
-      title: t('Under the Hood: How Aithor Trains Your Bot', 'خلف الكواليس: كيف يُدرّب Aithor بوتك'),
+      title: t('Under the Hood: How VOXIO Trains Your Bot', 'خلف الكواليس: كيف يُدرّب VOXIO بوتك'),
       desc: t('A deep dive into our knowledge extraction pipeline — how we parse your files and convert them into AI context.', 'تعمق في خط استخراج المعرفة — كيف نحلل ملفاتك ونحولها إلى سياق للذكاء الاصطناعي.'),
       tag: t('AI & Tech', 'ذكاء اصطناعي'),
     },
     {
       cat: 'tutorial', icon: 'fa-code',
       date: t('Dec 12, 2025', '١٢ ديسمبر ٢٠٢٥'), readTime: t('4 min', '٤ د'),
-      title: t('Embed Aithor Chat Widget in Under 2 Minutes', 'تضمين ودجت Aithor في أقل من دقيقتين'),
+      title: t('Embed VOXIO Chat Widget in Under 2 Minutes', 'تضمين ودجت VOXIO في أقل من دقيقتين'),
       desc: t('One script tag. That\'s all. Your trained AI chatbot is live on any webpage instantly.', 'سطر كود واحد. هذا كل شيء. بوتك الذكي المدرَّب يعمل على أي صفحة فوراً.'),
       tag: t('Tutorials', 'شروحات'),
     },
@@ -56,7 +56,7 @@ const Blog = () => {
       cat: 'business', icon: 'fa-globe',
       date: t('Nov 30, 2025', '٣٠ نوفمبر ٢٠٢٥'), readTime: t('7 min', '٧ د'),
       title: t('Arabic AI: Why Language Matters in Customer Service', 'الذكاء الاصطناعي العربي: لماذا تهم اللغة'),
-      desc: t('Why Arabic-language support is a business necessity for MENA companies, and how Aithor delivers it natively.', 'لماذا دعم اللغة العربية ضرورة تجارية لشركات المنطقة، وكيف يقدمه Aithor بشكل أصيل.'),
+      desc: t('Why Arabic-language support is a business necessity for MENA companies, and how VOXIO delivers it natively.', 'لماذا دعم اللغة العربية ضرورة تجارية لشركات المنطقة، وكيف يقدمه VOXIO بشكل أصيل.'),
       tag: t('Business', 'أعمال'),
     },
   ];
@@ -80,7 +80,7 @@ const Blog = () => {
           </div>
           <h1>{t('Insights on AI, Business & Technology', 'رؤى حول الذكاء الاصطناعي والأعمال والتقنية')}</h1>
           <p className="lp-hero-desc">
-            {t('Tutorials, case studies, and deep dives from the Aithor team.', 'شروحات ودراسات حالة وتحليلات معمقة من فريق Aithor.')}
+            {t('Tutorials, case studies, and deep dives from the VOXIO team.', 'شروحات ودراسات حالة وتحليلات معمقة من فريق VOXIO.')}
           </p>
         </div>
       </div>

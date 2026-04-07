@@ -1,7 +1,7 @@
 # PowerShell script to test backend endpoints
 
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "Testing Aithor Backend on Port 5000" -ForegroundColor Cyan
+Write-Host "Testing VOXIO Backend on Port 5000" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 

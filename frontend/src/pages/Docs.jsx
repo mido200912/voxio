@@ -47,12 +47,12 @@ const Docs = () => {
       {/* ─── TOP NAV BAR ─── */}
       <nav className="docs-topbar">
         <Link to="/" className="docs-logo">
-          <img src="/logo.png" alt="Aithor" />
-          <span>Aithor</span>
+          <img src="/logo.png" alt="VOXIO" />
+          <span>VOXIO</span>
         </Link>
         <div className="docs-topbar-right">
           <span className="docs-version-badge">v1.0</span>
-          <a href="mailto:aithor049@gmail.com" className="docs-contact-link">
+          <a href="mailto:voxio049@gmail.com" className="docs-contact-link">
             {t('Support', 'الدعم')}
           </a>
         </div>
@@ -84,11 +84,11 @@ const Docs = () => {
           <section id="overview" className="docs-section">
             <div className="docs-section-hero">
               <div className="docs-hero-badge"><i className="fas fa-compass" /> {t('Overview', 'نظرة عامة')}</div>
-              <h1>{t('Welcome to Aithor API', 'مرحباً بك في Aithor API')}</h1>
+              <h1>{t('Welcome to VOXIO API', 'مرحباً بك في VOXIO API')}</h1>
               <p className="docs-lead">
                 {t(
-                  'Aithor is an AI-powered customer communication platform. It lets you train a smart chatbot on your own company data, then deploy it across WhatsApp, Facebook, Instagram, Shopify, and your own website — all through a single unified API.',
-                  'Aithor منصة ذكاء اصطناعي لإدارة تواصل الشركات مع العملاء. تتيح لك تدريب بوت ذكي على بيانات شركتك ونشره عبر WhatsApp وFacebook وInstagram وShopify وموقعك الخاص — كل ذلك من خلال API موحد واحد.'
+                  'VOXIO is an AI-powered customer communication platform. It lets you train a smart chatbot on your own company data, then deploy it across WhatsApp, Facebook, Instagram, Shopify, and your own website — all through a single unified API.',
+                  'VOXIO منصة ذكاء اصطناعي لإدارة تواصل الشركات مع العملاء. تتيح لك تدريب بوت ذكي على بيانات شركتك ونشره عبر WhatsApp وFacebook وInstagram وShopify وموقعك الخاص — كل ذلك من خلال API موحد واحد.'
                 )}
               </p>
               <div className="docs-cta-row">
@@ -176,7 +176,7 @@ const Docs = () => {
               <div className="docs-section-icon"><i className="fas fa-lock" /></div>
               <div>
                 <h2>{t('Authentication', 'المصادقة')}</h2>
-                <p>{t('Aithor uses two separate auth systems depending on the endpoint type.', 'يستخدم Aithor نظامين مختلفين للمصادقة حسب نوع الـ endpoint.')}</p>
+                <p>{t('VOXIO uses two separate auth systems depending on the endpoint type.', 'يستخدم VOXIO نظامين مختلفين للمصادقة حسب نوع الـ endpoint.')}</p>
               </div>
             </div>
 
@@ -256,7 +256,7 @@ const Docs = () => {
                 </div>
                 <div className="docs-code-block">
                   <div className="docs-code-header"><span>cURL</span></div>
-                  <pre>{`curl -X POST https://aithor0.vercel.app/api/public/chat \\
+                  <pre>{`curl -X POST https://voxio1.vercel.app/api/public/chat \\
   -H "Content-Type: application/json" \\
   -d '{
     "apiKey": "YOUR_API_KEY",
@@ -266,7 +266,7 @@ const Docs = () => {
                 </div>
                 <div className="docs-code-block">
                   <div className="docs-code-header"><span>JavaScript (fetch)</span></div>
-                  <pre>{`const res = await fetch('https://aithor0.vercel.app/api/public/chat', {
+                  <pre>{`const res = await fetch('https://voxio1.vercel.app/api/public/chat', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -321,7 +321,7 @@ console.log(reply); // AI response`}</pre>
               <div className="docs-section-icon"><i className="fas fa-plug" /></div>
               <div>
                 <h2>{t('Integrations', 'التكاملات')}</h2>
-                <p>{t('Connect Aithor to your existing communication channels.', 'اربط Aithor بقنواتك التواصلية الحالية.')}</p>
+                <p>{t('Connect VOXIO to your existing communication channels.', 'اربط VOXIO بقنواتك التواصلية الحالية.')}</p>
               </div>
             </div>
 
@@ -332,7 +332,7 @@ console.log(reply); // AI response`}</pre>
                 { name: 'Instagram DMs', icon: '🟣', status: t('Coming Soon', 'قريباً'), color: '#e4405f', desc: t('Handle Instagram direct messages automatically.', 'معالجة رسائل Instagram المباشرة تلقائياً.') },
                 { name: 'Shopify', icon: '🟡', status: t('Coming Soon', 'قريباً'), color: '#96bf48', desc: t('Connect store data — products, orders, FAQs.', 'ربط بيانات المتجر — المنتجات والطلبات والأسئلة الشائعة.') },
                 { name: 'TikTok', icon: '⚫', status: t('Coming Soon', 'قريباً'), color: '#010101', desc: t('Manage TikTok messages through one dashboard.', 'إدارة رسائل TikTok من لوحة تحكم واحدة.') },
-                { name: 'Website Widget', icon: '🌐', status: t('Available', 'متاح'), color: '#6C63FF', desc: t('Embed Aithor chat widget on any page with one script tag.', 'ادمج ودجت Aithor في أي صفحة بسطر واحد من الكود.') },
+                { name: 'Website Widget', icon: '🌐', status: t('Available', 'متاح'), color: '#6C63FF', desc: t('Embed VOXIO chat widget on any page with one script tag.', 'ادمج ودجت VOXIO في أي صفحة بسطر واحد من الكود.') },
               ].map((int, i) => (
                 <div key={i} className="docs-int-card">
                   <div className="docs-int-top">
@@ -349,7 +349,7 @@ console.log(reply); // AI response`}</pre>
 
             <div className="docs-callout info">
               <i className="fas fa-circle-info" />
-              <p>{t('Integration endpoints use OAuth flows. Redirect your user to the connect URL, and Aithor handles the rest.', 'نقاط نهاية التكاملات تستخدم تدفقات OAuth. وجّه مستخدمك لرابط الاتصال، وسيتولى Aithor الباقي.')}</p>
+              <p>{t('Integration endpoints use OAuth flows. Redirect your user to the connect URL, and VOXIO handles the rest.', 'نقاط نهاية التكاملات تستخدم تدفقات OAuth. وجّه مستخدمك لرابط الاتصال، وسيتولى VOXIO الباقي.')}</p>
             </div>
           </section>
 
@@ -359,7 +359,7 @@ console.log(reply); // AI response`}</pre>
               <div className="docs-section-icon"><i className="fas fa-satellite-dish" /></div>
               <div>
                 <h2>{t('Webhooks', 'Webhooks')}</h2>
-                <p>{t('Aithor receives real-time events from connected platforms via webhooks.', 'يستقبل Aithor الأحداث الفورية من المنصات المتصلة عبر webhooks.')}</p>
+                <p>{t('VOXIO receives real-time events from connected platforms via webhooks.', 'يستقبل VOXIO الأحداث الفورية من المنصات المتصلة عبر webhooks.')}</p>
               </div>
             </div>
 
@@ -439,11 +439,11 @@ console.log(reply); // AI response`}</pre>
               <p style={{ padding: '0 15px', color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
                 {t('Simply paste this script before the closing </body> tag. It will inject a floating chat button at the bottom right corner.', 'الصق هذا الكود قبل وسم </body> في موقعك. سيقوم تلقائياً بإضافة زر محادثة عائم في الزاوية السفلى.')}
               </p>
-              <pre>{`<!-- Aithor Web Widget -->
+              <pre>{`<!-- VOXIO Web Widget -->
 <script 
-  src="https://aithor0.vercel.app/widget.js" 
+  src="https://voxio1.vercel.app/widget.js" 
   data-api-key="YOUR_API_KEY"
-  data-base-url="https://aithor0.vercel.app"
+  data-base-url="https://voxio1.vercel.app"
   async
 ></script>
 `}</pre>
@@ -454,7 +454,7 @@ console.log(reply); // AI response`}</pre>
               <pre>{`import requests
 
 API_KEY = "YOUR_API_KEY"
-BASE_URL = "https://aithor0.vercel.app/api"
+BASE_URL = "https://voxio1.vercel.app/api"
 
 def chat(message, conversation_id=None):
     payload = {
@@ -476,7 +476,7 @@ print(reply)`}</pre>
               <div className="docs-code-header"><span>React Hook</span></div>
               <pre>{`import { useState } from 'react';
 
-export function useAithorChat(apiKey) {
+export function useVOXIOChat(apiKey) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -484,7 +484,7 @@ export function useAithorChat(apiKey) {
     setLoading(true);
     setMessages(prev => [...prev, { role: 'user', text }]);
     
-    const res = await fetch('https://aithor0.vercel.app/api/public/chat', {
+    const res = await fetch('https://voxio1.vercel.app/api/public/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiKey, message: text }),
@@ -504,7 +504,7 @@ export function useAithorChat(apiKey) {
               <div>
                 <strong>{t('Need help?', 'تحتاج مساعدة؟')}</strong>
                 <p>{t('Contact our team at ', 'تواصل مع فريقنا على ')}
-                  <a href="mailto:aithor049@gmail.com" style={{ color: 'var(--color-text)' }}>aithor049@gmail.com</a>
+                  <a href="mailto:voxio049@gmail.com" style={{ color: 'var(--color-text)' }}>voxio049@gmail.com</a>
                   {t(' — we reply within 24 hours.', ' — نرد خلال 24 ساعة.')}
                 </p>
               </div>

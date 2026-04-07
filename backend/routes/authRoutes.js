@@ -66,13 +66,13 @@ router.post("/register", async (req, res) => {
     try {
       const message = `Your confirmation OTP is: ${otp}\nIt is valid for 10 minutes.`;
       const html = generateOtpEmail(
-        "Welcome to Aithor!",
+        "Welcome to VOXIO!",
         "Please use the verification code below to complete your registration.",
         otp
       );
       await sendEmail({
         email: user.email,
-        subject: "AiThor - Confirm Your Account",
+        subject: "VOXIO - Confirm Your Account",
         message,
         html
       });
@@ -121,7 +121,7 @@ router.post("/login", async (req, res) => {
       );
       await sendEmail({
         email: user.email,
-        subject: "AiThor - Login OTP",
+        subject: "VOXIO - Login OTP",
         message,
         html
       });
@@ -201,7 +201,7 @@ router.post("/forgot-password", async (req, res) => {
       );
       await sendEmail({
         email: user.email,
-        subject: "AiThor - Password Reset OTP",
+        subject: "VOXIO - Password Reset OTP",
         message,
         html
       });

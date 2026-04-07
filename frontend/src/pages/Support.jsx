@@ -14,8 +14,8 @@ const Support = () => {
       icon: 'fa-envelope',
       title: t('Email Support', 'دعم البريد الإلكتروني'),
       desc: t('Usually reply within 24 hours, often much faster.', 'نرد عادةً خلال ٢٤ ساعة، وكثيراً أسرع من ذلك.'),
-      linkLabel: 'aithor049@gmail.com',
-      linkHref: 'mailto:aithor049@gmail.com',
+      linkLabel: 'voxio049@gmail.com',
+      linkHref: 'mailto:voxio049@gmail.com',
       external: true,
     },
     {
@@ -29,7 +29,7 @@ const Support = () => {
     {
       icon: 'fa-comments',
       title: t('Live Chat', 'محادثة فورية'),
-      desc: t('Chat with our AI bot on the homepage — powered by Aithor itself!', 'تحدث مع بوتنا على الرئيسية — مدعوم بـ Aithor نفسه!'),
+      desc: t('Chat with our AI bot on the homepage — powered by VOXIO itself!', 'تحدث مع بوتنا على الرئيسية — مدعوم بـ VOXIO نفسه!'),
       linkLabel: t('Go to Home', 'الذهاب للرئيسية'),
       linkHref: '/',
       external: false,
@@ -38,12 +38,12 @@ const Support = () => {
 
   const faqs = [
     {
-      q: t('How do I get started with Aithor?', 'كيف أبدأ استخدام Aithor؟'),
+      q: t('How do I get started with VOXIO?', 'كيف أبدأ استخدام VOXIO؟'),
       a: t('Register a free account, complete your company profile during onboarding, then upload your knowledge base (PDFs, docs) to train your AI bot.', 'سجّل حساباً مجانياً، أكمل ملف شركتك خلال الإعداد، ثم ارفع قاعدة المعرفة (PDFs، وثائق) لتدريب بوتك.'),
     },
     {
-      q: t('Does Aithor support Arabic?', 'هل يدعم Aithor اللغة العربية؟'),
-      a: t('Yes. Aithor is Arabic-first. The platform UI supports RTL and the AI model (Meta Llama 3.3 70B) responds fluently in both Arabic and English.', 'نعم. صُمم Aithor مع الأولوية للعربية. الواجهة تدعم RTL ونموذج الذكاء الاصطناعي (Meta Llama 3.3 70B) يرد بطلاقة بالعربية والإنجليزية.'),
+      q: t('Does VOXIO support Arabic?', 'هل يدعم VOXIO اللغة العربية؟'),
+      a: t('Yes. VOXIO is Arabic-first. The platform UI supports RTL and the AI model (Meta Llama 3.3 70B) responds fluently in both Arabic and English.', 'نعم. صُمم VOXIO مع الأولوية للعربية. الواجهة تدعم RTL ونموذج الذكاء الاصطناعي (Meta Llama 3.3 70B) يرد بطلاقة بالعربية والإنجليزية.'),
     },
     {
       q: t('Where do I find my API key?', 'أين أجد مفتاح الـ API الخاص بي؟'),
@@ -55,11 +55,11 @@ const Support = () => {
     },
     {
       q: t('Can I embed the chatbot in my website?', 'هل يمكنني تضمين البوت في موقعي؟'),
-      a: t('Yes! Add a single <script> tag with your API key config and the Aithor widget appears on any webpage instantly.', 'نعم! أضف علامة <script> واحدة مع إعدادات مفتاح الـ API ويظهر ودجت Aithor فوراً.'),
+      a: t('Yes! Add a single <script> tag with your API key config and the VOXIO widget appears on any webpage instantly.', 'نعم! أضف علامة <script> واحدة مع إعدادات مفتاح الـ API ويظهر ودجت VOXIO فوراً.'),
     },
     {
       q: t('How do I delete my account?', 'كيف أحذف حسابي؟'),
-      a: t('Email aithor049@gmail.com with subject "Account Deletion". We permanently delete all your data within 30 days.', 'راسل aithor049@gmail.com بموضوع "حذف الحساب". نحذف جميع بياناتك بشكل دائم خلال ٣٠ يوماً.'),
+      a: t('Email voxio049@gmail.com with subject "Account Deletion". We permanently delete all your data within 30 days.', 'راسل voxio049@gmail.com بموضوع "حذف الحساب". نحذف جميع بياناتك بشكل دائم خلال ٣٠ يوماً.'),
     },
   ];
 
@@ -148,7 +148,7 @@ const Support = () => {
           <h2>{t('Still need help?', 'لا تزال بحاجة للمساعدة؟')}</h2>
           <p>{t('Our team is happy to help you get set up and running.', 'فريقنا سعيد بمساعدتك في الإعداد والتشغيل.')}</p>
           <div className="lp-cta-btns">
-            <a href="mailto:aithor049@gmail.com" className="lp-btn-primary">
+            <a href="mailto:voxio049@gmail.com" className="lp-btn-primary">
               <i className="fas fa-envelope" />
               {t('Email Us', 'راسلنا')}
             </a>

@@ -51,8 +51,8 @@ const DashboardLayout = () => {
             <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
                 <div className="sidebar-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <img src="/logo.png" alt="Aithor" className="sidebar-logo" />
-                        {isSidebarOpen && <span className="logo-text">Aithor</span>}
+                        <img src="/logo.png" alt="VOXIO" className="sidebar-logo" />
+                        {isSidebarOpen && <span className="logo-text">VOXIO</span>}
                     </div>
                     <button className="close-sidebar-btn mobile-only" onClick={() => setIsSidebarOpen(false)}>
                         <i className="fas fa-times"></i>
@@ -107,6 +107,18 @@ const DashboardLayout = () => {
                             <Link to="/dashboard/telegram" className={`nav-item ${isActive('/dashboard/telegram')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-telegram-plane"></i>
                                 {isSidebarOpen && <span>{language === 'ar' ? 'تليجرام' : 'Telegram'}</span>}
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/dashboard/website-chat" className={`nav-item ${isActive('/dashboard/website-chat')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-globe"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'موقع الويب' : 'Website'}</span>}
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/dashboard/chatbot-editor" className={`nav-item ${isActive('/dashboard/chatbot-editor')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-wand-magic-sparkles"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'مصمم الشات بوت' : 'Chatbot Editor'}</span>}
                             </Link>
                         </li>
                         <li>

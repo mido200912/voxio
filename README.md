@@ -1,8 +1,8 @@
-# 🚀 Aithor Backend API
+# 🚀 VOXIO Backend API
 
 <div align="center">
 
-![Aithor Logo](https://via.placeholder.com/200x200/4A90E2/FFFFFF?text=Aithor)
+![VOXIO Logo](https://via.placeholder.com/200x200/4A90E2/FFFFFF?text=VOXIO)
 
 **منصة ذكية لإدارة الشركات مع Chatbot مدعوم بالذكاء الاصطناعي**
 
@@ -36,7 +36,7 @@
 
 ## 🌟 نظرة عامة
 
-**Aithor** هو نظام backend متكامل يوفر:
+**VOXIO** هو نظام backend متكامل يوفر:
 - 🏢 إدارة شاملة للشركات والمشاريع
 - 🤖 Chatbot ذكي مدعوم بـ AI (Mistral 7B)
 - 🔗 تكامل مع منصات التواصل الاجتماعي (Facebook, Instagram, WhatsApp)
@@ -183,8 +183,8 @@ backend/
 
 1. **استنساخ المشروع**
 ```bash
-git clone https://github.com/yourusername/aithor-backend.git
-cd aithor-backend
+git clone https://github.com/yourusername/voxio-backend.git
+cd voxio-backend
 ```
 
 2. **تثبيت الحزم**
@@ -219,9 +219,9 @@ npm start
 # ========================================
 # Database Configuration
 # ========================================
-MONGO_URI=mongodb://localhost:27017/aithor
+MONGO_URI=mongodb://localhost:27017/voxio
 # أو استخدم MongoDB Atlas
-# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/aithor
+# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/voxio
 
 # ========================================
 # Server Configuration
@@ -631,13 +631,13 @@ vercel env add JWT_SECRET
 
 ```bash
 # Build image
-docker build -t aithor-backend .
+docker build -t voxio-backend .
 
 # Run container
 docker run -p 5000:5000 \
   -e MONGO_URI=your_mongo_uri \
   -e JWT_SECRET=your_jwt_secret \
-  aithor-backend
+  voxio-backend
 ```
 
 **Dockerfile:**
@@ -662,8 +662,8 @@ CMD ["node", "server.js"]
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/aithor-backend.git
-cd aithor-backend
+git clone https://github.com/yourusername/voxio-backend.git
+cd voxio-backend
 
 # 2. Install dependencies
 npm install
@@ -676,7 +676,7 @@ nano .env  # Edit with your values
 npm install -g pm2
 
 # 5. Start with PM2
-pm2 start server.js --name aithor-backend
+pm2 start server.js --name voxio-backend
 
 # 6. Save PM2 config
 pm2 save
@@ -732,7 +732,7 @@ GET /
 
 **Response:**
 ```
-AiThor API is running
+VOXIO API is running
 ```
 
 ### Database Connection Test
@@ -768,9 +768,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 التواصل
 
-**Project Maintainer**: Aithor Team  
-**Email**: support@aithor.com  
-**Website**: https://aithor.com
+**Project Maintainer**: VOXIO Team  
+**Email**: support@voxio.com  
+**Website**: https://voxio.com
 
 ---
 
@@ -793,7 +793,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Built with ❤️ by Aithor Team**
+**Built with ❤️ by VOXIO Team**
 
 ⭐ إذا أعجبك المشروع، لا تنسَ إعطاءه نجمة!
 

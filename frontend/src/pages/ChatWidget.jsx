@@ -12,8 +12,9 @@ const PALETTE = [
 const getColor    = (name = '') => PALETTE[name.charCodeAt(0) % PALETTE.length];
 const getInitials = (name = '') => name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
 
-const ChatWidget = () => {
-    const { apiKey } = useParams();
+const ChatWidget = ({ apiKeyProp }) => {
+    const params = useParams();
+    const apiKey = apiKeyProp || params.apiKey;
     const [company, setCompany] = useState(null);
     const [loading, setLoading] = useState(true);
     const [messages, setMessages] = useState([]);

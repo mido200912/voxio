@@ -490,7 +490,7 @@ const Integrations = () => {
                     </div>
                     <div className="integration-info">
                         <h3>{t.language === 'ar' ? 'ودجت الموقع (Web Widget)' : 'Web Widget'}</h3>
-                        <p>{t.language === 'ar' ? 'أضف شات بوت Aithor لموقعك الإلكتروني بضغطة واحدة.' : 'Add Aithor chatbot to your website with a single script.'}</p>
+                        <p>{t.language === 'ar' ? 'أضف شات بوت VOXIO لموقعك الإلكتروني بضغطة واحدة.' : 'Add VOXIO chatbot to your website with a single script.'}</p>
                     </div>
                     <div className="integration-action">
                         <button 
@@ -498,7 +498,7 @@ const Integrations = () => {
                             onClick={() => {
                                 const btn = document.getElementById('copy-widget-btn');
                                 const apiKey = JSON.parse(localStorage.getItem('user'))?.apiKey || 'YOUR_API_KEY';
-                                const code = `<script \n  src="https://aithor0.vercel.app/widget.js" \n  data-api-key="${apiKey}" \n  data-base-url="https://aithor0.vercel.app"\n></script>`;
+                                const code = `<script \n  src="https://voxio1.vercel.app/widget.js" \n  data-api-key="${apiKey}" \n  data-base-url="https://voxio1.vercel.app"\n></script>`;
                                 navigator.clipboard.writeText(code);
                                 const originalText = btn.innerText;
                                 btn.innerText = t.language === 'ar' ? 'تم النسخ!' : 'Copied!';
@@ -516,9 +516,9 @@ const Integrations = () => {
                     <pre>
                         <code>
 {`<script 
-  src="https://aithor0.vercel.app/widget.js" 
+  src="https://voxio1.vercel.app/widget.js" 
   data-api-key="${JSON.parse(localStorage.getItem('user'))?.apiKey || 'YOUR_API_KEY'}" 
-  data-base-url="https://aithor-v1.vercel.app"
+  data-base-url="https://voxio-v1.vercel.app"
 ></script>`}
                         </code>
                     </pre>

@@ -32,8 +32,8 @@ const AboutUs = () => {
           </h1>
           <p className="lp-hero-desc">
             {t(
-              'Aithor lets every company — from startups to enterprises — deploy a fully trained AI agent for customer service that never sleeps.',
-              'Aithor يمنح كل شركة — من الناشئة إلى الكبيرة — قوة وكيل ذكاء اصطناعي مدرَّب لخدمة العملاء لا يتوقف أبداً.'
+              'VOXIO lets every company — from startups to enterprises — deploy a fully trained AI agent for customer service that never sleeps.',
+              'VOXIO يمنح كل شركة — من الناشئة إلى الكبيرة — قوة وكيل ذكاء اصطناعي مدرَّب لخدمة العملاء لا يتوقف أبداً.'
             )}
           </p>
         </div>
@@ -101,7 +101,7 @@ const AboutUs = () => {
               { icon: 'fa-robot',         title: t('AI Chatbots', 'بوتات ذكية'),                    desc: t('Trained on your company\'s own data for precise, context-aware responses in Arabic & English.', 'مدربة على بيانات شركتك لردود دقيقة وادراكية للسياق بالعربية والإنجليزية.') },
               { icon: 'fa-network-wired', title: t('Multi-Channel Integration', 'تكامل متعدد القنوات'), desc: t('WhatsApp, Facebook, Instagram, Shopify, and your website — one unified platform.', 'WhatsApp وFacebook وInstagram وShopify وموقعك — منصة واحدة موحدة.') },
               { icon: 'fa-chart-line',    title: t('Analytics Dashboard', 'لوحة التحليلات'),          desc: t('Track conversations, measure AI resolution rates, and understand your customers better.', 'تتبع المحادثات وقس معدلات الحل وافهم عملاءك بشكل أفضل.') },
-              { icon: 'fa-code',          title: t('Developer API', 'API للمطورين'),                  desc: t('A clean REST API to embed Aithor in any app, website, or workflow you build.', 'API REST نظيف لتضمين Aithor في أي تطبيق أو موقع أو سير عمل تبنيه.') },
+              { icon: 'fa-code',          title: t('Developer API', 'API للمطورين'),                  desc: t('A clean REST API to embed VOXIO in any app, website, or workflow you build.', 'API REST نظيف لتضمين VOXIO في أي تطبيق أو موقع أو سير عمل تبنيه.') },
             ].map((f, i) => (
               <div key={i} className="lp-feature-item">
                 <div className="lp-feature-icon-wrap"><i className={`fas ${f.icon}`} /></div>
@@ -146,7 +146,7 @@ const AboutUs = () => {
               <i className="fas fa-arrow-left" />
               {t('Start Free', 'ابدأ مجاناً')}
             </Link>
-            <a href="mailto:aithor049@gmail.com" className="lp-btn-secondary">
+            <a href="mailto:voxio049@gmail.com" className="lp-btn-secondary">
               <i className="fas fa-envelope" />
               {t('Contact Us', 'تواصل معنا')}
             </a>

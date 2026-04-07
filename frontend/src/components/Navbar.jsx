@@ -38,8 +38,8 @@ const Navbar = () => {
                     scrollToSection('home');
                     navigate('/');
                 }}>
-                    <img src="/logo.png" alt="Aithor Logo" className="logo-img" />
-                    <span className="logo-text">Aithor</span>
+                    <img src="/logo.png" alt="VOXIO Logo" className="logo-img" />
+                    <span className="logo-text">VOXIO</span>
                 </div>
 
                 <ul className={`nav-menu ${isMobileMenuOpen ? 'active' : ''}`}>

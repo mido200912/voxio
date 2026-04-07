@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import './AithorChatWidget.css';
+import './VOXIOChatWidget.css';
 
-const AithorChatWidget = () => {
+const VOXIOChatWidget = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
         {
             id: 1,
             role: 'assistant',
-            content: 'مرحباً بك في AiThor! 👋 أنا مساعدك الذكي، كيف يمكنني مساعدتك في بناء وكيل الذكاء الاصطناعي الخاص بك؟'
+            content: 'مرحباً بك في VOXIO! 👋 أنا مساعدك الذكي، كيف يمكنني مساعدتك في بناء وكيل الذكاء الاصطناعي الخاص بك؟'
         }
     ]);
     const [input, setInput] = useState('');
@@ -33,7 +33,7 @@ const AithorChatWidget = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post(`${BACKEND_URL}/aithor-chat`, { prompt: input });
+            const res = await axios.post(`${BACKEND_URL}/voxio-chat`, { prompt: input });
 
             const botMsg = {
                 id: Date.now() + 1,
@@ -56,12 +56,12 @@ const AithorChatWidget = () => {
     };
 
     return (
-        <div className="aithor-widget-container">
+        <div className="voxio-widget-container">
             {/* Chat Button */}
             <button
                 className={`widget-toggle-btn ${isOpen ? 'open' : ''}`}
                 onClick={toggleChat}
-                aria-label="Chat with AiThor"
+                aria-label="Chat with VOXIO"
             >
                 {isOpen ? <i className="fas fa-times"></i> : <i className="fas fa-robot"></i>}
             </button>
@@ -72,7 +72,7 @@ const AithorChatWidget = () => {
                     <div className="widget-header">
                         <div className="header-info">
                             <span className="status-dot"></span>
-                            <h3>AiThor Assistant</h3>
+                            <h3>VOXIO Assistant</h3>
                         </div>
                         <p>اسألني عن خدماتنا وطرق الاشتراك!</p>
                     </div>
@@ -111,4 +111,4 @@ const AithorChatWidget = () => {
     );
 };
 
-export default AithorChatWidget;
+export default VOXIOChatWidget;

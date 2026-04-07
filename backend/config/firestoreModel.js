@@ -144,6 +144,12 @@ export class FirestoreModel {
         cacheDelete(`${collectionName}:id:${this._id}`);
         // Also clear email-based cache if present
         if (dataToSave.email) cacheDelete(`${collectionName}:email:${dataToSave.email}`);
+        // Clear slug-based cache if present
+        if (dataToSave.slug) cacheDelete(`${collectionName}:slug:${dataToSave.slug}`);
+        // Clear apiKey-based cache if present
+        if (dataToSave.apiKey) cacheDelete(`${collectionName}:apiKey:${dataToSave.apiKey}`);
+        // Clear owner-based cache if present
+        if (dataToSave.owner) cacheDelete(`${collectionName}:owner:${dataToSave.owner}`);
 
         return this;
       }.bind(instance),

@@ -1,6 +1,6 @@
-async function p() {
-  const r = await fetch('https://aithor0.vercel.app/api/health');
-  console.log(r.status);
+async function test() {
+  const r = await fetch('https://voxio1.vercel.app/api/health');
+  console.log("HEALTH DATA:");
   console.log(await r.text());
 }
-p();
+test();

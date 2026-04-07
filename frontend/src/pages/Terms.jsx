@@ -10,7 +10,7 @@ const Terms = () => {
             <p style={{ color: 'var(--text-secondary)', marginBottom: '40px' }}>Last Updated: March 2026</p>
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>1. Agreement to Terms</h2>
-            <p>These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and Aithor ("we", "us", or "our"), concerning your access to and use of the Aithor website and application as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site"). You agree that by accessing the Site, you have read, understood, and agree to be bound by all of these Terms of Service.</p>
+            <p>These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and VOXIO ("we", "us", or "our"), concerning your access to and use of the VOXIO website and application as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site"). You agree that by accessing the Site, you have read, understood, and agree to be bound by all of these Terms of Service.</p>
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>2. Use of the Services</h2>
             <p>Our platform allows you to create AI-powered chatbots and integrate them with various communication platforms, including but not limited to TikTok, Meta platforms, and e-commerce services like Shopify. By using these integrations, you agree to comply strictly with the Terms of Service and Developer Policies of those respective platforms.</p>
@@ -37,7 +37,7 @@ const Terms = () => {
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>8. Contact Us</h2>
             <p>In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at:</p>
-            <p><strong>Email:</strong> support@aithor.com</p>
+            <p><strong>Email:</strong> support@voxio.com</p>
         </div>
     );
 };

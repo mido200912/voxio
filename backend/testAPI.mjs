@@ -4,7 +4,7 @@ async function testAPIs() {
     const baseURL = 'http://localhost:5000/api';
     const token = 'test-token'; // Replace with actual token
 
-    console.log('🧪 Testing Aithor API Endpoints...\n');
+    console.log('🧪 Testing VOXIO API Endpoints...\n');
 
     const tests = [
         { name: 'Root', url: 'http://localhost:5000/' },
