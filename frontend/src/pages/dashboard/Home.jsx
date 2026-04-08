@@ -15,7 +15,7 @@ const DashboardHome = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.app.vercel/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
 
     useEffect(() => {
         const fetchAnalytics = async () => {

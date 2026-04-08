@@ -35,7 +35,7 @@ const Settings = () => {
         values: '' // Handle as comma separated string for UI
     });
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.app.vercel/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
     const token = localStorage.getItem('token');
 
     const fetchCompanyData = useCallback(async () => {

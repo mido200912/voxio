@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import './AgentsExplorer.css'; // We'll reuse/extend these styles
 
-const API = import.meta.env.VITE_API_URL || 'https://aithor1.app.vercel/api';
+const API = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
 
 const PALETTE = [
   '#6C63FF','#2563eb','#16a34a','#d97706',
