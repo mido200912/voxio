@@ -23,7 +23,8 @@ const app = express();
 const allowedOrigins = [
     "http://localhost:5173",
     "https://voxio-v1.vercel.app",
-    "https://voxio0.vercel.app"
+    "https://voxio0.vercel.app",
+    "https://aithor1.app.vercel"
 ];
 
 app.use(cors({
@@ -110,7 +111,7 @@ app.get('/widget.js', (req, res) => {
 (function() {
     const script = document.currentScript;
     const apiKey = script.getAttribute('data-api-key');
-    const baseUrl = script.getAttribute('data-base-url') || 'https://voxio0.vercel.app';
+    const baseUrl = script.getAttribute('data-base-url') || 'https://aithor1.app.vercel';
     const primaryColor = script.getAttribute('data-primary-color') || '#000';
     
     if (!apiKey) {

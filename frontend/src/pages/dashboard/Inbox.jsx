@@ -14,7 +14,7 @@ const Inbox = () => {
     const [sending, setSending] = useState(false);
     const [training, setTraining] = useState(false);
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.app.vercel/api';
     const token = localStorage.getItem('token');
 
     useEffect(() => {

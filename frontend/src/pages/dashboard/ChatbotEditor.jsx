@@ -41,7 +41,7 @@ const ChatbotEditor = () => {
     const iframeRef = useRef(null);
     const messagesEndRef = useRef(null);
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.app.vercel/api';
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
     const [error, setError] = useState(null);
     const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.app.vercel/api';
 
     // Check if user is already logged in on mount
     useEffect(() => {

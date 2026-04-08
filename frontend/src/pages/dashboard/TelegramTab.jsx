@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.app.vercel/api';
 
 const TelegramTab = () => {
     const { language } = useLanguage();
