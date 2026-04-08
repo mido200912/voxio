@@ -17,9 +17,19 @@ const VOXIOChatWidget = () => {
 
     const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+    const [sessionId] = useState(() => {
+        let sid = localStorage.getItem('voxio_sid');
+        if (!sid) {
+            sid = "sess_" + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('voxio_sid', sid);
+        }
+        return sid;
+    });
+
     const toggleChat = () => setIsOpen(!isOpen);
 
     useEffect(() => {
+        // Load history for VOXIO Assistant too if needed, or just keep session alive
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
@@ -33,7 +43,10 @@ const VOXIOChatWidget = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post(`${BACKEND_URL}/voxio-chat`, { prompt: input });
+            const res = await axios.post(`${BACKEND_URL}/voxio-chat`, { 
+                prompt: input,
+                sessionId: sessionId 
+            });
 
             const botMsg = {
                 id: Date.now() + 1,

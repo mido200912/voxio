@@ -35,9 +35,13 @@ router.post("/chat", async (req, res) => {
 
     const CompanyChat = (await import("../models/CompanyChat.js")).default;
     
-    // Identify customer strictly by IP for persistent cross-session history
+    // Identify customer by sessionId (Persistent LocalStorage ID) as primary
+    // clientIp remains for security logs but is NOT the primary identifier anymore
     const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
-    const userId = `web_${clientIp.replace(/:/g, '_')}`; // Ensure valid ID format
+    const { sessionId, sid } = req.body;
+    
+    // Priority: sessionId -> sid -> fallback to IP based ID
+    const userId = sessionId || sid || `web_${clientIp.replace(/:/g, '_')}`;
     const cleanPrompt = prompt.trim().toLowerCase();
 
     const baseChatData = { company: company._id, user: userId, ip: clientIp, platform: 'web' };
@@ -185,6 +189,7 @@ router.get("/history", async (req, res) => {
 
     const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
     // Use the same logic as POST /chat to identify the same persistent user
+    // We strictly prefer sessionId if provided by the client (widget)
     const userId = sessionId || `web_${clientIp.replace(/:/g, '_')}`;
 
     const CompanyChat = (await import("../models/CompanyChat.js")).default;
