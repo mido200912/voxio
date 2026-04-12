@@ -5,7 +5,10 @@ class CompanyModel extends FirestoreModel {
   async create(data) {
     const defaultData = {
       apiKey: crypto.randomBytes(24).toString("hex"),
+      chatToken: `vchat_${crypto.randomBytes(16).toString("hex")}`,
       slug: data.name ? data.name.toLowerCase().replace(/ /g, "-") : `company-${Date.now()}`,
+      websiteUrl: data.websiteUrl || "",
+      allowedDomains: data.allowedDomains || [],
       requests: [],
       knowledgeBase: [],
       extractedKnowledge: "",

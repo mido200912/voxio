@@ -10,6 +10,28 @@ import Integration from "../models/Integration.js";
 const router = express.Router();
 const webOrderSessions = {}; // Stores sessions while waiting for phone number
 
+// Helper to verify domain
+const verifyDomain = (req, company) => {
+  const origin = req.headers.origin || req.headers.referer || "";
+  const allowedDomains = company.allowedDomains || [];
+  const websiteUrl = company.websiteUrl || "";
+
+  const allAllowed = [...allowedDomains];
+  if (websiteUrl) {
+    try {
+      const url = new URL(websiteUrl);
+      allAllowed.push(url.origin, url.hostname);
+    } catch (e) {
+      allAllowed.push(websiteUrl);
+    }
+  }
+
+  if (allAllowed.length === 0) return true; // Allow if none specified (for now)
+  
+  const isAllowed = allAllowed.some(domain => origin.includes(domain)) || origin.includes("localhost") || origin.includes("127.0.0.1");
+  return isAllowed;
+};
+
 /**
  * 🧠 Chat with AI using specific company API key
  */
@@ -22,16 +44,22 @@ router.post("/chat", async (req, res) => {
     if ((!finalApiKey && !slug) || !prompt)
       return res.status(400).json({ success: false, error: "Missing parameters" });
 
-    // ✅ احضار الشركة بناءً على الـ API Key أو السبيكة (Slug)
+    // ✅ احضار الشركة بناءً على الـ chatToken أو API Key أو السبيكة (Slug)
     let company;
     if (slug) {
       company = await Company.findOne({ slug });
     } else {
-      company = await Company.findOne({ apiKey: finalApiKey });
+      company = await Company.findOne({ $or: [{ chatToken: finalApiKey }, { apiKey: finalApiKey }] });
     }
 
     if (!company)
       return res.status(404).json({ success: false, error: "Invalid company" });
+
+    // 🛡️ Security Check
+    if (!verifyDomain(req, company)) {
+      console.warn(`🛑 Unauthorized chat attempt from domain: ${req.headers.origin || req.headers.referer} for ${company.name}`);
+      return res.status(403).json({ success: false, error: "Unauthorized domain" });
+    }
 
     const CompanyChat = (await import("../models/CompanyChat.js")).default;
     
@@ -184,8 +212,10 @@ router.post("/chat", async (req, res) => {
 router.get("/history", async (req, res) => {
   try {
     const { apiKey, sessionId } = req.query;
-    const company = await Company.findOne({ apiKey });
+    const company = await Company.findOne({ $or: [{ chatToken: apiKey }, { apiKey }] });
     if (!company) return res.status(404).json({ success: false });
+
+    if (!verifyDomain(req, company)) return res.status(403).json({ success: false });
 
     const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
     // Use the same logic as POST /chat to identify the same persistent user
@@ -216,8 +246,10 @@ router.get("/history", async (req, res) => {
 router.get("/commands/:apiKey", async (req, res) => {
   try {
     const { apiKey } = req.params;
-    const company = await Company.findOne({ apiKey });
+    const company = await Company.findOne({ $or: [{ chatToken: apiKey }, { apiKey }] });
     if (!company) return res.status(404).json({ success: false });
+
+    if (!verifyDomain(req, company)) return res.status(403).json({ success: false });
 
     const integration = await Integration.findOne({ company: company._id, platform: 'website' });
     const commands = integration?.settings?.commands || [];

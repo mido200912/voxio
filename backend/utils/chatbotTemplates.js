@@ -1,7 +1,7 @@
 export function getChatbotTemplate(type = 'default', company) {
   const name = company.name || 'AI Assistant';
   const logo = company.logo || '';
-  const apiKey = company.apiKey || '';
+  const apiKey = company.chatToken || company.apiKey || '';
   const slug = company.slug || '';
   const apiUrl = process.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
 

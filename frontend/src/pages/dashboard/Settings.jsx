@@ -7,7 +7,7 @@ import './Settings.css';
 
 const Settings = () => {
     const { user, changePassword } = useAuth();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [pwdSaving, setPwdSaving] = useState(false);
@@ -22,6 +22,7 @@ const Settings = () => {
 
     // API Key State
     const [apiKey, setApiKey] = useState('');
+    const [chatToken, setChatToken] = useState('');
     const [copySuccess, setCopySuccess] = useState('');
 
     // Company Data State
@@ -32,7 +33,9 @@ const Settings = () => {
         description: '',
         vision: '',
         mission: '',
-        values: '' // Handle as comma separated string for UI
+        values: '', // Handle as comma separated string for UI
+        websiteUrl: '',
+        allowedDomains: '' // Handle as comma separated string for UI
     });
 
     const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
@@ -52,7 +55,9 @@ const Settings = () => {
                 description: data.description || '',
                 vision: data.vision || '',
                 mission: data.mission || '',
-                values: data.values ? data.values.join(', ') : ''
+                values: data.values ? data.values.join(', ') : '',
+                websiteUrl: data.websiteUrl || '',
+                allowedDomains: data.allowedDomains ? data.allowedDomains.join(', ') : ''
             });
         } catch (error) {
             console.error("Error fetching company data", error);
@@ -72,15 +77,27 @@ const Settings = () => {
         }
     }, [BACKEND_URL, token]);
 
+    const fetchChatToken = useCallback(async () => {
+        try {
+            const res = await axios.get(`${BACKEND_URL}/company`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setChatToken(res.data.chatToken);
+        } catch (error) {
+            console.error("Error fetching Chat Token", error);
+        }
+    }, [BACKEND_URL, token]);
+
     useEffect(() => {
         fetchCompanyData();
         fetchApiKey();
-    }, [fetchCompanyData, fetchApiKey]);
+        fetchChatToken();
+    }, [fetchCompanyData, fetchApiKey, fetchChatToken]);
 
 
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(apiKey);
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
         setCopySuccess(t.dashboard.settingsPage.copiedText);
         setTimeout(() => setCopySuccess(''), 2000);
     };
@@ -96,6 +113,7 @@ const Settings = () => {
             const payload = {
                 ...companyData,
                 values: companyData.values.split(',').map(v => v.trim()).filter(v => v),
+                allowedDomains: companyData.allowedDomains.split(',').map(d => d.trim()).filter(d => d),
                 size: companyData.companySize
             };
 
@@ -242,6 +260,36 @@ const Settings = () => {
                             />
                         </div>
 
+                        <div className="form-row">
+                            <div className="form-group half">
+                                <label>{language === 'ar' ? 'رابط الموقع (Website URL)' : 'Website URL'}</label>
+                                <input
+                                    type="text"
+                                    name="websiteUrl"
+                                    value={companyData.websiteUrl}
+                                    onChange={handleInputChange}
+                                    className="settings-input"
+                                    placeholder="https://example.com"
+                                />
+                            </div>
+                            <div className="form-group half">
+                                <label>{language === 'ar' ? 'النطاقات المسموح بها (Allowed Domains)' : 'Allowed Domains'}</label>
+                                <input
+                                    type="text"
+                                    name="allowedDomains"
+                                    value={companyData.allowedDomains}
+                                    onChange={handleInputChange}
+                                    className="settings-input"
+                                    placeholder="example.com, shop.example.com"
+                                />
+                            </div>
+                        </div>
+                        <p style={{fontSize: '12px', opacity: 0.6, marginBottom: '20px'}}>
+                            {language === 'ar' 
+                                ? '⚠️ تأمين الـ API: أدخل النطاقات التي سيتم تشغيل البوت عليها فقط لمنع استخدامه في مواقع أخرى.' 
+                                : '⚠️ API Security: Enter specific domains where your bot is allowed to run to prevent unauthorized use.'}
+                        </p>
+
                         <button
                             className="btn btn-primary"
                             onClick={handleSave}
@@ -259,18 +307,47 @@ const Settings = () => {
                         <h3>{t.dashboard.settingsPage.apiKeyTitle}</h3>
                     </div>
                     <div className="card-body">
-                        <p className="instruction-tip">{t.dashboard.settingsPage.apiKeyDesc}</p>
-                        <div className="api-key-box">
-                            <input type="text" value={apiKey} readOnly />
-                            <button className="icon-btn" onClick={copyToClipboard} title={t.dashboard.settingsPage.copy}>
-                                <i className={`fas ${copySuccess ? 'fa-check' : 'fa-copy'}`}></i>
-                            </button>
-                        </div>
-                        {copySuccess && <span className="copy-feedback">{copySuccess}</span>}
+                        <p className="instruction-tip">
+                            {language === 'ar' 
+                                ? 'مفاتيح الربط الخاصة بك. استخدم الـ Chat Token لموقعك الإلكتروني لأمان أعلى.' 
+                                : 'Your API keys. Use the Chat Token for your website for higher security.'}
+                        </p>
+                        
+                        <div className="api-keys-container" style={{display:'flex', flexDirection:'column', gap:'20px'}}>
+                            <div className="api-key-item">
+                                <label style={{fontSize:'13px', fontWeight:'600', marginBottom:'5px', display:'block'}}>
+                                    {language === 'ar' ? 'مفتاح الشات (Chat Token) - آمن للمتصفح' : 'Chat Token - Browser Safe'}
+                                </label>
+                                <div className="api-key-box">
+                                    <input type="text" value={chatToken || "Generating..."} readOnly />
+                                    <button className="icon-btn" onClick={() => copyToClipboard(chatToken)} title={t.dashboard.settingsPage.copy}>
+                                        <i className={`fas ${copySuccess ? 'fa-check' : 'fa-copy'}`}></i>
+                                    </button>
+                                </div>
+                            </div>
 
-                        <div className="warning-box">
+                            <div className="api-key-item">
+                                <label style={{fontSize:'13px', fontWeight:'600', marginBottom:'5px', display:'block', color: '#ff4444'}}>
+                                    {language === 'ar' ? 'مفتاح الإدارة (Secret API Key) - لا تشاركه أبداً' : 'Secret API Key - Never Share'}
+                                </label>
+                                <div className="api-key-box">
+                                    <input type="text" value={apiKey} readOnly />
+                                    <button className="icon-btn" onClick={() => copyToClipboard(apiKey)} title={t.dashboard.settingsPage.copy}>
+                                        <i className={`fas ${copySuccess ? 'fa-check' : 'fa-copy'}`}></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {copySuccess && <span className="copy-feedback" style={{marginTop:'10px', display:'block'}}>{copySuccess}</span>}
+
+                        <div className="warning-box" style={{marginTop:'20px'}}>
                             <i className="fas fa-exclamation-triangle"></i>
-                            <p>{t.dashboard.settingsPage.apiKeyWarning}</p>
+                            <p>
+                                {language === 'ar' 
+                                    ? 'تنبيه: لا تستخدم الـ Secret API Key داخل كود الجافا سكريبت في موقعك، استخدم دائماً الـ Chat Token.' 
+                                    : 'Warning: Never use your Secret API Key inside your website\'s JavaScript code. Always use the Chat Token instead.'}
+                            </p>
                         </div>
                     </div>
                 </motion.div>

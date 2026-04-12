@@ -32,7 +32,7 @@ app.use(cors({
         // السماح بالطلبات التي ليس لها Origin (مثل تطبيقات الموبايل أو الـ Server-to-Server)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith(".vercel.app") || origin.includes("localhost")) {
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith(".vercel.app") || origin.includes("localhost") || (req.url && req.url.includes("/api/public"))) {
             callback(null, true);
         } else {
             console.log("CORS Blocked for origin:", origin);
