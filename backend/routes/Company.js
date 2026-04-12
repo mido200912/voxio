@@ -512,10 +512,13 @@ router.post("/", requireAuth, async (req, res) => {
       if (!existing.apiKey) {
         existing.apiKey = crypto.randomBytes(24).toString("hex");
       }
+      if (!existing.chatToken) {
+        existing.chatToken = `vchat_${crypto.randomBytes(16).toString("hex")}`;
+      }
       if (!existing.slug && req.body.name) {
         existing.slug = req.body.name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4);
       }
-      Object.assign(existing, req.body, { apiKey: existing.apiKey });
+      Object.assign(existing, req.body, { apiKey: existing.apiKey, chatToken: existing.chatToken });
       await existing.save();
       return res.json(existing);
     }
@@ -545,10 +548,18 @@ router.get("/", requireAuth, async (req, res) => {
     if (!company) return res.status(404).json({ error: "Company not found" });
     
     // Auto-generate slug for legacy users
+    let updated = false;
     if (!company.slug) {
         company.slug = company.name ? company.name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4) : `company-${Date.now()}`;
-        await company.save();
+        updated = true;
     }
+
+    if (!company.chatToken) {
+        company.chatToken = `vchat_${crypto.randomBytes(16).toString("hex")}`;
+        updated = true;
+    }
+
+    if (updated) await company.save();
     
     res.json(company);
   } catch (err) {
@@ -566,12 +577,19 @@ router.get("/fix-apikey", requireAuth, async (req, res) => {
 
     if (!company.apiKey) {
       company.apiKey = crypto.randomBytes(24).toString("hex");
+      company.chatToken = `vchat_${crypto.randomBytes(16).toString("hex")}`;
       await company.save();
       return res.json({
-        message: "API key generated successfully!",
+        message: "API keys generated successfully!",
         apiKey: company.apiKey,
+        chatToken: company.chatToken,
         company
       });
+    }
+
+    if (!company.chatToken) {
+        company.chatToken = `vchat_${crypto.randomBytes(16).toString("hex")}`;
+        await company.save();
     }
 
     res.json({
