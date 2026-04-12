@@ -25,6 +25,7 @@ const ChatbotEditor = () => {
     const [aiProcessing, setAiProcessing] = useState(false);
     const [showCopied, setShowCopied] = useState(false);
     const [showWebCommands, setShowWebCommands] = useState(false);
+    const [templates, setTemplates] = useState([]);
     
     // Workspace Modes: 'split', 'code-only', 'preview-only'
     const [viewMode, setViewMode] = useState('split');
@@ -51,7 +52,18 @@ const ChatbotEditor = () => {
 
     useEffect(() => {
         fetchCurrentChatbot();
+        fetchTemplates();
     }, []);
+
+    const fetchTemplates = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${BACKEND_URL}/chatbot-editor/templates`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setTemplates(res.data.templates || []);
+        } catch (err) { console.error(err); }
+    };
 
     const fetchCurrentChatbot = async () => {
         try {
@@ -223,13 +235,17 @@ const ChatbotEditor = () => {
         }
     };
 
-    const handleResetToDefault = async () => {
-        if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من مسح كل التعديلات والعودة للكود الأساسي الافتراضي؟' : 'Are you sure you want to reset to the absolute default code?')) return;
+    const handleResetToDefault = async (templateId = 'default') => {
+        const confirmMsg = language === 'ar' 
+            ? 'هل أنت متأكد من تغيير القالب؟ سيؤدي هذا لمسح التعديلات الحالية.' 
+            : 'Are you sure you want to change the template? This will overwrite your current changes.';
+        
+        if (!window.confirm(confirmMsg)) return;
         
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`${BACKEND_URL}/chatbot-editor/reset`, {}, {
+            const res = await axios.post(`${BACKEND_URL}/chatbot-editor/reset`, { templateId }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -339,6 +355,27 @@ const ChatbotEditor = () => {
                         {/* Tab 2: Theme Settings */}
                         {activeSidebarTab === 'theme' && (
                             <div className="theme-settings-panel">
+                                <section className="template-gallery">
+                                    <h4>{language === 'ar' ? 'اختر قالب احترافي' : 'Choose a Premium Template'}</h4>
+                                    <div className="templates-grid">
+                                        {templates.map(tpl => (
+                                            <div 
+                                                key={tpl.id} 
+                                                className="template-card" 
+                                                onClick={() => handleResetToDefault(tpl.id)}
+                                            >
+                                                <div className="template-thumb">
+                                                    <img src={tpl.thumbnail} alt={tpl.name} />
+                                                    <div className="hover-overlay"><i className="fas fa-magic"></i></div>
+                                                </div>
+                                                <span>{tpl.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+
+                                <div className="divider" style={{ margin: '20px 0', borderTop: '1px solid var(--border)' }}></div>
+
                                 <h4>{language === 'ar' ? 'الألوان المكتشفة' : 'Detected Theme Colors'}</h4>
                                 <p style={{fontSize:'12px', opacity:0.7, marginBottom:'15px'}}>
                                     {language === 'ar' ? 'يتم اكتشاف هذه الألوان تلقائياً من الكود الذي صممه الذكاء الاصطناعي.' : 'These colors are automatically detected from the AI-designed code.'}

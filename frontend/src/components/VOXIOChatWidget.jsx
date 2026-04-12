@@ -43,9 +43,9 @@ const VOXIOChatWidget = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post(`${BACKEND_URL}/voxio-chat`, { 
+            const res = await axios.post(`${BACKEND_URL}/voxio-chat`, {
                 prompt: input,
-                sessionId: sessionId 
+                sessionId: sessionId
             });
 
             const botMsg = {

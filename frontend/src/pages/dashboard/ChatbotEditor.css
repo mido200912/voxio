@@ -491,8 +491,9 @@
   color: #858585;
   text-align: right;
   padding: 10px 10px 10px 0;
-  font-family: 'Fira Code', monospace;
+  font-family: 'Fira Code', 'Fira Mono', monospace;
   font-size: 13px;
+  line-height: 1.5;
   border-right: 1px solid rgba(255,255,255,0.1);
   user-select: none;
   overflow: hidden;
@@ -509,6 +510,17 @@
   min-height: 100%;
   color: #d4d4d4;
   caret-color: #ffffff;
+  font-family: 'Fira Code', 'Fira Mono', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.code-editor-content textarea, 
+.code-editor-content pre {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  padding: 10px !important; /* Must match Editor padding prop */
 }
 
 /* Custom Highlight colors for JS/CSS if Tomorrow theme isn't enough */
@@ -688,3 +700,92 @@
 @media (max-width: 1200px) {
   .chat-panel { width: 320px; }
 }
+
+/* ─── TEMPLATE GALLERY STYLES ─── */
+.template-gallery {
+  margin-bottom: 30px;
+}
+
+.template-gallery h4 {
+  margin-bottom: 15px;
+  font-size: 15px;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.template-card {
+  cursor: pointer;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.template-card:hover {
+  border-color: var(--color-text);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.template-thumb {
+  width: 100%;
+  aspect-ratio: 16/10;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.template-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s;
+}
+
+.template-card:hover .template-thumb img {
+  transform: scale(1.1);
+}
+
+.hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: 0.3s;
+  color: #fff;
+  font-size: 20px;
+  backdrop-filter: blur(2px);
+}
+
+.template-card:hover .hover-overlay {
+  opacity: 1;
+}
+
+.template-card span {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.template-card:hover span {
+  color: var(--color-text);
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--color-border);
+}
+

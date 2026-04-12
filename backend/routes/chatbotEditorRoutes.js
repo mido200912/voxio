@@ -2,7 +2,7 @@ import express from "express";
 import Company from "../models/company.js";
 import { requireAuth } from "../middleware/auth.js";
 import { fetchDesignerAiResponse } from "../utils/corexHelper.js";
-import { getDefaultChatbotTemplate } from "../utils/defaultChatbotTemplate.js";
+import { getChatbotTemplate } from "../utils/chatbotTemplates.js";
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router.get("/current", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const htmlContent = company.websiteConfig?.htmlContent || getDefaultChatbotTemplate(company);
+    const htmlContent = company.websiteConfig?.htmlContent || getChatbotTemplate('default', company);
 
     res.json({
       htmlContent,
@@ -38,7 +38,7 @@ router.post("/edit", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const currentHtml = company.websiteConfig?.htmlContent || getDefaultChatbotTemplate(company);
+    const currentHtml = company.websiteConfig?.htmlContent || getChatbotTemplate('default', company);
 
     // Format chat history for context
     const historyContext = (history || [])
@@ -129,7 +129,8 @@ router.post("/reset", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const defaultHtml = getDefaultChatbotTemplate(company);
+    const { templateId } = req.body;
+    const defaultHtml = getChatbotTemplate(templateId || 'default', company);
     company.websiteConfig = {
       ...company.websiteConfig,
       htmlContent: defaultHtml
@@ -151,7 +152,7 @@ router.get("/page/:slug", async (req, res) => {
     const company = await Company.findOne({ slug });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const htmlContent = company.websiteConfig?.htmlContent || getDefaultChatbotTemplate(company);
+    const htmlContent = company.websiteConfig?.htmlContent || getChatbotTemplate('default', company);
 
     res.json({
       htmlContent,
@@ -183,6 +184,20 @@ router.post("/save", requireAuth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+/*-------------------------------
+  Get available templates
+-------------------------------*/
+router.get("/templates", requireAuth, async (req, res) => {
+  res.json({
+    templates: [
+      { id: 'default', name: 'الافتراضي (Classic Night)', thumbnail: 'https://img.freepik.com/free-vector/gradient-ui-ux-background_23-2149052117.jpg' },
+      { id: 'glassmorphism', name: 'الزجاجي (Glass Bloom)', thumbnail: 'https://img.freepik.com/free-vector/gradient-glassmorphism-background_23-2149440113.jpg' },
+      { id: 'luxury', name: 'الملكي (Royal Gold)', thumbnail: 'https://img.freepik.com/free-vector/gradient-golden-luxury-background_23-2149117415.jpg' },
+      { id: 'cyberpunk', name: 'المستقبلي (Cyber Neon)', thumbnail: 'https://img.freepik.com/free-vector/cyberpunk-concept-illustration_114360-14112.jpg' }
+    ]
+  });
 });
 
 export default router;

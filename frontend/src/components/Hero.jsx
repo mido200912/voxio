@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import './Hero.css';
+import { BackgroundPaths } from './ui/background-paths';
 
 const Hero = () => {
     const statsRef = useRef(null);
@@ -48,8 +49,9 @@ const Hero = () => {
     }, []);
 
     return (
-        <section className="hero" id="home">
-            <div className="hero-container">
+        <section className="hero relative" id="home">
+            <BackgroundPaths />
+            <div className="hero-container relative z-10">
                 <div className="hero-content">
                     <div className="hero-badge animate-fade-in">
                         <i className="fas fa-sparkles"></i>
