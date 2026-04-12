@@ -12,11 +12,30 @@ export function getChatbotTemplate(type = 'default', company) {
   const script = getTemplateScript(apiUrl, apiKey);
 
   const typingStyle = `
-        .typing { display: flex; gap: 5px; padding: 10px 0; justify-content: center; }
-        .typing span { width: 8px; height: 8px; background: currentColor; border-radius: 50%; opacity: 0.4; animation: typing 1s infinite alternate; }
-        .typing span:nth-child(2) { animation-delay: 0.2s; }
-        .typing span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { from { transform: translateY(0); opacity: 0.4; } to { transform: translateY(-7px); opacity: 1; } }
+        .typing { display: flex; gap: 6px; padding: 12px 5px; justify-content: center; align-items: center; }
+        .typing span { width: 8px; height: 8px; background: currentColor; border-radius: 50%; opacity: 0.3; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing span:nth-child(1) { animation-delay: -0.32s; }
+        .typing span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
+  `;
+
+  // Shared CSS for Fullscreen and Scrollbars
+  const resetAndLayout = `
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-ar); }
+        body { width: 100vw; height: 100dvh; overflow: hidden; display: flex; }
+        .chat-container { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; transition: all 0.3s ease; }
+        .messages-area { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 24px; scroll-behavior: smooth; }
+        .messages-area::-webkit-scrollbar { width: 6px; }
+        .messages-area::-webkit-scrollbar-thumb { border-radius: 10px; background: var(--scrollbar-thumb); }
+        .messages-area::-webkit-scrollbar-track { background: transparent; }
+        
+        /* Smooth Message Animations */
+        .message { display: flex; gap: 16px; max-width: 85%; opacity: 0; animation: messagePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes messagePop { 0% { opacity: 0; transform: translateY(30px) scale(0.95); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        
+        .msg-content { display: flex; flex-direction: column; gap: 6px; width: fit-content; max-width: 100%; }
+        .message.ai { align-self: flex-end; flex-direction: row-reverse; transform-origin: bottom right; }
+        .message.user { align-self: flex-start; flex-direction: row; transform-origin: bottom left; }
   `;
 
   const templates = {
@@ -24,144 +43,91 @@ export function getChatbotTemplate(type = 'default', company) {
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>${name} - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #050505;
-            --card-bg: #111111;
-            --border: #333333;
+            --bg: #030303;
+            --card-bg: #0d0d0d;
+            --border: #222222;
             --text: #ffffff;
-            --text-muted: #888888;
+            --text-muted: #999999;
             --primary: #4f46e5;
-            --primary-glow: rgba(79, 70, 229, 0.4);
+            --scrollbar-thumb: #333;
             --font-ar: 'Cairo', sans-serif;
         }
 
         ${typingStyle}
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-ar); }
+        ${resetAndLayout}
         
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .chat-container {
-            width: 100%; max-width: 600px; height: 100vh; display: flex; flex-direction: column;
-            background: var(--card-bg);
-            border-left: 1px solid var(--border); border-right: 1px solid var(--border);
-            box-shadow: 0 0 40px rgba(0,0,0,0.5);
-            position: relative;
-        }
+        body { background-color: var(--bg); color: var(--text); }
+        .chat-container { background: var(--bg); }
 
         .header {
-            padding: 20px 24px; border-bottom: 1px solid var(--border);
+            padding: 20px 30px; border-bottom: 1px solid var(--border);
             display: flex; align-items: center; justify-content: space-between;
-            background: rgba(10, 10, 15, 0.4);
-            backdrop-filter: blur(10px);
+            background: rgba(13, 13, 13, 0.8); backdrop-filter: blur(12px); z-index: 10;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
         }
-        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
         .company-logo, .company-logo-placeholder {
-            width: 45px; height: 45px; border-radius: 14px; object-fit: cover;
-            border: 2px solid var(--border);
+            width: 48px; height: 48px; border-radius: 14px; object-fit: cover;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid var(--border);
         }
         .company-logo-placeholder {
-            background: linear-gradient(135deg, var(--border), #222);
-            display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 20px;
+            background: linear-gradient(135deg, #111, #333);
+            display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 22px;
         }
-        .header-info h1 { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
-        .status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #22c55e; }
-        .status-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-
-        .messages-area {
-            flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 20px;
-            scroll-behavior: smooth;
-        }
-        .messages-area::-webkit-scrollbar { width: 5px; }
-        .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-        .message { display: flex; gap: 12px; max-width: 85%; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .message.ai { align-self: flex-end; flex-direction: row-reverse; }
-        .message.user { align-self: flex-start; flex-direction: row; }
+        .header-info h1 { font-size: 19px; font-weight: 700; margin-bottom: 3px; letter-spacing: -0.5px; }
+        .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #10b981; font-weight: 600; }
+        .status-dot { width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 12px #10b981; animation: pulse 2s infinite ease-in-out; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
         .msg-avatar {
-            width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; font-size: 14px;
+            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        .message.ai .msg-avatar { background: var(--text); color: var(--bg); }
+        .message.ai .msg-avatar { background: linear-gradient(135deg, var(--text), #ccc); color: var(--bg); }
         .message.user .msg-avatar { background: var(--border); color: var(--text); }
 
         .msg-bubble {
-            padding: 14px 18px; border-radius: 18px; font-size: 15px; line-height: 1.6;
-            position: relative; white-space: pre-wrap; word-break: break-word; text-align: right;
+            padding: 16px 20px; border-radius: 20px; font-size: 16px; line-height: 1.6;
+            white-space: pre-wrap; word-break: break-word; text-align: right; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .message.ai .msg-bubble { 
-            background: transparent; border: 1px solid var(--border); 
-            border-bottom-left-radius: 4px; color: var(--text);
-        }
-        .message.user .msg-bubble { 
-            background: var(--text); color: var(--bg);
-            border-bottom-right-radius: 4px;
-        }
+        .message.ai .msg-bubble { background: var(--card-bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; color: var(--text); }
+        .message.user .msg-bubble { background: var(--text); color: var(--bg); border-bottom-right-radius: 4px; font-weight: 600; }
         
-        .message .msg-content {
-            display: flex; flex-direction: column; gap: 4px; 
-            width: fit-content; max-width: 100%;
-        }
-        .message.ai .msg-content { align-items: flex-start; }
-        .message.user .msg-content { align-items: flex-end; }
-
-        .input-area {
-            padding: 20px 24px; background: var(--bg); border-top: 1px solid var(--border);
-        }
+        .input-area { padding: 25px 30px; background: var(--bg); border-top: 1px solid var(--border); position: relative; }
         .input-wrapper {
-            display: flex; gap: 12px; background: var(--card-bg); padding: 8px;
-            border-radius: 16px; border: 1px solid var(--border); transition: all 0.3s;
+            display: flex; gap: 15px; background: var(--card-bg); padding: 10px;
+            border-radius: 20px; border: 1px solid var(--border); transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
-        .input-wrapper:focus-within { border-color: var(--text); box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
-        input {
-            flex: 1; background: transparent; border: none; outline: none; color: var(--text);
-            padding: 10px 15px; font-size: 15px;
-        }
+        .input-wrapper:focus-within { border-color: var(--text); box-shadow: 0 8px 30px rgba(255, 255, 255, 0.08); transform: translateY(-2px); }
+        input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); padding: 10px 15px; font-size: 16px; }
         .send-btn {
-            width: 45px; height: 45px; border-radius: 12px; background: var(--text);
-            border: none; color: var(--bg); cursor: pointer; transition: 0.2s;
-            display: flex; align-items: center; justify-content: center; font-size: 18px;
+            width: 50px; height: 50px; border-radius: 16px; background: var(--text); border: none; color: var(--bg); cursor: pointer; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
         }
-        .send-btn i { transform: scaleX(-1); }
-        .send-btn:hover { transform: scale(1.05); }
-        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .send-btn i { transform: scaleX(-1); transition: transform 0.3s; }
+        .send-btn:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 20px rgba(255,255,255,0.2); }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        .ai-buttons-container {
-            display: flex; flex-direction: column; gap: 6px;
-            width: 100%; min-width: 150px; box-sizing: border-box; 
-            align-items: stretch; margin-top: 8px;
-        }
-        
+        .ai-buttons-container { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 10px; }
         .product-btn {
-            background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-align: center; width: 100%; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 14px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease; text-align: right;
         }
-        .product-btn:hover { border-color: var(--text); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,255,255,0.1); background: var(--text); color: var(--bg); }
+        .product-btn:hover { border-color: var(--text); background: var(--text); color: var(--bg); transform: translateX(-5px); }
 
         .autocomplete-menu {
-            position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; maxWidth: 300px;
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); overflow: hidden;
-            display: none; flex-direction: column; z-index: 10;
+            position: absolute; bottom: calc(100% + 15px); left: 30px; width: calc(100% - 60px);
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.6); overflow: hidden; display: none; flex-direction: column; z-index: 100;
         }
-        .autocomplete-item { padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px; }
-        .autocomplete-item:hover { background: var(--primary); color: #ffffff; }
-
-        @media (max-width: 480px) { .chat-container { border: none; height: 100vh; } .msg-bubble { font-size: 14px; } }
+        .autocomplete-item { padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; font-weight: 600; }
+        .autocomplete-item:hover { background: var(--text); color: var(--bg); padding-right: 25px; }
     </style>
 </head>
 <body>
@@ -174,10 +140,10 @@ export function getChatbotTemplate(type = 'default', company) {
                 <div class="status"><div class="status-dot"></div> متصل الآن</div>
             </div>
         </div>
-        <div style="font-size: 11px; color: var(--text-muted)">مدعوم بواسطة <a href="/" style="color: var(--text); text-decoration: none; font-weight: bold;">VOXIO</a></div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">مدعوم بواسطة <a href="/" style="color: var(--text); text-decoration: none; font-weight: 800;">VOXIO</a></div>
     </div>
     <div class="messages-area" id="chat-box"></div>
-    <div class="input-area" style="position: relative;">
+    <div class="input-area">
         <div class="autocomplete-menu" id="autocomplete-menu"></div>
         <div class="input-wrapper">
             <input type="text" id="user-input" placeholder="اكتب سؤالك أو اكتب / للأوامر..." autocomplete="off">
@@ -188,50 +154,71 @@ export function getChatbotTemplate(type = 'default', company) {
 <script>${script}</script>
 </body>
 </html>`,
+
     'glassmorphism': `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>${name} - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #0f172a;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --border: rgba(255, 255, 255, 0.1);
-            --text: #f1f5f9;
-            --primary: #38bdf8;
-            --secondary: #818cf8;
+            --glass-bg: rgba(15, 23, 42, 0.4);
+            --border: rgba(255, 255, 255, 0.15);
+            --text: #f8fafc;
+            --primary: #0ea5e9;
+            --secondary: #6366f1;
+            --scrollbar-thumb: rgba(255,255,255,0.2);
             --font-ar: 'Cairo', sans-serif;
         }
         ${typingStyle}
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-ar); }
-        body { background: radial-gradient(circle at top left, #1e293b, #0f172a); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .chat-container { width: 100%; max-width: 600px; height: 95vh; display: flex; flex-direction: column; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); margin: 20px; overflow: hidden; }
-        .header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.03); }
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .company-logo, .company-logo-placeholder { width: 50px; height: 50px; border-radius: 16px; object-fit: cover; border: 2px solid var(--primary); box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
-        .company-logo-placeholder { background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 20px; }
-        .header-info h1 { font-size: 20px; font-weight: 800; background: linear-gradient(to right, #ffffff, #cbd5e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4ade80; }
-        .status-dot { width: 10px; height: 10px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 10px #4ade80; animation: pulse 2s infinite; }
-        .messages-area { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 20px; }
-        .message { display: flex; gap: 15px; max-width: 80%; animation: fadeIn 0.4s ease; }
-        .message.ai { align-self: flex-end; flex-direction: row-reverse; }
-        .message.user { align-self: flex-start; }
-        .msg-bubble { padding: 16px 20px; border-radius: 20px; font-size: 15px; line-height: 1.6; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); position: relative; }
-        .message.ai .msg-bubble { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-bottom-left-radius: 5px; color: #e2e8f0; }
-        .message.user .msg-bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #ffffff; border-bottom-right-radius: 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .input-area { padding: 24px; background: rgba(0,0,0,0.2); }
-        .input-wrapper { display: flex; gap: 12px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 18px; border: 1px solid var(--border); transition: 0.3s; }
-        .input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); }
-        input { flex: 1; background: transparent; border: none; outline: none; color: #ffffff; padding: 12px; font-size: 16px; }
-        .send-btn { width: 48px; height: 48px; border-radius: 14px; background: var(--primary); color: #ffffff; border: none; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        ${resetAndLayout}
+        
+        body { 
+            background: linear-gradient(45deg, #0f172a, #1e1b4b, #0f172a, #082f49);
+            background-size: 400% 400%; animation: gradientBG 15s ease infinite; color: var(--text);
+        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .chat-container { background: var(--glass-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); }
+        
+        /* Floating glowing orbs in background */
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; animation: float 10s infinite alternate; }
+        .orb-1 { top: 10%; left: 10%; width: 300px; height: 300px; background: rgba(14, 165, 233, 0.3); animation-delay: 0s; }
+        .orb-2 { bottom: 10%; right: 10%; width: 400px; height: 400px; background: rgba(99, 102, 241, 0.3); animation-delay: -5s; }
+        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.2); } }
+
+        .header { padding: 25px 35px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.03); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .header-left { display: flex; align-items: center; gap: 18px; }
+        .company-logo, .company-logo-placeholder { width: 55px; height: 55px; border-radius: 18px; object-fit: cover; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 0 20px rgba(14, 165, 233, 0.4); }
+        .company-logo-placeholder { background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 24px; }
+        .header-info h1 { font-size: 22px; font-weight: 800; background: linear-gradient(to right, #ffffff, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+        .status { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #34d399; font-weight: 600;}
+        .status-dot { width: 10px; height: 10px; background: #34d399; border-radius: 50%; box-shadow: 0 0 15px #34d399; animation: pulse 2s infinite; }
+
+        .msg-bubble { padding: 18px 22px; border-radius: 22px; font-size: 16px; line-height: 1.6; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .message.ai .msg-bubble { background: rgba(255, 255, 255, 0.05); border-bottom-left-radius: 6px; }
+        .message.user .msg-bubble { background: linear-gradient(135deg, rgba(14, 165, 233, 0.8), rgba(99, 102, 241, 0.8)); border-bottom-right-radius: 6px; border: 1px solid rgba(255,255,255,0.3); font-weight: 600; }
+        .msg-avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid var(--border); background: rgba(255,255,255,0.1); }
+
+        .input-area { padding: 30px 35px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); }
+        .input-wrapper { display: flex; gap: 15px; background: rgba(255,255,255,0.07); padding: 10px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.4s ease; backdrop-filter: blur(10px); }
+        .input-wrapper:focus-within { border-color: var(--primary); background: rgba(255,255,255,0.1); box-shadow: 0 0 30px rgba(14, 165, 233, 0.3); transform: translateY(-3px); }
+        input { flex: 1; background: transparent; border: none; outline: none; color: #ffffff; padding: 12px 18px; font-size: 17px; }
+        input::placeholder { color: rgba(255,255,255,0.5); }
+        .send-btn { width: 55px; height: 55px; border-radius: 18px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #ffffff; border: none; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4); }
+        .send-btn i { transform: scaleX(-1); }
+        .send-btn:hover { transform: scale(1.08) rotate(-5deg); box-shadow: 0 8px 25px rgba(14, 165, 233, 0.6); }
+        
+        .product-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px 20px; border-radius: 16px; cursor: pointer; backdrop-filter: blur(5px); transition: all 0.3s ease; text-align: right; font-weight: 600; }
+        .product-btn:hover { background: rgba(255,255,255,0.15); border-color: #fff; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
     <div class="chat-container">
         <div class="header">
             <div class="header-left">
@@ -241,11 +228,11 @@ export function getChatbotTemplate(type = 'default', company) {
                     <div class="status"><div class="status-dot"></div> متصل الآن</div>
                 </div>
             </div>
-            <div style="font-size: 11px; opacity: 0.6">مدعوم بواسطة <b>VOXIO</b></div>
+            <div style="font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 600;">مدعوم بواسطة <b style="color:#fff;">VOXIO</b></div>
         </div>
         <div class="messages-area" id="chat-box"></div>
         <div class="input-area">
-            <div id="autocomplete-menu" style="display:none; position:absolute; bottom:100px; background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:15px; width:90%; padding:10px; z-index:100;"></div>
+            <div id="autocomplete-menu" style="display:none; position:absolute; bottom:calc(100% + 20px); background:var(--glass-bg); backdrop-filter:blur(25px); border:1px solid var(--border); border-radius:20px; width:calc(100% - 70px); z-index:100; overflow: hidden; box-shadow: 0 -10px 40px rgba(0,0,0,0.5);"></div>
             <div class="input-wrapper">
                 <input type="text" id="user-input" placeholder="اكتب سؤالك هنا..." autocomplete="off">
                 <button id="send-btn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
@@ -255,39 +242,58 @@ export function getChatbotTemplate(type = 'default', company) {
     <script>${script}</script>
 </body>
 </html>`,
+
     'luxury': `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>${name} - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #0c0a09;
-            --surface: #1c1917;
-            --primary: #d97706;
-            --text: #fafaf9;
-            --border: #44403c;
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --primary: #d4af37; /* Premium Gold */
+            --primary-dark: #b5952f;
+            --text: #ffffff;
+            --border: #2a2a2a;
+            --scrollbar-thumb: #d4af37;
             --font-ar: 'Cairo', sans-serif;
         }
         ${typingStyle}
-        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: var(--font-ar); }
-        .chat-container { width: 100%; max-width: 650px; height: 100vh; display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
-        .header { padding: 30px; border-bottom: 1px solid var(--border); text-align: center; }
-        .company-logo { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; }
-        .header h1 { font-size: 22px; color: var(--primary); font-weight: 800; letter-spacing: 1px; }
-        .messages-area { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px; }
-        .msg-bubble { padding: 18px 24px; border-radius: 12px; font-size: 16px; border: 1px solid var(--border); }
-        .message.ai { align-self: flex-end; flex-direction: row-reverse; width: 90%; }
-        .message.ai .msg-bubble { background: rgba(217, 119, 6, 0.05); border-color: rgba(217, 119, 6, 0.2); }
-        .message.user { align-self: flex-start; width: 90%; }
-        .message.user .msg-bubble { background: var(--bg); border-color: var(--border); }
-        .input-area { padding: 30px; background: var(--bg); }
-        .input-wrapper { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 5px; }
-        input { flex: 1; background: transparent; border: none; color: #ffffff; padding: 15px; font-size: 16px; outline: none; }
-        .send-btn { background: var(--primary); color: #000000; font-weight: bold; border: none; padding: 0 25px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        ${resetAndLayout}
+        
+        body { background: var(--bg); color: var(--text); }
+        .chat-container { background: var(--surface); background-image: radial-gradient(circle at top, #111 0%, #000 100%); }
+        
+        .header { padding: 40px 30px; border-bottom: 1px solid var(--border); text-align: center; position: relative; }
+        .header::after { content: ''; position: absolute; bottom: -1px; left: 10%; width: 80%; height: 1px; background: linear-gradient(90deg, transparent, var(--primary), transparent); }
+        
+        .company-logo, .company-logo-placeholder { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin: 0 auto 15px auto; box-shadow: 0 0 30px rgba(212, 175, 55, 0.15); }
+        .company-logo-placeholder { background: transparent; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 28px; }
+        .header h1 { font-size: 26px; color: var(--text); font-weight: 800; letter-spacing: 2px; margin-bottom: 5px; }
+        
+        .messages-area { padding: 40px; }
+        .msg-bubble { padding: 20px 28px; border-radius: 0; font-size: 16px; border: 1px solid var(--border); line-height: 1.8; letter-spacing: 0.5px; }
+        .message.ai .msg-bubble { background: rgba(212, 175, 55, 0.03); border-color: rgba(212, 175, 55, 0.3); border-right: 3px solid var(--primary); }
+        .message.user .msg-bubble { background: var(--bg); border-color: var(--border); border-left: 3px solid #fff; font-weight: 600; }
+        .msg-avatar { display: none; } /* Hidden for minimal luxury look */
+
+        .input-area { padding: 40px; background: var(--surface); position: relative; }
+        .input-area::before { content: ''; position: absolute; top: 0; left: 10%; width: 80%; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+        
+        .input-wrapper { display: flex; background: var(--bg); border: 1px solid var(--border); padding: 8px; transition: all 0.4s; }
+        .input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 20px rgba(212, 175, 55, 0.1); }
+        input { flex: 1; background: transparent; border: none; color: #ffffff; padding: 18px 25px; font-size: 17px; outline: none; }
+        input::placeholder { color: #555; text-transform: uppercase; letter-spacing: 1px; font-size: 14px; }
+        
+        .send-btn { background: var(--primary); color: #000; font-weight: 800; border: none; padding: 0 40px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s; }
+        .send-btn:hover { background: var(--primary-dark); transform: scale(0.98); }
+        
+        .product-btn { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 15px; text-transform: uppercase; letter-spacing: 1px; font-size: 13px; font-weight: 700; transition: 0.4s; }
+        .product-btn:hover { background: var(--primary); color: #000; }
     </style>
 </head>
 <body>
@@ -295,25 +301,27 @@ export function getChatbotTemplate(type = 'default', company) {
         <div class="header">
             ${logoHtml}
             <h1>${name}</h1>
-            <p style="font-size: 12px; opacity: 0.5;">PREMIUM ASSISTANT</p>
+            <p style="font-size: 12px; color: var(--primary); letter-spacing: 3px; font-weight: 600;">PREMIUM ASSISTANT</p>
         </div>
         <div class="messages-area" id="chat-box"></div>
         <div class="input-area">
-            <div id="autocomplete-menu" style="display:none; position:absolute; bottom:120px; background:var(--surface); border:1px solid var(--primary); width:80%; z-index:100;"></div>
+            <div id="autocomplete-menu" style="display:none; position:absolute; bottom:calc(100% + 20px); background:var(--bg); border:1px solid var(--primary); width:calc(100% - 80px); z-index:100; left: 40px;"></div>
             <div class="input-wrapper">
                 <input type="text" id="user-input" placeholder="كيف يمكننا خدمتك؟">
                 <button id="send-btn" class="send-btn">إرسال</button>
             </div>
+            <div style="text-align: center; margin-top: 20px; font-size: 10px; color: #444; letter-spacing: 2px;">POWERED BY VOXIO</div>
         </div>
     </div>
     <script>${script}</script>
 </body>
 </html>`,
+
     'cyberpunk': `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>${name} - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -321,35 +329,68 @@ export function getChatbotTemplate(type = 'default', company) {
         :root {
             --bg: #050505;
             --neon-blue: #00f3ff;
-            --neon-pink: #ff00ff;
+            --neon-pink: #ff003c;
+            --neon-yellow: #fcee0a;
             --text: #ffffff;
+            --scrollbar-thumb: var(--neon-blue);
             --font-ar: 'Cairo', sans-serif;
         }
         ${typingStyle}
-        body { background: var(--bg); color: var(--text); font-family: var(--font-ar); overflow: hidden; height: 100vh; }
-        .chat-container { width: 100%; max-width: 600px; height: 90vh; margin: 5vh auto; background: rgba(0,0,0,0.8); border: 2px solid var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue); display: flex; flex-direction: column; position: relative; }
-        .chat-container::before { content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px; border: 1px solid var(--neon-pink); z-index: -1; animation: glitch 2s infinite; }
-        .header { padding: 20px; border-bottom: 2px solid var(--neon-blue); display: flex; justify-content: space-between; align-items: center; background: rgba(0, 243, 255, 0.1); }
-        .messages-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .msg-bubble { padding: 12px 18px; border: 1px solid var(--neon-blue); background: rgba(0, 243, 255, 0.05); position: relative; font-size: 15px; }
-        .message.user .msg-bubble { border-color: var(--neon-pink); background: rgba(255, 0, 255, 0.05); align-self: flex-start; }
-        .message.ai .msg-bubble { align-self: flex-end; }
-        .input-area { padding: 20px; border-top: 2px solid var(--neon-blue); }
-        input { flex: 1; background: #000; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 12px; outline: none; }
-        .send-btn { background: var(--neon-blue); color: #000000; border: none; padding: 10px 20px; font-weight: 800; cursor: pointer; box-shadow: 0 0 10px var(--neon-blue); }
+        ${resetAndLayout}
+        
+        body { background: var(--bg); color: var(--text); background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 243, 255, 0.05) 2px, rgba(0, 243, 255, 0.05) 4px); }
+        .chat-container { border: 2px solid var(--neon-blue); box-shadow: inset 0 0 50px rgba(0, 243, 255, 0.1); position: relative; overflow: hidden; background: rgba(0,0,0,0.8); }
+        
+        /* Glitch effect on container edges */
+        .chat-container::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 2px solid var(--neon-pink); opacity: 0.5; z-index: -1; animation: glitch 3s infinite linear alternate-reverse; pointer-events: none; }
+        @keyframes glitch { 0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 2px); } 20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -2px); } 40% { clip-path: inset(40% 0 50% 0); transform: translate(2px, 2px); } 60% { clip-path: inset(80% 0 5% 0); transform: translate(-2px, -2px); } 80% { clip-path: inset(10% 0 70% 0); transform: translate(2px, 2px); } 100% { clip-path: inset(30% 0 50% 0); transform: translate(-2px, -2px); } }
+
+        .header { padding: 25px; border-bottom: 3px solid var(--neon-blue); display: flex; justify-content: space-between; align-items: center; background: rgba(0, 243, 255, 0.15); position: relative; text-transform: uppercase; }
+        .header::before { content: 'SYS.ACTIVE'; position: absolute; bottom: -10px; left: 20px; background: var(--bg); color: var(--neon-blue); font-size: 10px; padding: 0 5px; font-weight: bold; border: 1px solid var(--neon-blue); }
+        
+        .company-logo, .company-logo-placeholder { width: 50px; height: 50px; border-radius: 0; border: 2px solid var(--neon-yellow); clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%); }
+        .company-logo-placeholder { background: var(--neon-blue); color: #000; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+
+        .messages-area { background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%); }
+        
+        .msg-bubble { padding: 15px 20px; border: 1px solid var(--neon-blue); background: rgba(0, 243, 255, 0.05); position: relative; font-size: 16px; border-radius: 0; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+        .message.user .msg-bubble { border-color: var(--neon-pink); background: rgba(255, 0, 60, 0.1); color: #fff; box-shadow: -5px 5px 0 rgba(255,0,60,0.2); }
+        .message.ai .msg-bubble { border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: 5px 5px 0 rgba(0,243,255,0.2); }
+        .msg-avatar { display: none; }
+
+        .input-area { padding: 25px; border-top: 3px solid var(--neon-pink); background: rgba(0,0,0,0.9); position: relative; }
+        .input-area::before { content: 'INPUT_REQ'; position: absolute; top: -10px; right: 20px; background: var(--bg); color: var(--neon-pink); font-size: 10px; padding: 0 5px; font-weight: bold; border: 1px solid var(--neon-pink); }
+        
+        .input-wrapper { display: flex; gap: 15px; }
+        input { flex: 1; background: #000; border: 2px solid var(--neon-blue); color: var(--neon-blue); padding: 15px; outline: none; font-size: 16px; font-family: monospace; transition: 0.3s; }
+        input:focus { border-color: var(--neon-yellow); box-shadow: 0 0 15px rgba(252, 238, 10, 0.3); }
+        input::placeholder { color: rgba(0,243,255,0.4); }
+        
+        .send-btn { background: var(--neon-pink); color: #000; border: none; padding: 0 30px; font-weight: 900; font-size: 18px; cursor: pointer; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); transition: 0.2s; }
+        .send-btn:hover { background: var(--neon-yellow); color: #000; box-shadow: 0 0 20px var(--neon-yellow); transform: scale(1.05); }
+
+        .product-btn { background: #000; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 12px; font-weight: bold; text-transform: uppercase; transition: 0.3s; cursor: pointer; }
+        .product-btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="header">
-            <div style="display:flex; align-items:center; gap:10px;">${logoHtml} <b>${name.toUpperCase()} SYSTEM</b></div>
-            <div style="font-size:10px; color:var(--neon-blue)">STATUS: ONLINE</div>
+            <div style="display:flex; align-items:center; gap:15px;">
+                ${logoHtml} 
+                <div>
+                    <div style="font-size:20px; font-weight:900; color:var(--text); text-shadow: 2px 2px var(--neon-pink);">${name.toUpperCase()}</div>
+                    <div style="font-size:11px; color:var(--neon-blue); font-weight:bold; letter-spacing:2px;">LINK ESTABLISHED</div>
+                </div>
+            </div>
+            <div style="font-size:12px; color:var(--neon-yellow); font-weight:900; writing-mode: vertical-rl;">VOXIO</div>
         </div>
         <div class="messages-area" id="chat-box"></div>
         <div class="input-area">
-            <div class="input-wrapper" style="display:flex; gap:10px;">
-                <input type="text" id="user-input" placeholder="ENTER COMMAND...">
-                <button id="send-btn" class="send-btn">EXECUTE</button>
+            <div id="autocomplete-menu" style="display:none; position:absolute; bottom:calc(100% + 20px); background:#000; border:2px solid var(--neon-yellow); width:calc(100% - 50px); z-index:100;"></div>
+            <div class="input-wrapper">
+                <input type="text" id="user-input" placeholder="> ENTER_COMMAND_">
+                <button id="send-btn" class="send-btn">EXEC</button>
             </div>
         </div>
     </div>
@@ -401,7 +442,12 @@ function getTemplateScript(apiUrl, apiKey) {
                           '</div>';
         
         box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
+        
+        // Smooth scroll to bottom after animation starts
+        setTimeout(() => {
+            box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+        }, 50);
+        
         return div;
     }
 
@@ -425,7 +471,9 @@ function getTemplateScript(apiUrl, apiKey) {
             const content = parentRow.querySelector('.msg-content');
             if (content) content.appendChild(container);
         }
-        box.scrollTop = box.scrollHeight;
+        setTimeout(() => {
+            box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+        }, 50);
     }
 
     async function send() {
@@ -440,7 +488,6 @@ function getTemplateScript(apiUrl, apiKey) {
         append('user', text);
         input.value = '';
 
-        // Create typing/loading bubble
         const loadingRow = append('ai', '<div class="typing"><span></span><span></span><span></span></div>');
         const bubble = loadingRow.querySelector('.msg-bubble');
 
@@ -468,7 +515,9 @@ function getTemplateScript(apiUrl, apiKey) {
             input.disabled = false;
             btn.disabled = false;
             input.focus();
-            box.scrollTop = box.scrollHeight;
+            setTimeout(() => {
+                box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+            }, 50);
         }
     }
 
@@ -494,7 +543,7 @@ function getTemplateScript(apiUrl, apiKey) {
                         };
                         autocompMenu.appendChild(div);
                     });
-                    autocompMenu.style.display = 'block';
+                    autocompMenu.style.display = 'flex';
                 } else {
                     autocompMenu.style.display = 'none';
                 }

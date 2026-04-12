@@ -89,7 +89,7 @@ Remember: Modify the code to fulfill the current request while respecting the co
       let cleaned = aiResult;
       // Strip markdown fences if present
       cleaned = cleaned.replace(/```json\s*/gi, '').replace(/```html\s*/gi, '').replace(/```\s*/gi, '');
-      
+
       const startIdx = cleaned.indexOf('{');
       const endIdx = cleaned.lastIndexOf('}');
       if (startIdx !== -1 && endIdx !== -1) {
