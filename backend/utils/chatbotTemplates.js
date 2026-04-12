@@ -9,22 +9,24 @@ export function getChatbotTemplate(type = 'default', company) {
     ? `<img src="${logo}" alt="${name}" class="company-logo">`
     : `<div class="company-logo-placeholder">${name.charAt(0)}</div>`;
 
+  const script = getTemplateScript(apiUrl, apiKey);
+
   const templates = {
     'default': `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${name} - Chat</title>
+    <title>${name} - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg: #050505;
-            --card-bg: #111;
-            --border: #333;
-            --text: #fff;
-            --text-muted: #888;
+            --card-bg: #111111;
+            --border: #333333;
+            --text: #ffffff;
+            --text-muted: #888888;
             --primary: #4f46e5;
             --primary-glow: rgba(79, 70, 229, 0.4);
             --font-ar: 'Cairo', sans-serif;
@@ -129,29 +131,6 @@ export function getChatbotTemplate(type = 'default', company) {
         .send-btn:hover { transform: scale(1.05); }
         .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .welcome-box {
-            text-align: center; margin: auto 0; padding: 40px 20px;
-        }
-        .welcome-icon {
-            font-size: 50px; color: var(--text); margin-bottom: 20px;
-        }
-        .welcome-box h2 { font-size: 24px; margin-bottom: 10px; }
-        .welcome-box p { color: var(--text-muted); font-size: 16px; }
-
-        .autocomplete-menu {
-            position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; maxWidth: 300px;
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); overflow: hidden;
-            display: none; flex-direction: column; z-index: 10;
-        }
-        .autocomplete-item {
-            padding: 12px 15px; border-bottom: 1px solid var(--border);
-            cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px;
-        }
-        .autocomplete-item:hover { background: var(--primary); color: #fff; }
-        .autocomplete-cmd { font-weight: 600; font-size: 14px; }
-        .autocomplete-desc { font-size: 11px; opacity: 0.8; }
-
         .ai-buttons-container {
             display: flex; flex-direction: column; gap: 6px;
             width: 100%; min-width: 150px; box-sizing: border-box; 
@@ -182,6 +161,18 @@ export function getChatbotTemplate(type = 'default', company) {
         }
         .product-btn:active { transform: translateY(0); }
 
+        .autocomplete-menu {
+            position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; maxWidth: 300px;
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); overflow: hidden;
+            display: none; flex-direction: column; z-index: 10;
+        }
+        .autocomplete-item {
+            padding: 12px 15px; border-bottom: 1px solid var(--border);
+            cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px;
+        }
+        .autocomplete-item:hover { background: var(--primary); color: #ffffff; }
+
         @media (max-width: 480px) {
             .chat-container { border: none; height: 100vh; }
             .msg-bubble { font-size: 14px; }
@@ -192,9 +183,9 @@ export function getChatbotTemplate(type = 'default', company) {
 <div class="chat-container">
     <div class="header">
         <div class="header-left">
-            \${logoHtml}
+            ${logoHtml}
             <div class="header-info">
-                <h1>\${name}</h1>
+                <h1>${name}</h1>
                 <div class="status"><div class="status-dot"></div> متصل الآن</div>
             </div>
         </div>
@@ -202,10 +193,9 @@ export function getChatbotTemplate(type = 'default', company) {
     </div>
 
     <div class="messages-area" id="chat-box">
-        <div class="welcome-box">
-            <div class="welcome-icon"><i class="fas fa-robot"></i></div>
-            <h2>أهلاً بك في \${name}</h2>
-            <p>أنا مساعدك الذكي، كيف يمكنني خدمتك اليوم؟</p>
+        <div style="text-align: center; padding: 40px 20px;">
+           <h2 style="font-size: 24px;">أهلاً بك في ${name}</h2>
+           <p style="color: var(--text-muted);">كيف يمكنني مساعدتك اليوم؟</p>
         </div>
     </div>
 
@@ -217,170 +207,8 @@ export function getChatbotTemplate(type = 'default', company) {
         </div>
     </div>
 </div>
-
 <script>
-(function() {
-    const box = document.getElementById('chat-box');
-    const input = document.getElementById('user-input');
-    const btn = document.getElementById('send-btn');
-    const autocompMenu = document.getElementById('autocomplete-menu');
-    let sid = localStorage.getItem('voxio_sid');
-    if (!sid) {
-        sid = "sess_" + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('voxio_sid', sid);
-    }
-    let isProcessing = false;
-    let webCommands = [];
-
-    fetch('\${apiUrl}/public/commands/\${apiKey}')
-        .then(r => r.json())
-        .then(d => { if (d.success) webCommands = d.commands; })
-        .catch(e => console.error(e));
-
-    fetch('\${apiUrl}/public/history?apiKey=\${apiKey}&sessionId=' + sid)
-        .then(r => r.json())
-        .then(d => {
-            if (d.success && d.history.length > 0) {
-                const welcome = box.querySelector('.welcome-box');
-                if (welcome) welcome.remove();
-                d.history.forEach(m => append(m.sender, m.text));
-            }
-        })
-        .catch(e => console.error(e));
-
-    function append(role, text) {
-        const welcome = box.querySelector('.welcome-box');
-        if (welcome) welcome.remove();
-
-        const div = document.createElement('div');
-        div.className = 'message ' + role;
-        const safeText = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
-        
-        let htmlContent = '<div class="msg-avatar"><i class="fas fa-' + (role === "ai" ? "robot" : "user") + '"></i></div>' +
-                          '<div class="msg-content">' +
-                            '<div class="msg-bubble" dir="auto">' + safeText + '</div>' +
-                          '</div>';
-        
-        div.innerHTML = htmlContent;
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-        return div;
-    }
-
-    function appendButtons(buttons, parentRow) {
-        if (!buttons || buttons.length === 0) return;
-        const container = document.createElement('div');
-        container.className = 'ai-buttons-container';
-        
-        buttons.forEach(function(btnText) {
-            const btn = document.createElement('button');
-            btn.className = 'product-btn';
-            btn.textContent = btnText;
-            btn.onclick = function() {
-                input.value = btnText;
-                send();
-            };
-            container.appendChild(btn);
-        });
-        
-        if (parentRow) {
-            const content = parentRow.querySelector('.msg-content');
-            if (content) content.appendChild(container);
-            else box.appendChild(container);
-        } else {
-            box.appendChild(container);
-        }
-        
-        box.scrollTop = box.scrollHeight;
-    }
-
-    async function send() {
-        autocompMenu.style.display = 'none';
-        const text = input.value.trim();
-        if (!text || isProcessing) return;
-
-        isProcessing = true;
-        input.disabled = true;
-        btn.disabled = true;
-        
-        append('user', text);
-        input.value = '';
-
-        const loadingId = 'loading-' + Date.now();
-        const loadingDiv = document.createElement('div');
-        loadingId.id = loadingId;
-        loadingDiv.className = 'message ai';
-        loadingDiv.innerHTML = '<div class="msg-avatar"><i class="fas fa-robot"></i></div><div class="msg-bubble" dir="auto"><i class="fas fa-spinner fa-spin"></i> يكتب...</div>';
-        box.appendChild(loadingDiv);
-        box.scrollTop = box.scrollHeight;
-
-        try {
-            const res = await fetch('\${apiUrl}/public/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: '\${apiKey}', prompt: text, sessionId: sid })
-            });
-            const data = await res.json();
-            
-            document.getElementById(loadingId)?.remove();
-            
-            if (res.ok) {
-                const aiRow = append('ai', data.reply || "عذراً، حدث خطأ ما.");
-                if (data.buttons && data.buttons.length > 0) {
-                    appendButtons(data.buttons, aiRow);
-                }
-            } else {
-                append('ai', data.error || "عذراً، حدث خطأ ما.");
-            }
-        } catch (e) {
-            document.getElementById(loadingId)?.remove();
-            append('ai', "⚠ خطأ في الاتصال بالسيرفر. يرجى المحاولة مرة أخرى.");
-        } finally {
-            isProcessing = false;
-            input.disabled = false;
-            btn.disabled = false;
-            input.focus();
-        }
-    }
-
-    btn.addEventListener('click', send);
-    input.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') send();
-    });
-
-    input.addEventListener('input', function(e) {
-        const text = input.value;
-        if (text.startsWith('/') && webCommands.length > 0) {
-            const query = text.replace('/', '').toLowerCase();
-            const matches = webCommands.filter(c => c.command.toLowerCase().includes(query));
-            if (matches.length > 0) {
-                autocompMenu.innerHTML = '';
-                matches.forEach(c => {
-                    const div = document.createElement('div');
-                    div.className = 'autocomplete-item';
-                    div.innerHTML = '<span class="autocomplete-cmd">/' + c.command + '</span>' +
-                                    '<span class="autocomplete-desc">' + c.description + '</span>';
-                    div.onclick = function() {
-                        input.value = '/' + c.command;
-                        send();
-                    };
-                    autocompMenu.appendChild(div);
-                });
-                autocompMenu.style.display = 'flex';
-            } else {
-                autocompMenu.style.display = 'none';
-            }
-        } else {
-            autocompMenu.style.display = 'none';
-        }
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!autocompMenu.contains(e.target) && e.target !== input) {
-            autocompMenu.style.display = 'none';
-        }
-    });
-})();
+${script}
 </script>
 </body>
 </html>`,
@@ -389,7 +217,7 @@ export function getChatbotTemplate(type = 'default', company) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${name} - Chat</title>
+    <title>${name} - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -439,9 +267,9 @@ export function getChatbotTemplate(type = 'default', company) {
         }
         .company-logo-placeholder {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
-            display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 20px;
+            display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 20px;
         }
-        .header-info h1 { font-size: 20px; font-weight: 800; background: linear-gradient(to right, #fff, #cbd5e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-info h1 { font-size: 20px; font-weight: 800; background: linear-gradient(to right, #ffffff, #cbd5e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4ade80; }
         .status-dot { width: 10px; height: 10px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 10px #4ade80; animation: pulse 2s infinite; }
 
@@ -465,7 +293,7 @@ export function getChatbotTemplate(type = 'default', company) {
         }
         .message.user .msg-bubble { 
             background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: #fff; border-bottom-right-radius: 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            color: #ffffff; border-bottom-right-radius: 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .input-area { padding: 24px; background: rgba(0,0,0,0.2); }
@@ -474,30 +302,29 @@ export function getChatbotTemplate(type = 'default', company) {
             border-radius: 18px; border: 1px solid var(--border); transition: 0.3s;
         }
         .input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); }
-        input { flex: 1; background: transparent; border: none; outline: none; color: #fff; padding: 12px; font-size: 16px; }
+        input { flex: 1; background: transparent; border: none; outline: none; color: #ffffff; padding: 12px; font-size: 16px; }
         .send-btn {
             width: 48px; height: 48px; border-radius: 14px; background: var(--primary);
-            color: #fff; border: none; cursor: pointer; transition: 0.3s;
+            color: #ffffff; border: none; cursor: pointer; transition: 0.3s;
             display: flex; align-items: center; justify-content: center; font-size: 20px;
         }
         .send-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(56, 189, 248, 0.4); }
 
         .ai-buttons-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; width: 100%; }
         .product-btn {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); color: #fff;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); color: #ffffff;
             padding: 10px; border-radius: 12px; cursor: pointer; transition: 0.3s; width: 100%;
         }
         .product-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--primary); transform: translateX(-5px); }
     </style>
 </head>
 <body>
-    <!-- Template content logic remains same, just styling is different -->
     <div class="chat-container">
         <div class="header">
             <div class="header-left">
-                \${logoHtml}
+                ${logoHtml}
                 <div class="header-info">
-                    <h1>\${name}</h1>
+                    <h1>${name}</h1>
                     <div class="status"><div class="status-dot"></div> متصل الآن</div>
                 </div>
             </div>
@@ -506,7 +333,7 @@ export function getChatbotTemplate(type = 'default', company) {
         <div class="messages-area" id="chat-box">
              <div style="text-align:center; padding: 40px 20px;">
                 <h2 style="font-size: 28px; margin-bottom: 10px;">أهلاً بك 👋</h2>
-                <p style="opacity: 0.7;">كيف يمكنني مساعدتك في \${name} اليوم؟</p>
+                <p style="opacity: 0.7;">كيف يمكنني مساعدتك في ${name} اليوم؟</p>
             </div>
         </div>
         <div class="input-area">
@@ -518,8 +345,7 @@ export function getChatbotTemplate(type = 'default', company) {
         </div>
     </div>
     <script>
-        // JS logic same as default, using templates but keeping identical behavior
-        \${getTemplateScript(apiUrl, apiKey)}
+    ${script}
     </script>
 </body>
 </html>`,
@@ -528,7 +354,7 @@ export function getChatbotTemplate(type = 'default', company) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${name} - Chat</title>
+    <title>${name} - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -553,17 +379,17 @@ export function getChatbotTemplate(type = 'default', company) {
         .message.user .msg-bubble { background: var(--bg); border-color: var(--border); }
         .input-area { padding: 30px; background: var(--bg); }
         .input-wrapper { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 5px; }
-        input { flex: 1; background: transparent; border: none; color: #fff; padding: 15px; font-size: 16px; outline: none; }
-        .send-btn { background: var(--primary); color: #000; font-weight: bold; border: none; padding: 0 25px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        input { flex: 1; background: transparent; border: none; color: #ffffff; padding: 15px; font-size: 16px; outline: none; }
+        .send-btn { background: var(--primary); color: #000000; font-weight: bold; border: none; padding: 0 25px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
         .product-btn { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 12px; margin-top: 10px; cursor: pointer; transition: 0.3s; width: 100%; font-weight: 600; }
-        .product-btn:hover { background: var(--primary); color: #000; }
+        .product-btn:hover { background: var(--primary); color: #000000; }
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="header">
-            \${logoHtml}
-            <h1>\${name}</h1>
+            ${logoHtml}
+            <h1>${name}</h1>
             <p style="font-size: 12px; opacity: 0.5;">PREMIUM ASSISTANT</p>
         </div>
         <div class="messages-area" id="chat-box"></div>
@@ -575,7 +401,9 @@ export function getChatbotTemplate(type = 'default', company) {
             </div>
         </div>
     </div>
-    <script>\${getTemplateScript(apiUrl, apiKey)}</script>
+    <script>
+    ${script}
+    </script>
 </body>
 </html>`,
     'cyberpunk': `<!DOCTYPE html>
@@ -583,7 +411,7 @@ export function getChatbotTemplate(type = 'default', company) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${name} - Chat</title>
+    <title>${name} - Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -591,7 +419,7 @@ export function getChatbotTemplate(type = 'default', company) {
             --bg: #050505;
             --neon-blue: #00f3ff;
             --neon-pink: #ff00ff;
-            --text: #fff;
+            --text: #ffffff;
             --font-ar: 'Cairo', sans-serif;
         }
         body { background: var(--bg); color: var(--text); font-family: var(--font-ar); overflow: hidden; height: 100vh; }
@@ -606,15 +434,15 @@ export function getChatbotTemplate(type = 'default', company) {
         .input-area { padding: 20px; border-top: 2px solid var(--neon-blue); }
         .input-wrapper { display: flex; gap: 10px; }
         input { flex: 1; background: #000; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 12px; outline: none; }
-        .send-btn { background: var(--neon-blue); color: #000; border: none; padding: 10px 20px; font-weight: 800; cursor: pointer; box-shadow: 0 0 10px var(--neon-blue); }
+        .send-btn { background: var(--neon-blue); color: #000000; border: none; padding: 10px 20px; font-weight: 800; cursor: pointer; box-shadow: 0 0 10px var(--neon-blue); }
         .product-btn { background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink); padding: 8px; margin-top: 5px; cursor: pointer; width: 100%; text-transform: uppercase; font-size: 12px; }
-        .product-btn:hover { background: var(--neon-pink); color: #000; }
+        .product-btn:hover { background: var(--neon-pink); color: #000000; }
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="header">
-            <div style="display:flex; align-items:center; gap:10px;">\${logoHtml} <b>\${name.toUpperCase()} SYSTEM</b></div>
+            <div style="display:flex; align-items:center; gap:10px;">${logoHtml} <b>${name.toUpperCase()} SYSTEM</b></div>
             <div style="font-size:10px; color:var(--neon-blue)">STATUS: ONLINE</div>
         </div>
         <div class="messages-area" id="chat-box"></div>
@@ -625,7 +453,9 @@ export function getChatbotTemplate(type = 'default', company) {
             </div>
         </div>
     </div>
-    <script>\${getTemplateScript(apiUrl, apiKey)}</script>
+    <script>
+    ${script}
+    </script>
 </body>
 </html>`
   };
@@ -647,12 +477,12 @@ function getTemplateScript(apiUrl, apiKey) {
     let isProcessing = false;
     let webCommands = [];
 
-    fetch('\${apiUrl}/public/commands/\${apiKey}')
+    fetch('${apiUrl}/public/commands/${apiKey}')
         .then(r => r.json())
         .then(d => { if (d.success) webCommands = d.commands; })
         .catch(e => console.error(e));
 
-    fetch('\${apiUrl}/public/history?apiKey=\${apiKey}&sessionId=' + sid)
+    fetch('${apiUrl}/public/history?apiKey=${apiKey}&sessionId=' + sid)
         .then(r => r.json())
         .then(d => {
             if (d.success && d.history.length > 0) {
@@ -672,11 +502,11 @@ function getTemplateScript(apiUrl, apiKey) {
         div.className = 'message ' + role;
         const safeText = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>');
         
-        let htmlContent = '<div class="msg-content">' +
+        div.innerHTML = '<div class="msg-avatar"><i class="fas fa-' + (role === "ai" ? "robot" : "user") + '"></i></div>' +
+                          '<div class="msg-content">' +
                             '<div class="msg-bubble" dir="auto">' + safeText + '</div>' +
                           '</div>';
         
-        div.innerHTML = htmlContent;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
         return div;
@@ -725,31 +555,31 @@ function getTemplateScript(apiUrl, apiKey) {
         const loadingDiv = document.createElement('div');
         loadingId.id = loadingId;
         loadingDiv.className = 'message ai';
-        loadingDiv.innerHTML = '<div class="msg-bubble" dir="auto">...</div>';
+        loadingDiv.innerHTML = '<div class="msg-avatar"><i class="fas fa-robot"></i></div><div class="msg-bubble" dir="auto">...</div>';
         box.appendChild(loadingDiv);
         box.scrollTop = box.scrollHeight;
 
         try {
-            const res = await fetch('\${apiUrl}/public/chat', {
+            const res = await fetch('${apiUrl}/public/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: '\${apiKey}', prompt: text, sessionId: sid })
+                body: JSON.stringify({ apiKey: '${apiKey}', prompt: text, sessionId: sid })
             });
             const data = await res.json();
             
             document.getElementById(loadingId)?.remove();
             
             if (res.ok) {
-                const aiRow = append('ai', data.reply || "Error");
+                const aiRow = append('ai', data.reply || "عذراً، حدث خطأ ما.");
                 if (data.buttons && data.buttons.length > 0) {
                     appendButtons(data.buttons, aiRow);
                 }
             } else {
-                append('ai', data.error || "Error");
+                append('ai', data.error || "عذراً، حدث خطأ ما.");
             }
         } catch (e) {
             document.getElementById(loadingId)?.remove();
-            append('ai', "Connection Error");
+            append('ai', "⚠ خطأ في الاتصال.");
         } finally {
             isProcessing = false;
             input.disabled = false;

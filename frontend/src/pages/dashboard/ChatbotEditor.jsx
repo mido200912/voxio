@@ -172,11 +172,16 @@ const ChatbotEditor = () => {
 
     const normalizeToHex = (color) => {
         if (!color) return '#000000';
-        const hexMatch = color.match(/#[0-9a-fA-F]{3,6}/);
+        
+        // If it's a 3-char hex #123, convert to #112233
+        const hex3Match = color.match(/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/);
+        if (hex3Match) {
+            return "#" + hex3Match[1] + hex3Match[1] + hex3Match[2] + hex3Match[2] + hex3Match[3] + hex3Match[3];
+        }
+
+        const hexMatch = color.match(/#[0-9a-fA-F]{6}/);
         if (hexMatch) return hexMatch[0];
         
-        // Simple rgb to hex if needed, but for now we'll support hex mainly. 
-        // If it's rgb(r,g,b), we parse it.
         const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
         if (rgbMatch) {
             const r = parseInt(rgbMatch[1]);
@@ -185,7 +190,6 @@ const ChatbotEditor = () => {
             return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
         }
 
-        // Basic named colors map for the picker
         const colors = {
             'white': '#ffffff', 'black': '#000000', 'red': '#ff0000', 'blue': '#0000ff', 
             'green': '#008000', 'yellow': '#ffff00', 'purple': '#800080', 'gray': '#808080',
@@ -235,7 +239,10 @@ const ChatbotEditor = () => {
         }
     };
 
-    const handleResetToDefault = async (templateId = 'default') => {
+    const handleResetToDefault = async (templateIdArg) => {
+        // Ensure templateId is a string, not an event object
+        const templateId = typeof templateIdArg === 'string' ? templateIdArg : 'default';
+        
         const confirmMsg = language === 'ar' 
             ? 'هل أنت متأكد من تغيير القالب؟ سيؤدي هذا لمسح التعديلات الحالية.' 
             : 'Are you sure you want to change the template? This will overwrite your current changes.';
@@ -298,7 +305,7 @@ const ChatbotEditor = () => {
                 </div>
 
                 <div className="workspace-actions">
-                    <button className="workspace-tab danger" onClick={handleResetToDefault} title={language === 'ar' ? 'العودة للكود الأساسي' : 'Reset Default'} style={{ color: '#ef4444' }}>
+                    <button className="workspace-tab danger" onClick={() => handleResetToDefault('default')} title={language === 'ar' ? 'العودة للكود الأساسي' : 'Reset Default'} style={{ color: '#ef4444' }}>
                         <i className="fas fa-trash-restore"></i> {language === 'ar' ? 'إعادة ضبط' : 'Reset'}
                     </button>
                     <button className="workspace-tab" onClick={handleUndoCode} title={language === 'ar' ? 'رجوع للكود السابق' : 'Undo'} disabled={codeHistory.length === 0} style={{ opacity: codeHistory.length === 0 ? 0.5 : 1 }}>
