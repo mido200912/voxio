@@ -1,14 +1,32 @@
 import express from 'express';
+import multer from 'multer';
 import axios from 'axios';
-import { upload } from '../config/cloudinary.js';
 import Company from '../models/company.js';
 import { requireAuth as protect } from '../middleware/auth.js';
 import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
 
 const router = express.Router();
 
+const storage = multer.memoryStorage();
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.pdf', '.docx', '.txt', '.doc'];
+        const allowedMimes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain'];
+        const ext = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+        if (allowed.includes(ext) && allowedMimes.includes(file.mimetype)) cb(null, true);
+        else cb(new Error('Invalid file type. Only PDF, DOCX, and TXT are allowed.'), false);
+    }
+});
+
 // Upload a file to knowledge base and extract text using AI
-router.post('/upload', protect, upload.single('file'), async (req, res) => {
+router.post('/upload', protect, (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message });
+        next();
+    });
+}, async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });

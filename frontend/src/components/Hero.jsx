@@ -7,7 +7,7 @@ import { BackgroundPaths } from './ui/background-paths';
 
 const Hero = () => {
     const statsRef = useRef(null);
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { user, isAuthChecked } = useAuth();
 
     useEffect(() => {
@@ -71,28 +71,32 @@ const Hero = () => {
                     <div className="hero-buttons animate-slide-up delay-2">
                         {isAuthChecked && (
                             user ? (
-                                // مستخدم مسجل دخول - عرض زر Dashboard
                                 <>
                                     <Link to="/dashboard" className="btn btn-primary btn-large">
                                         <i className="fas fa-tachometer-alt"></i>
-                                        الدخول للوحة التحكم
+                                        {t.nav.goDashboard}
                                     </Link>
-                                    <button className="btn btn-outline btn-large">
+                                    <button 
+                                        className="btn btn-outline btn-large"
+                                        onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                                    >
                                         <i className="fas fa-play-circle"></i>
                                         {t.hero.watchVideo}
                                     </button>
                                 </>
                             ) : (
-                                // مستخدم غير مسجل - عرض أزرار التسجيل
                                 <>
                                     <Link to="/register" className="btn btn-primary btn-large">
                                         <i className="fas fa-rocket"></i>
                                         {t.hero.startNow}
                                     </Link>
-                                    <Link to="/login" className="btn btn-outline btn-large">
-                                        <i className="fas fa-sign-in-alt"></i>
-                                        تسجيل الدخول
-                                    </Link>
+                                    <button 
+                                        className="btn btn-outline btn-large"
+                                        onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                                    >
+                                        <i className="fas fa-play-circle"></i>
+                                        {t.hero.watchVideo}
+                                    </button>
                                 </>
                             )
                         )}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import secureStorage from '../utils/secureStorage';
+import { secureStorage } from '../utils/secureStorage';
 import './Navbar.css';
 
 const Navbar = () => {

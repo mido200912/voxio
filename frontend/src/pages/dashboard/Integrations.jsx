@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -498,7 +499,7 @@ const Integrations = () => {
                             className="btn btn-primary"
                             onClick={() => {
                                 const btn = document.getElementById('copy-widget-btn');
-                                const apiKey = JSON.parse(localStorage.getItem('user'))?.apiKey || 'YOUR_API_KEY';
+                                const apiKey = secureStorage.getItem('user')?.apiKey || 'YOUR_API_KEY';
                                 const code = `<script \n  src="https://voxio1.vercel.app/widget.js" \n  data-api-key="${apiKey}" \n  data-base-url="https://voxio1.vercel.app"\n></script>`;
                                 navigator.clipboard.writeText(code);
                                 const originalText = btn.innerText;

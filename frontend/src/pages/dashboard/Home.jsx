@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
+import { secureStorage } from '../../utils/secureStorage';
 import { motion } from 'framer-motion';
 import './DashboardHome.css';
 
@@ -20,7 +21,7 @@ const DashboardHome = () => {
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = secureStorage.getItem('token');
                 const response = await axios.get(`${BACKEND_URL}/company/analytics`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });

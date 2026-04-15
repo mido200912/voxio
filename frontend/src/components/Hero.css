@@ -60,9 +60,33 @@
 
 .hero-buttons {
     display: flex;
-    gap: 1rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
     margin-bottom: var(--spacing-lg);
+}
+
+.hero-buttons .btn {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hero-buttons .btn-outline {
+    background: rgba(var(--color-text-rgb), 0.05);
+    backdrop-filter: blur(5px);
+    border-color: var(--color-text);
+}
+
+.hero-buttons .btn-outline:hover {
+    background: var(--color-text);
+    color: var(--color-bg);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 30px var(--color-shadow-hover);
+}
+
+/* Fix for Light Mode Hover */
+[data-theme="light"] .hero-buttons .btn-outline:hover {
+    background: #000000;
+    color: #ffffff;
+    border-color: #000000;
 }
 
 /* Hero Stats */

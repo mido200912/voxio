@@ -54,6 +54,106 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const verifyOtp = async (email, otp) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/verify-otp`, { email, otp });
+            const { user, token } = response.data;
+            setUser(user);
+            secureStorage.setItem('token', token);
+            secureStorage.setItem('user', user);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            return true;
+        } catch (err) {
+            setError(err.response?.data?.message || err.message);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const register = async (name, email, password) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password });
+            if (response.data.step === 'otp_required') return { step: 'otp_required', email: response.data.email };
+            const { user, token } = response.data;
+            setUser(user);
+            secureStorage.setItem('token', token);
+            secureStorage.setItem('user', user);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            return { step: 'done' };
+        } catch (err) {
+            setError(err.response?.data?.message || err.message);
+            return { step: 'error' };
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const forgotPassword = async (email) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/forgot-password`, { email });
+            return response.data;
+        } catch (err) {
+            setError(err.response?.data?.message || err.message);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resetPassword = async (email, otp, newPassword) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/reset-password`, { email, otp, newPassword });
+            return response.data;
+        } catch (err) {
+            setError(err.response?.data?.message || err.message);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const changePassword = async (oldPassword, newPassword) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await axios.post(`${BACKEND_URL}/auth/change-password`, { oldPassword, newPassword });
+            return true;
+        } catch (err) {
+            setError(err.response?.data?.message || err.message);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const googleLogin = async (idToken) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/auth/google-login`, { idToken });
+            const { user, token, isNew } = response.data;
+            setUser(user);
+            secureStorage.setItem('token', token);
+            secureStorage.setItem('user', user);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            return { success: true, isNew };
+        } catch (err) {
+            setError(err.response?.data?.error || "Google auth failed");
+            return { success: false };
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const logout = () => {
         setUser(null);
         secureStorage.removeItem('token');
@@ -62,11 +162,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, error, setError, login, logout, isAuthChecked }}>
+        <AuthContext.Provider value={{ 
+            user, loading, error, setError, login, verifyOtp, 
+            register, logout, isAuthChecked, forgotPassword, 
+            resetPassword, changePassword, googleLogin 
+        }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) throw new Error('useAuth must be used within an AuthProvider');
+    return context;
+};
 
