@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
+import { secureStorage } from '../../utils/secureStorage';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Integrations.css';
 
@@ -140,7 +141,7 @@ const Integrations = () => {
     ]);
 
     const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
-    const token = localStorage.getItem('token');
+    const token = secureStorage.getItem('token');
 
     useEffect(() => {
         fetchIntegrations();

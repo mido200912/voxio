@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import secureStorage from '../utils/secureStorage';
 import './Navbar.css';
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeLink, setActiveLink] = useState('home');
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const token = secureStorage.getItem('token');
     const { theme, toggleTheme } = useTheme();
     const { language, toggleLanguage, t } = useLanguage();
 
@@ -149,8 +152,16 @@ const Navbar = () => {
                         </div>
                     </li>
                     <li className="mobile-only mobile-auth">
-                        <button className="btn btn-secondary" onClick={() => navigate('/login')}>{t.nav.login}</button>
-                        <button className="btn btn-primary" onClick={() => navigate('/register')}>{t.nav.startFree}</button>
+                        {token ? (
+                            <button className="btn btn-primary btn-block" onClick={() => navigate('/dashboard')}>
+                                {t.nav.goDashboard}
+                            </button>
+                        ) : (
+                            <>
+                                <button className="btn btn-secondary" onClick={() => navigate('/login')}>{t.nav.login}</button>
+                                <button className="btn btn-primary" onClick={() => navigate('/register')}>{t.nav.startFree}</button>
+                            </>
+                        )}
                     </li>
                 </ul>
 
@@ -172,8 +183,18 @@ const Navbar = () => {
                             <i className="fas fa-sun"></i>
                         )}
                     </button>
-                    <button className="btn btn-secondary" onClick={() => navigate('/login')}>{t.nav.login}</button>
-                    <button className="btn btn-primary" onClick={() => navigate('/register')}>{t.nav.startFree}</button>
+                    <div className="nav-auth-desktop">
+                        {token ? (
+                            <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>
+                                {t.nav.goDashboard}
+                            </button>
+                        ) : (
+                            <>
+                                <button className="btn btn-secondary" onClick={() => navigate('/login')}>{t.nav.login}</button>
+                                <button className="btn btn-primary" onClick={() => navigate('/register')}>{t.nav.startFree}</button>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 <div

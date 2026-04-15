@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { secureStorage } from '../../utils/secureStorage';
 import { useLanguage } from '../../context/LanguageContext';
 import { motion } from 'framer-motion';
 import './AiTraining.css';
@@ -14,7 +15,7 @@ const AiTraining = () => {
     const [savingKnowledge, setSavingKnowledge] = useState(false); // ✨ جديد
 
     const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
-    const token = localStorage.getItem('token');
+    const token = secureStorage.getItem('token');
 
     useEffect(() => {
         fetchFiles();
