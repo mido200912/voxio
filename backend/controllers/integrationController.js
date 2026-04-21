@@ -178,21 +178,19 @@ const metaWebhook = async (req, res) => {
 
     console.log(`Received Meta webhook [${body.object}]:`, JSON.stringify(body, null, 2));
 
-    // Acknowledge Meta immediately to prevent timeout and retries
-    res.sendStatus(200);
+    try {
+        // Must await BEFORE sending response on Vercel to prevent Lambda freeze!
+        // Handle WhatsApp messages
+        await handleWhatsAppMessage(body);
 
-    // Process asynchronously without blocking the webhook acknowledgment
-    Promise.resolve().then(async () => {
-        try {
-            // Handle WhatsApp messages
-            await handleWhatsAppMessage(body);
-
-            // Handle Instagram messages and comments
-            await handleInstagramWebhook(body);
-        } catch (asyncErr) {
-            console.error('Async Webhook Processing Error:', asyncErr);
-        }
-    });
+        // Handle Instagram messages and comments
+        await handleInstagramWebhook(body);
+        
+        res.sendStatus(200);
+    } catch (processErr) {
+        console.error('Webhook Processing Error:', processErr);
+        res.sendStatus(200); // Still send 200 to Meta so it doesn't retry
+    }
 
   } catch (error) {
     console.error(error);
