@@ -119,6 +119,18 @@ export const handleWhatsAppMessage = async (body) => {
                         }
 
                         console.log(`[WhatsApp Webhook] Fetching AI response...`);
+                        
+                        // ✅ [PRO TIP] Mark message as read (Meta Standard)
+                        try {
+                            await axios.post(
+                                `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`,
+                                { messaging_product: "whatsapp", status: "read", message_id: messageId },
+                                { headers: { Authorization: `Bearer ${accessToken}` } }
+                            );
+                        } catch (readErr) {
+                            console.warn("Failed to mark as read:", readErr.message);
+                        }
+
                         const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${messageText}`);
                         console.log(`[WhatsApp Webhook] AI generated response: ${reply.substring(0, 30)}...`);
 
@@ -176,11 +188,15 @@ export const handleInstagramWebhook = async (body) => {
                         if (processedMessages.size > 1000) processedMessages.delete(processedMessages.values().next().value);
 
                         // Find integration using the page ID or IG account ID
-                        const integration = await Integration.findOne({
+                        const allIgIntegrations = await Integration.find({
                             platform: 'instagram',
-                            isActive: true,
-                            $or: [{ 'credentials.pageId': receiverId }, { 'credentials.igAccountId': receiverId }]
+                            isActive: true
                         });
+
+                        let integration = allIgIntegrations.find(int => 
+                            int.credentials?.pageId === receiverId || 
+                            int.credentials?.igAccountId === receiverId
+                        );
 
                         if (!integration || !integration.company) continue;
 
@@ -237,11 +253,15 @@ export const handleInstagramWebhook = async (body) => {
                         processedMessages.add(commentId);
                         if (processedMessages.size > 1000) processedMessages.delete(processedMessages.values().next().value);
 
-                        const integration = await Integration.findOne({
+                        const allIgIntegrations = await Integration.find({
                             platform: 'instagram',
-                            isActive: true,
-                            $or: [{ 'credentials.pageId': receiverId }, { 'credentials.igAccountId': receiverId }]
+                            isActive: true
                         });
+
+                        let integration = allIgIntegrations.find(int => 
+                            int.credentials?.pageId === receiverId || 
+                            int.credentials?.igAccountId === receiverId
+                        );
 
                         if (!integration || !integration.company) continue;
 

@@ -67,7 +67,7 @@ const metaLogin = (req, res) => {
 
   const scope = 'pages_show_list,pages_messaging,instagram_basic,instagram_manage_messages,whatsapp_business_messaging';
 
-  const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
+  const authUrl = `https://www.facebook.com/v25\.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
 
   res.redirect(authUrl);
 };
@@ -87,17 +87,17 @@ const metaCallback = async (req, res) => {
 
   try {
     // 1. Exchange code for short-lived access token
-    const tokenUrl = `https://graph.facebook.com/v18.0/oauth/access_token?client_id=${process.env.META_APP_ID}&redirect_uri=${BASE_URL}/api/integrations/meta/callback&client_secret=${process.env.META_APP_SECRET}&code=${code}`;
+    const tokenUrl = `https://graph.facebook.com/v25\.0/oauth/access_token?client_id=${process.env.META_APP_ID}&redirect_uri=${BASE_URL}/api/integrations/meta/callback&client_secret=${process.env.META_APP_SECRET}&code=${code}`;
     const { data: tokenData } = await axios.get(tokenUrl);
     const shortLivedToken = tokenData.access_token;
 
     // 2. تبادل الرمز قصير الأجل برمز طويل الأجل (60 يومًا)
-    const longLivedTokenUrl = `https://graph.facebook.com/v18.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${process.env.META_APP_ID}&client_secret=${process.env.META_APP_SECRET}&fb_exchange_token=${shortLivedToken}`;
+    const longLivedTokenUrl = `https://graph.facebook.com/v25\.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${process.env.META_APP_ID}&client_secret=${process.env.META_APP_SECRET}&fb_exchange_token=${shortLivedToken}`;
     const { data: longLivedData } = await axios.get(longLivedTokenUrl);
     const userAccessToken = longLivedData.access_token;
 
     // 3. Get User's Pages
-    const pagesUrl = `https://graph.facebook.com/v18.0/me/accounts?access_token=${userAccessToken}`;
+    const pagesUrl = `https://graph.facebook.com/v25\.0/me/accounts?access_token=${userAccessToken}`;
     const { data: pagesData } = await axios.get(pagesUrl);
 
     const page = pagesData.data?.[0]; // نأخذ الأولى لتبسيط MVP
@@ -120,7 +120,7 @@ const metaCallback = async (req, res) => {
 
     // 5. Fetch linked Instagram Business Account
     try {
-      const igUrl = `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`;
+      const igUrl = `https://graph.facebook.com/v25\.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`;
       const { data: igData } = await axios.get(igUrl);
       if (igData.instagram_business_account) {
         const igAccountId = igData.instagram_business_account.id;
@@ -144,7 +144,7 @@ const metaCallback = async (req, res) => {
     // 💡 يجب هنا تسجيل الـ Webhooks للصفحة (بواسطة رمز الصفحة)
     // Subscribe to messages and comments
     try {
-      await axios.post(`https://graph.facebook.com/v18.0/${page.id}/subscribed_apps`, {
+      await axios.post(`https://graph.facebook.com/v25\.0/${page.id}/subscribed_apps`, {
          subscribed_fields: ['messages', 'messaging_postbacks', 'feed', 'instagram_manage_messages', 'instagram_manage_comments']
       }, {
          headers: { Authorization: `Bearer ${page.access_token}` }

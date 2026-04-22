@@ -202,7 +202,7 @@ router.post('/telegram', requireAuth, async (req, res) => {
         }
 
         // Set webhook for the bot
-        const baseUrl = process.env.BASE_URL || 'https://voxio1.vercel.app';
+        const baseUrl = process.env.BASE_URL || 'https://aithor1.vercel.app';
         if (!baseUrl) {
             console.error('❌ BASE_URL is missing in environment variables');
             return res.status(500).json({ error: 'Server configuration error (BASE_URL missing)' });

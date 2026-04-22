@@ -256,7 +256,7 @@ const Docs = () => {
                 </div>
                 <div className="docs-code-block">
                   <div className="docs-code-header"><span>cURL</span></div>
-                  <pre>{`curl -X POST https://voxio1.vercel.app/api/public/chat \\
+                  <pre>{`curl -X POST https://aithor1.vercel.app/api/public/chat \\
   -H "Content-Type: application/json" \\
   -d '{
     "apiKey": "YOUR_API_KEY",
@@ -266,7 +266,7 @@ const Docs = () => {
                 </div>
                 <div className="docs-code-block">
                   <div className="docs-code-header"><span>JavaScript (fetch)</span></div>
-                  <pre>{`const res = await fetch('https://voxio1.vercel.app/api/public/chat', {
+                  <pre>{`const res = await fetch('https://aithor1.vercel.app/api/public/chat', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -441,9 +441,9 @@ console.log(reply); // AI response`}</pre>
               </p>
               <pre>{`<!-- VOXIO Web Widget -->
 <script 
-  src="https://voxio1.vercel.app/widget.js" 
+  src="https://voxio-v1.vercel.app/widget.js" 
   data-api-key="YOUR_API_KEY"
-  data-base-url="https://voxio1.vercel.app"
+  data-base-url="https://voxio-v1.vercel.app"
   async
 ></script>
 `}</pre>
@@ -454,7 +454,7 @@ console.log(reply); // AI response`}</pre>
               <pre>{`import requests
 
 API_KEY = "YOUR_API_KEY"
-BASE_URL = "https://voxio1.vercel.app/api"
+BASE_URL = "https://aithor1.vercel.app/api"
 
 def chat(message, conversation_id=None):
     payload = {
@@ -484,7 +484,7 @@ export function useVOXIOChat(apiKey) {
     setLoading(true);
     setMessages(prev => [...prev, { role: 'user', text }]);
     
-    const res = await fetch('https://voxio1.vercel.app/api/public/chat', {
+    const res = await fetch('https://aithor1.vercel.app/api/public/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiKey, message: text }),

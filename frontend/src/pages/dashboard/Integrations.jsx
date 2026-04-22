@@ -500,7 +500,7 @@ const Integrations = () => {
                             onClick={() => {
                                 const btn = document.getElementById('copy-widget-btn');
                                 const apiKey = secureStorage.getItem('user')?.apiKey || 'YOUR_API_KEY';
-                                const code = `<script \n  src="https://voxio1.vercel.app/widget.js" \n  data-api-key="${apiKey}" \n  data-base-url="https://voxio1.vercel.app"\n></script>`;
+                                const code = `<script \n  src="https://voxio-v1.vercel.app/widget.js" \n  data-api-key="${apiKey}" \n  data-base-url="https://voxio-v1.vercel.app"\n></script>`;
                                 navigator.clipboard.writeText(code);
                                 const originalText = btn.innerText;
                                 btn.innerText = t.language === 'ar' ? 'تم النسخ!' : 'Copied!';
@@ -518,7 +518,7 @@ const Integrations = () => {
                     <pre>
                         <code>
 {`<script 
-  src="https://voxio1.vercel.app/widget.js" 
+  src="https://voxio-v1.vercel.app/widget.js" 
   data-api-key="${secureStorage.getItem('user')?.apiKey || 'YOUR_API_KEY'}" 
   data-base-url="https://voxio-v1.vercel.app"
 ></script>`}

@@ -3,7 +3,7 @@ export function getChatbotTemplate(type = 'default', company) {
   const logo = company.logo || '';
   const apiKey = company.chatToken || company.apiKey || '';
   const slug = company.slug || '';
-  const apiUrl = process.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+  const apiUrl = process.env.VITE_API_URL || 'https://voxio-v1.vercel.app/api';
 
   const logoHtml = logo 
     ? `<img src="${logo}" alt="${name}" class="company-logo">`
