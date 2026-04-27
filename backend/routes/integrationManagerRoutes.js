@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import Integration from '../models/Integration.js';
 import Company from '../models/company.js';
 import User from '../models/User.js';
+import CompanyChat from '../models/CompanyChat.js';
 import sendEmail from '../utils/sendEmail.js';
 import { generateOtpEmail } from '../utils/emailTemplate.js';
 
@@ -54,6 +55,33 @@ router.get('/:platform/settings', requireAuth, async (req, res) => {
         res.json({ settings: integration.settings || {} });
     } catch (error) {
         console.error('Error fetching integration settings:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// @route   GET /api/integration-manager/:platform/analytics
+// @desc    Get analytics for a specific platform
+// @access  Private
+router.get('/:platform/analytics', requireAuth, async (req, res) => {
+    try {
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        const chats = await CompanyChat.find({ company: company._id, platform: req.params.platform });
+        
+        const totalReceived = chats.filter(c => c.sender === 'user').length;
+        const totalSent = chats.filter(c => c.sender === 'ai' || c.sender === 'agent').length;
+        // In a real app we'd track actual delivery receipts. For now, estimate based on AI responses sent.
+        const deliveryRate = totalSent > 0 ? (totalSent / (totalSent + (chats.filter(c => c.status === 'failed').length || 0))) * 100 : 0; 
+        
+        res.json({
+            totalReceived,
+            totalSent,
+            deliveryRate: deliveryRate.toFixed(1),
+            activeChats: new Set(chats.map(c => c.user)).size
+        });
+    } catch (error) {
+        console.error('Error fetching analytics:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -181,6 +209,43 @@ router.post('/whatsapp', requireAuth, async (req, res) => {
         res.json({ message: 'WhatsApp integrated successfully', integration });
     } catch (error) {
         console.error('WhatsApp integration error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// @route   POST /api/integration-manager/instagram
+// @desc    Manually configure Instagram
+// @access  Private
+router.post('/instagram', requireAuth, async (req, res) => {
+    try {
+        const { pageId, igAccountId, accessToken } = req.body;
+        
+        if (!pageId || !igAccountId || !accessToken) {
+            return res.status(400).json({ error: 'Page ID, IG Account ID and Access Token are required' });
+        }
+
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        let integration = await Integration.findOne({ company: company._id, platform: 'instagram' });
+        if (!integration) {
+            integration = await Integration.create({
+                company: company._id,
+                platform: 'instagram',
+                credentials: { pageId, igAccountId, accessToken },
+                isActive: true
+            });
+        } else {
+            integration.credentials = { pageId, igAccountId, accessToken };
+            integration.isActive = true;
+            await integration.save();
+        }
+
+        res.json({ message: 'Instagram integrated successfully', integration });
+    } catch (error) {
+        console.error('Instagram integration error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });

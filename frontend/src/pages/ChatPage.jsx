@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import PageLoader from '../components/PageLoader';
 
 const ChatPage = () => {
     const { slug } = useParams();
@@ -26,30 +27,7 @@ const ChatPage = () => {
     }, [slug]);
 
     if (loading) {
-        return (
-            <div style={{
-                height: '100vh',
-                background: '#0a0a0f',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px',
-                fontFamily: "'Inter', sans-serif",
-                color: '#71717a'
-            }}>
-                <div style={{
-                    width: '40px',
-                    height: '40px',
-                    border: '3px solid rgba(99,102,241,0.2)',
-                    borderTopColor: '#6366f1',
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite'
-                }} />
-                <p>Loading...</p>
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
-        );
+        return <PageLoader text="جاري تجهيز المحادثة..." />;
     }
 
     if (error) {

@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
+import { secureStorage } from '../../utils/secureStorage';
+import { useToast } from '../../components/Toast';
 
 const WebCommandsModal = ({ show, onClose }) => {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [commandsData, setCommandsData] = useState({ commands: [] });
     const [newCommand, setNewCommand] = useState({ command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] });
     const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '' });
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    const token = localStorage.getItem('token');
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const token = secureStorage.getItem('token');
     
     const newCommandRef = useRef(newCommand);
     useEffect(() => { newCommandRef.current = newCommand; }, [newCommand]);
@@ -41,7 +44,7 @@ const WebCommandsModal = ({ show, onClose }) => {
 
     const addProductToCommand = () => {
         if (!newProduct.name) {
-            alert(t.language === 'ar' ? 'اكتب اسم المنتج الأوّل!' : 'Enter product name first!');
+            toast.warning(t.language === 'ar' ? 'اكتب اسم المنتج الأوّل!' : 'Enter product name first!');
             return;
         }
         const productToAdd = { name: newProduct.name, price: newProduct.price, description: newProduct.description };
@@ -88,11 +91,11 @@ const WebCommandsModal = ({ show, onClose }) => {
             await axios.post(`${BACKEND_URL}/integration-manager/website`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert(t.language === 'ar' ? 'تم الحفظ بنجاح!' : 'Saved successfully!');
+            toast.success(t.language === 'ar' ? 'تم الحفظ بنجاح!' : 'Saved successfully!');
             onClose();
         } catch (error) {
             console.error('Error saving website commands:', error);
-            alert(t.language === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Error saving data.');
+            toast.error(t.language === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Error saving data.');
         }
     };
 

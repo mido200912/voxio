@@ -1,21 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import './AgentsExplorer.css'; // We'll reuse/extend these styles
+import { motion, AnimatePresence } from 'framer-motion';
+import './ChatWidget.css';
 
 const API = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
-
-const PALETTE = [
-  '#6C63FF','#2563eb','#16a34a','#d97706',
-  '#db2777','#0891b2','#7c3aed','#dc2626',
-];
-const getColor    = (name = '') => PALETTE[name.charCodeAt(0) % PALETTE.length];
-const getInitials = (name = '') => name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
 
 const ChatWidget = ({ apiKeyProp }) => {
     const params = useParams();
     const apiKey = apiKeyProp || params.apiKey;
     const [company, setCompany] = useState(null);
+    const [config, setConfig] = useState({ primaryColor: '#6C63FF', welcomeMessage: 'مرحباً! كيف يمكنني مساعدتك؟', customCss: '' });
     const [loading, setLoading] = useState(true);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -23,13 +18,17 @@ const ChatWidget = ({ apiKeyProp }) => {
     const endRef = useRef(null);
 
     useEffect(() => {
+        // Fetch company data and widget config
         axios.get(`${API}/public/company/${apiKey}`)
             .then(({ data }) => {
                 if (data.success) {
                     setCompany(data.company);
+                    if (data.company.widgetConfig) {
+                        setConfig(data.company.widgetConfig);
+                    }
                     setMessages([{
                         role: 'ai',
-                        text: `مرحباً! أنا المساعد الذكي لـ **${data.company.name}**. كيف يمكنني مساعدتك؟`,
+                        text: data.company.widgetConfig?.welcomeMessage || `مرحباً! أنا المساعد الذكي لـ **${data.company.name}**. كيف يمكنني مساعدتك اليوم؟`,
                         time: new Date(),
                     }]);
                 }
@@ -61,7 +60,7 @@ const ChatWidget = ({ apiKeyProp }) => {
         } catch {
             setMessages(prev => [...prev, {
                 role: 'ai',
-                text: 'حدث خطأ. حاول مجدداً.',
+                text: 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.',
                 time: new Date(),
             }]);
         } finally { setSending(false); }
@@ -70,66 +69,86 @@ const ChatWidget = ({ apiKeyProp }) => {
     const formatTime = d => new Date(d).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
     if (loading) return null;
-    if (!company) return <div style={{padding:20, textAlign:'center'}}>Invalid API Key</div>;
+    if (!company) return <div className="vx-widget-wrapper" style={{padding:20, textAlign:'center'}}>Invalid API Key</div>;
 
-    const color = getColor(company.name);
+    const color = config.primaryColor || '#6C63FF';
 
     return (
-        <div className="ac-page widget-view" style={{ height: '100dvh', background: 'var(--color-bg)' }}>
-            {/* Minimal Header */}
-            <div className="ac-header" style={{ padding: '0.6rem 1rem' }}>
-                <div className="ac-header-company">
-                    <div className="ac-header-avatar" style={{ background: color, width: 34, height: 34, fontSize: '0.8rem' }}>
-                        {getInitials(company.name)}
-                    </div>
-                    <div className="ac-header-info">
-                        <h2 style={{ fontSize: '0.9rem' }}>{company.name}</h2>
-                        <div className="ac-header-status">
-                            <span className="ac-live-dot" />
-                            <span>متصل</span>
-                        </div>
+        <div className="vx-widget-wrapper" style={{ '--vx-color': color }}>
+            {/* Inject Custom CSS from AI */}
+            {config.customCss && <style>{config.customCss}</style>}
+
+            {/* Header */}
+            <header className="vx-widget-header">
+                <div className="vx-avatar-main" style={{ background: color }}>
+                    {company.name[0].toUpperCase()}
+                </div>
+                <div className="vx-header-info">
+                    <h2>{company.name}</h2>
+                    <div className="vx-status">
+                        <span className="vx-dot" />
+                        <span>متصل الآن</span>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Messages */}
-            <div className="ac-messages" style={{ padding: '1rem' }}>
-                {messages.map((msg, i) => (
-                    <div key={i} className={`ac-row ${msg.role}`}>
-                        {msg.role === 'ai' && (
-                            <div className="ac-msg-avatar" style={{ background: color, width: 24, height: 24, fontSize: '0.6rem' }}>
-                                {getInitials(company.name)}
+            {/* Messages Area */}
+            <div className="vx-messages-container">
+                <AnimatePresence initial={false}>
+                    {messages.map((msg, i) => (
+                        <motion.div 
+                            key={i} 
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            className={`vx-msg-row ${msg.role}`}
+                        >
+                            <div className={`vx-bubble ${msg.role}`} style={msg.role === 'user' ? {background: color} : {}}>
+                                <p>
+                                    {msg.text.split('**').map((p, j) => 
+                                        j % 2 === 1 ? <strong key={j}>{p}</strong> : p
+                                    )}
+                                </p>
+                                <time>{formatTime(msg.time)}</time>
                             </div>
-                        )}
-                        <div className={`ac-bubble ${msg.role}`} style={msg.role === 'user' ? { background: color } : {}}>
-                            <p style={{ fontSize: '0.85rem' }}>{msg.text.split('**').map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}</p>
-                            <time>{formatTime(msg.time)}</time>
-                        </div>
-                    </div>
-                ))}
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+                
                 {sending && (
-                    <div className="ac-row ai">
-                        <div className="ac-msg-avatar" style={{ background: color, width: 24, height: 24 }}>AI</div>
-                        <div className="ac-bubble ai ac-typing">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="vx-msg-row ai"
+                    >
+                        <div className="vx-bubble ai vx-typing">
                             <span /><span /><span />
                         </div>
-                    </div>
+                    </motion.div>
                 )}
                 <div ref={endRef} />
             </div>
 
-            {/* Input */}
-            <div className="ac-input-area" style={{ padding: '0.8rem' }}>
-                <div className="ac-input-wrap">
+            {/* Input Area */}
+            <div className="vx-input-area">
+                <div className="vx-input-wrap">
                     <textarea
-                        className="ac-input"
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
-                        placeholder="اكتب استفسارك..."
+                        placeholder="اكتب رسالتك هنا..."
                         rows={1}
+                        style={{ height: 'auto' }}
+                        onInput={(e) => {
+                            e.target.style.height = 'auto';
+                            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                        }}
                     />
-                    <button className="ac-send" onClick={sendMessage} disabled={!input.trim() || sending} style={{ background: color, width: 34, height: 34 }}>
+                    <button 
+                        className="vx-send-btn" 
+                        onClick={sendMessage} 
+                        disabled={!input.trim() || sending}
+                        style={{background: color}}
+                    >
                         <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} />
                     </button>
                 </div>

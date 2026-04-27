@@ -12,6 +12,7 @@ class CompanyModel extends FirestoreModel {
       requests: [],
       knowledgeBase: [],
       extractedKnowledge: "",
+      urlExtractedKnowledge: "",
       customInstructions: "",
       websiteConfig: {
         themeColor: "#4f46e5",

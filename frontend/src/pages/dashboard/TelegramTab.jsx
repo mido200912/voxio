@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion, AnimatePresence } from 'framer-motion';
+import PageLoader from '../../components/PageLoader';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
 
@@ -125,47 +126,51 @@ const TelegramTab = () => {
     };
 
 
-    // ─── STYLES ──────────────────────────────────────────────────────────
+    // ─── PREMIUM STYLES ────────────────────────────────────────────────────────
     const s = {
-        wrapper: { padding: '24px', fontFamily: 'inherit', direction: isArabic ? 'rtl' : 'ltr' },
-        header: { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' },
-        icon: { width: '52px', height: '52px', borderRadius: '14px', background: '#26A5E415', color: '#26A5E4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' },
-        mainTabs: { display: 'flex', gap: '4px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '12px', width: 'fit-content', marginBottom: '24px' },
+        wrapper: { padding: '32px', fontFamily: 'inherit', direction: isArabic ? 'rtl' : 'ltr' },
+        header: { display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px', background: 'linear-gradient(135deg, rgba(38, 165, 228, 0.1) 0%, rgba(38, 165, 228, 0.02) 100%)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(38, 165, 228, 0.15)' },
+        icon: { width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #26A5E4, #1B7DAE)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 10px 20px rgba(38, 165, 228, 0.3)' },
+        mainTabs: { display: 'flex', gap: '8px', background: 'var(--color-card-bg)', padding: '6px', borderRadius: '16px', width: 'fit-content', marginBottom: '32px', border: '1px solid var(--color-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
         mainTab: (active) => ({
-            padding: '8px 22px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-            fontWeight: active ? '600' : '400', fontSize: '0.92rem',
-            background: active ? 'var(--bg-primary)' : 'transparent',
-            color: active ? '#26A5E4' : 'var(--text-secondary)',
-            boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-            transition: 'all 0.2s'
-        }),
-        categoryBar: { display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)' },
-        catBtn: (active) => ({
-            padding: '8px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-            whiteSpace: 'nowrap', transition: 'all 0.2s',
+            padding: '10px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+            fontWeight: active ? '700' : '500', fontSize: '0.95rem',
             background: active ? '#26A5E4' : 'transparent',
-            color: active ? 'white' : 'var(--text-secondary)',
-            fontWeight: active ? '600' : '400'
+            color: active ? '#ffffff' : 'var(--color-text-secondary)',
+            boxShadow: active ? '0 4px 12px rgba(38, 165, 228, 0.3)' : 'none',
+            transition: 'all 0.3s ease',
+            display: 'flex', alignItems: 'center'
         }),
-        card: { background: 'var(--bg-secondary)', borderRadius: '16px', padding: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' },
-        grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' },
-        chatLayout: { display: 'flex', gap: '0', height: '520px', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden' },
-        sidebar: { width: '240px', borderInlineEnd: '1px solid var(--border-color)', overflowY: 'auto', background: 'var(--bg-secondary)', flexShrink: 0 },
+        categoryBar: { display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '24px' },
+        catBtn: (active) => ({
+            padding: '8px 20px', borderRadius: '24px', border: '1px solid',
+            borderColor: active ? '#26A5E4' : 'var(--color-border)',
+            cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.3s',
+            background: active ? 'rgba(38, 165, 228, 0.1)' : 'var(--color-card-bg)',
+            color: active ? '#26A5E4' : 'var(--color-text-secondary)',
+            fontWeight: active ? '700' : '500'
+        }),
+        card: { background: 'var(--color-card-bg)', borderRadius: '20px', padding: '24px', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' },
+        grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' },
+        chatLayout: { display: 'flex', gap: '0', height: '600px', border: '1px solid var(--color-border)', borderRadius: '24px', overflow: 'hidden', background: 'var(--color-bg)', boxShadow: '0 15px 40px rgba(0,0,0,0.05)' },
+        sidebar: { width: '280px', borderInlineEnd: '1px solid var(--color-border)', overflowY: 'auto', background: 'var(--color-card-bg)', flexShrink: 0 },
         userItem: (active) => ({
-            padding: '14px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)',
-            background: active ? '#26A5E415' : 'transparent',
-            borderInlineStart: active ? '3px solid #26A5E4' : '3px solid transparent',
-            transition: 'background 0.15s'
+            padding: '16px 20px', cursor: 'pointer', borderBottom: '1px solid var(--color-border)',
+            background: active ? 'rgba(38, 165, 228, 0.05)' : 'transparent',
+            borderInlineStart: active ? '4px solid #26A5E4' : '4px solid transparent',
+            transition: 'all 0.2s ease'
         }),
-        messagesArea: { flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)' },
-        messagesBody: { flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' },
+        messagesArea: { flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--color-bg)' },
+        messagesBody: { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' },
         bubble: (sender) => ({
-            maxWidth: '70%', padding: '10px 14px', borderRadius: sender === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-            background: sender === 'user' ? '#26A5E4' : 'var(--bg-secondary)',
-            color: sender === 'user' ? 'white' : 'var(--text-primary)',
+            maxWidth: '75%', padding: '12px 18px', 
+            borderRadius: sender === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+            background: sender === 'user' ? 'linear-gradient(135deg, #26A5E4, #1B7DAE)' : 'var(--color-card-bg)',
+            color: sender === 'user' ? 'white' : 'var(--color-text)',
             alignSelf: sender === 'user' ? 'flex-end' : 'flex-start',
-            fontSize: '0.92rem', lineHeight: '1.5', wordBreak: 'break-word',
-            border: sender !== 'user' ? '1px solid var(--border-color)' : 'none'
+            fontSize: '0.95rem', lineHeight: '1.5', wordBreak: 'break-word',
+            border: sender !== 'user' ? '1px solid var(--color-border)' : 'none',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
         }),
     };
 
@@ -175,10 +180,10 @@ const TelegramTab = () => {
             <div style={s.header}>
                 <div style={s.icon}><i className="fab fa-telegram-plane" /></div>
                 <div>
-                    <h1 style={{ fontSize: '1.7rem', color: 'var(--text-primary)', margin: 0 }}>
+                    <h1 style={{ fontSize: '1.7rem', color: 'var(--color-text)', margin: 0 }}>
                         {isArabic ? 'تليجرام' : 'Telegram'}
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                    <p style={{ color: 'var(--color-text-secondary)', margin: '4px 0 0' }}>
                         {isArabic ? 'إدارة المحادثات والطلبات الواردة' : 'Manage conversations & incoming requests'}
                     </p>
                 </div>
@@ -201,9 +206,7 @@ const TelegramTab = () => {
                 {mainTab === 'requests' && (
                     <motion.div key="requests" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         {loading ? (
-                            <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
-                                <i className="fas fa-spinner fa-spin" style={{ fontSize: '24px' }} />
-                            </div>
+                            <PageLoader text={isArabic ? 'جاري تحميل الطلبات...' : 'Loading requests...'} />
                         ) : requests.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
                                 <div style={{ fontSize: '48px', color: '#26A5E4', marginBottom: '16px' }}><i className="fab fa-telegram-plane" /></div>
@@ -229,12 +232,12 @@ const TelegramTab = () => {
                                                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                                                     <div>
-                                                        <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '1rem' }}>
+                                                        <div style={{ fontWeight: '600', color: 'var(--color-text)', fontSize: '1rem' }}>
                                                             <i className="fas fa-user-circle" style={{ marginInlineEnd: '6px', color: '#26A5E4' }} />
                                                             {req.customerName}
                                                         </div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                                                            {req.product && <span style={{ background: '#26A5E415', color: '#26A5E4', borderRadius: '8px', padding: '2px 8px', marginInlineEnd: '6px', fontSize: '0.78rem' }}>{req.product}</span>}
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '3px' }}>
+                                                            {req.product && <span style={{ background: 'rgba(38, 165, 228, 0.1)', color: '#26A5E4', borderRadius: '8px', padding: '2px 8px', marginInlineEnd: '6px', fontSize: '0.78rem' }}>{req.product}</span>}
                                                             {formatFullDate(req.date)}
                                                         </div>
                                                     </div>
@@ -243,11 +246,11 @@ const TelegramTab = () => {
                                                         <i className="fas fa-trash" />
                                                     </button>
                                                 </div>
-                                                <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '0.92rem', lineHeight: '1.6', color: 'var(--text-primary)' }}>
+                                                <div style={{ background: 'var(--color-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--color-border)', fontSize: '0.95rem', lineHeight: '1.6', color: 'var(--color-text)' }}>
                                                     {req.message}
                                                 </div>
                                                 {req.aiReply && (
-                                                    <div style={{ marginTop: '10px', background: '#26A5E410', padding: '10px 12px', borderRadius: '10px', fontSize: '0.88rem', color: '#26A5E4', border: '1px solid #26A5E430' }}>
+                                                    <div style={{ marginTop: '12px', background: 'rgba(38, 165, 228, 0.05)', padding: '12px 16px', borderRadius: '12px', fontSize: '0.9rem', color: '#26A5E4', border: '1px solid rgba(38, 165, 228, 0.2)' }}>
                                                         <i className="fas fa-robot" style={{ marginInlineEnd: '6px' }} />
                                                         {req.aiReply}
                                                     </div>
@@ -270,7 +273,7 @@ const TelegramTab = () => {
                 {mainTab === 'chats' && (
                     <motion.div key="chats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         {chatsLoading ? (
-                            <div style={{ textAlign: 'center', padding: '60px' }}><i className="fas fa-spinner fa-spin" style={{ fontSize: '24px' }} /></div>
+                            <PageLoader text={isArabic ? 'جاري تحميل المحادثات...' : 'Loading chats...'} />
                         ) : chats.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
                                 <div style={{ fontSize: '48px', color: '#26A5E4', marginBottom: '16px' }}><i className="fas fa-comments" /></div>
@@ -281,18 +284,18 @@ const TelegramTab = () => {
                             <div style={s.chatLayout}>
                                 {/* Sidebar */}
                                 <div style={s.sidebar}>
-                                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)', fontSize: '0.85rem', fontWeight: '600', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         {isArabic ? 'المحادثات' : 'Chats'} ({chats.length})
                                     </div>
                                     {chats.map(chat => (
                                         <div key={chat.id} style={s.userItem(activeChatUser === chat.id)} onClick={() => setActiveChatUser(chat.id)}>
-                                            <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ fontWeight: '600', color: 'var(--color-text)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <span style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#26A5E4', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', flexShrink: 0 }}>
                                                     {(chat.name || 'U').charAt(0).toUpperCase()}
                                                 </span>
                                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chat.name}</span>
                                             </div>
-                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingInlineStart: '40px' }}>
+                                            <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingInlineStart: '40px' }}>
                                                 {chat.lastMessage}
                                             </div>
                                         </div>
@@ -303,13 +306,13 @@ const TelegramTab = () => {
                                 <div style={s.messagesArea}>
                                     {activeChatUser ? (
                                         <>
-                                            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-color)', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-border)', fontWeight: '600', color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 <i className="fab fa-telegram-plane" style={{ color: '#26A5E4' }} />
                                                 {activeChatUser}
                                             </div>
                                             <div style={s.messagesBody}>
                                                 {messages.length === 0 && (
-                                                    <div style={{ textAlign: 'center', color: 'var(--text-secondary)', margin: 'auto', padding: '20px' }}>
+                                                    <div style={{ textAlign: 'center', color: 'var(--color-text-secondary)', margin: 'auto', padding: '20px' }}>
                                                         {isArabic ? 'لا توجد رسائل' : 'No messages'}
                                                     </div>
                                                 )}
@@ -325,7 +328,7 @@ const TelegramTab = () => {
                                             </div>
                                         </>
                                     ) : (
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-secondary)' }}>
                                             {isArabic ? 'اختر محادثة من القائمة' : 'Select a chat'}
                                         </div>
                                     )}

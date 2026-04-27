@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { secureStorage } from '../../utils/secureStorage';
 import { motion } from 'framer-motion';
+import { useToast } from '../../components/Toast';
 import './ModelTest.css';
 
 const ModelTest = () => {
@@ -12,8 +14,9 @@ const ModelTest = () => {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
+    const { toast } = useToast();
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,10 +62,10 @@ const ModelTest = () => {
 
         try {
             // Ensure we have the latest token
-            const currentToken = token || localStorage.getItem('token');
+            const currentToken = token || secureStorage.getItem('token');
 
             if (!currentToken) {
-                alert(t.dashboard.modelTestPage.loginRequired);
+                toast.warning(t.dashboard.modelTestPage.loginRequired);
                 return;
             }
 

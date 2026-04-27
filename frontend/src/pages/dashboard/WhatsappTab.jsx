@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion, AnimatePresence } from 'framer-motion';
+import PageLoader from '../../components/PageLoader';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
 
@@ -109,37 +110,40 @@ const WhatsappTab = () => {
         return isNaN(d.getTime()) ? '' : d.toLocaleString();
     };
 
-    // ─── STYLES ──────────────────────────────────────────────────────────
+    // ─── PREMIUM STYLES ────────────────────────────────────────────────────────
     const s = {
-        wrapper: { padding: '24px', fontFamily: 'inherit', direction: isArabic ? 'rtl' : 'ltr' },
-        header: { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' },
-        icon: { width: '52px', height: '52px', borderRadius: '14px', background: '#25D36615', color: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' },
-        mainTabs: { display: 'flex', gap: '4px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '12px', width: 'fit-content', marginBottom: '24px' },
+        wrapper: { padding: '32px', fontFamily: 'inherit', direction: isArabic ? 'rtl' : 'ltr' },
+        header: { display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px', background: 'linear-gradient(135deg, rgba(37, 211, 102, 0.1) 0%, rgba(37, 211, 102, 0.02) 100%)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(37, 211, 102, 0.15)' },
+        icon: { width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #25D366, #128C7E)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 10px 20px rgba(37, 211, 102, 0.3)' },
+        mainTabs: { display: 'flex', gap: '8px', background: 'var(--color-card-bg)', padding: '6px', borderRadius: '16px', width: 'fit-content', marginBottom: '32px', border: '1px solid var(--color-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
         mainTab: (active) => ({
-            padding: '8px 22px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-            fontWeight: active ? '600' : '400', fontSize: '0.92rem',
-            background: active ? 'var(--bg-primary)' : 'transparent',
-            color: active ? '#25D366' : 'var(--text-secondary)',
-            boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-            transition: 'all 0.2s'
+            padding: '10px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+            fontWeight: active ? '700' : '500', fontSize: '0.95rem',
+            background: active ? '#25D366' : 'transparent',
+            color: active ? '#ffffff' : 'var(--color-text-secondary)',
+            boxShadow: active ? '0 4px 12px rgba(37, 211, 102, 0.3)' : 'none',
+            transition: 'all 0.3s ease',
+            display: 'flex', alignItems: 'center'
         }),
-        chatLayout: { display: 'flex', gap: '0', height: '560px', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden' },
-        sidebar: { width: '280px', borderInlineEnd: '1px solid var(--border-color)', overflowY: 'auto', background: 'var(--bg-secondary)', flexShrink: 0 },
+        chatLayout: { display: 'flex', gap: '0', height: '600px', border: '1px solid var(--color-border)', borderRadius: '24px', overflow: 'hidden', background: 'var(--color-bg)', boxShadow: '0 15px 40px rgba(0,0,0,0.05)' },
+        sidebar: { width: '280px', borderInlineEnd: '1px solid var(--color-border)', overflowY: 'auto', background: 'var(--color-card-bg)', flexShrink: 0 },
         userItem: (active) => ({
-            padding: '14px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)',
-            background: active ? '#25D36615' : 'transparent',
+            padding: '16px 20px', cursor: 'pointer', borderBottom: '1px solid var(--color-border)',
+            background: active ? 'rgba(37, 211, 102, 0.05)' : 'transparent',
             borderInlineStart: active ? '4px solid #25D366' : '4px solid transparent',
-            transition: 'background 0.15s'
+            transition: 'all 0.2s ease'
         }),
-        messagesArea: { flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)' },
-        messagesBody: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundSize: 'cover', backgroundBlendMode: 'soft-light' },
+        messagesArea: { flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--color-bg)' },
+        messagesBody: { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundSize: 'cover', backgroundBlendMode: 'overlay', opacity: 0.95 },
         bubble: (sender) => ({
-            maxWidth: '75%', padding: '10px 14px', borderRadius: '12px',
-            background: sender === 'user' ? '#d9fdd3' : 'white',
-            color: '#111b21',
+            maxWidth: '75%', padding: '12px 18px', 
+            borderRadius: sender === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+            background: sender === 'user' ? '#128C7E' : 'var(--color-card-bg)',
+            color: sender === 'user' ? 'white' : 'var(--color-text)',
             alignSelf: sender === 'user' ? 'flex-end' : 'flex-start',
-            fontSize: '0.92rem', lineHeight: '1.5', wordBreak: 'break-word',
-            boxShadow: '0 1px 1px rgba(0,0,0,0.1)'
+            fontSize: '0.95rem', lineHeight: '1.5', wordBreak: 'break-word',
+            border: sender !== 'user' ? '1px solid var(--color-border)' : 'none',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
         }),
     };
 
@@ -167,7 +171,7 @@ const WhatsappTab = () => {
             <AnimatePresence mode="wait">
                 <motion.div key="chats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                     {chatsLoading && chats.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '60px' }}><i className="fas fa-spinner fa-spin" style={{ fontSize: '24px', color: '#25D366' }} /></div>
+                        <PageLoader text={isArabic ? 'جاري تحميل المحادثات...' : 'Loading chats...'} />
                     ) : chats.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
                             <div style={{ fontSize: '48px', color: '#25D366', marginBottom: '16px' }}><i className="fab fa-whatsapp" /></div>
@@ -178,18 +182,18 @@ const WhatsappTab = () => {
                         <div style={s.chatLayout}>
                             {/* Sidebar */}
                             <div style={s.sidebar}>
-                                <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)', background: '#f0f2f5' }}>
+                                <div style={{ padding: '16px', borderBottom: '1px solid var(--color-border)', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--color-text)', background: 'var(--color-card-bg)' }}>
                                     {isArabic ? 'المحادثات' : 'Chats'} ({chats.length})
                                 </div>
                                 {chats.map(chat => (
                                     <div key={chat.id} style={s.userItem(activeChatUser === chat.id)} onClick={() => setActiveChatUser(chat.id)}>
-                                        <div style={{ fontWeight: 'bold', color: '#111b21', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ fontWeight: 'bold', color: 'var(--color-text)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <span style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
                                                 {(chat.name || 'U').charAt(0).toUpperCase()}
                                             </span>
                                             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chat.name}</span>
-                                                <span style={{ fontSize: '0.8rem', color: '#667781', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {chat.lastMessage}
                                                 </span>
                                             </div>
@@ -202,7 +206,7 @@ const WhatsappTab = () => {
                             <div style={s.messagesArea}>
                                 {activeChatUser ? (
                                     <>
-                                        <div style={{ padding: '12px 18px', background: '#f0f2f5', borderBottom: '1px solid var(--border-color)', fontWeight: 'bold', color: '#111b21', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ padding: '12px 18px', background: 'var(--color-card-bg)', borderBottom: '1px solid var(--color-border)', fontWeight: 'bold', color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <span style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>
                                                 {activeChatUser.charAt(0).toUpperCase()}
                                             </span>
@@ -210,17 +214,17 @@ const WhatsappTab = () => {
                                         </div>
                                         <div style={s.messagesBody}>
                                             {messages.length === 0 && (
-                                                <div style={{ textAlign: 'center', background: '#fff9c4', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', color: '#544c1', margin: 'auto' }}>
+                                                <div style={{ textAlign: 'center', background: 'rgba(37, 211, 102, 0.1)', border: '1px solid rgba(37, 211, 102, 0.2)', padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem', color: '#25D366', margin: 'auto' }}>
                                                     {isArabic ? 'هذه بداية رسائلك مع هذا الرقم.' : 'This is the beginning of the chat.'}
                                                 </div>
                                             )}
                                             {messages.map((msg, idx) => (
                                                 <div key={idx} style={s.bubble(msg.sender)}>
-                                                    <div style={{ color: msg.sender === 'user' ? '#12411e' : '#555', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '2px' }}>
+                                                    <div style={{ color: msg.sender === 'user' ? 'rgba(255,255,255,0.8)' : 'var(--color-text-secondary)', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '2px' }}>
                                                         {msg.sender === 'user' ? (isArabic ? 'العميل' : 'Customer') : 'VOXIO Bot'}
                                                     </div>
                                                     {msg.text}
-                                                    <div style={{ fontSize: '0.7rem', color: '#888', marginTop: '4px', textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '0.7rem', color: msg.sender === 'user' ? 'rgba(255,255,255,0.7)' : 'var(--color-text-secondary)', marginTop: '4px', textAlign: 'right' }}>
                                                         {formatTime(msg.createdAt)}
                                                     </div>
                                                 </div>
@@ -229,7 +233,7 @@ const WhatsappTab = () => {
                                         </div>
                                     </>
                                 ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f0f2f5', color: '#667781', fontSize: '1.1rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--color-bg)', color: 'var(--color-text-secondary)', fontSize: '1.1rem' }}>
                                         {isArabic ? 'اختر محادثة لعرض الرسائل' : 'Select a chat to view messages'}
                                     </div>
                                 )}

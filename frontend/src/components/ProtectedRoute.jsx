@@ -1,15 +1,12 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PageLoader from './PageLoader';
 
 const ProtectedRoute = ({ children }) => {
     const { user, loading, isAuthChecked } = useAuth();
 
     if (!isAuthChecked || loading) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-                <div style={{ color: 'var(--primary-color)', fontSize: '1.5rem' }}>Loading...</div>
-            </div>
-        );
+        return <PageLoader />;
     }
 
     if (!user) {

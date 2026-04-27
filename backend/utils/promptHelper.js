@@ -19,6 +19,7 @@ export async function getCompanyAIContext(companyDoc) {
     }
 
     const knowledgeContext = companyDoc.extractedKnowledge || "لا توجد معلومات إضافية متاحة حالياً.";
+    const urlKnowledgeContext = companyDoc.urlExtractedKnowledge || "";
 
     const parts = [
         `You are a specialized AI assistant representing the company "${companyDoc.name || 'N/A'}".`,
@@ -40,9 +41,14 @@ export async function getCompanyAIContext(companyDoc) {
         "Available Products & Services:",
         productsInfo,
         "",
-        "Knowledge Base (Fact source):",
+        "Knowledge Base - Files (Fact source):",
         knowledgeContext,
         "",
+        ...(urlKnowledgeContext ? [
+            "Knowledge Base - Website & Social Media:",
+            urlKnowledgeContext,
+            ""
+        ] : []),
         "Custom Instructions (Follow exactly):",
         companyDoc.customInstructions || "Respond professionally and naturally.",
         "",

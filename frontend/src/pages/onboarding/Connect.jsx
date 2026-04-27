@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../components/Toast';
 import '../../pages/auth/Auth.css';
 
 const OnboardingConnect = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     const handleConnect = (platform) => {
         // Mock connection logic
         console.log(`Connecting to ${platform}...`);
-        alert(`جاري التحويل لربط ${platform}... (محاكاة)`);
+        toast.info(`جاري التحويل لربط ${platform}... (محاكاة)`);
     };
 
     const handleFinish = () => {

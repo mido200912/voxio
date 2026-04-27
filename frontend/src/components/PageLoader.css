@@ -1,0 +1,110 @@
+.page-loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--color-bg, #000);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+.loader-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.loader-logo {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+  z-index: 2;
+  animation: pulseLogo 2s infinite ease-in-out;
+}
+
+.outer-ring,
+.inner-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid transparent;
+}
+
+.outer-ring {
+  border-top-color: var(--color-text, #fff);
+  border-right-color: rgba(255, 255, 255, 0.1);
+  animation: spinOuter 1.5s linear infinite;
+}
+
+.inner-ring {
+  width: 70%;
+  height: 70%;
+  top: 15%;
+  left: 15%;
+  border-bottom-color: #6C63FF; /* Premium purple color */
+  border-left-color: rgba(108, 99, 255, 0.2);
+  animation: spinInner 1s linear infinite reverse;
+}
+
+.loading-text {
+  color: var(--color-text-secondary, #b3b3b3);
+  font-family: var(--font-ar), 'Cairo', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  animation: fadeText 1.5s infinite alternate;
+}
+
+/* Animations */
+@keyframes spinOuter {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinInner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseLogo {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+@keyframes fadeText {
+  0% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}

@@ -118,20 +118,26 @@ const DashboardLayout = () => {
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/telegram" className={`nav-item ${isActive('/dashboard/telegram')}`} onClick={handleNavItemClick}>
+                            <Link to="/dashboard/widget" className={`nav-item ${isActive('/dashboard/widget')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-code"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'ودجت الموقع' : 'Web Widget'}</span>}
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/dashboard/telegram" className={`nav-item nav-item-telegram ${isActive('/dashboard/telegram')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-telegram-plane"></i>
                                 {isSidebarOpen && <span>{language === 'ar' ? 'تليجرام' : 'Telegram'}</span>}
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/website-chat" className={`nav-item ${isActive('/dashboard/website-chat')}`} onClick={handleNavItemClick}>
+                            <Link to="/dashboard/website-chat" className={`nav-item nav-item-website ${isActive('/dashboard/website-chat')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-globe"></i>
                                 {isSidebarOpen && <span>{language === 'ar' ? 'موقع الويب' : 'Website'}</span>}
                             </Link>
                         </li>
                         {activeIntegrations.includes('whatsapp') && (
                         <li>
-                            <Link to="/dashboard/whatsapp" className={`nav-item ${isActive('/dashboard/whatsapp')}`} onClick={handleNavItemClick}>
+                            <Link to="/dashboard/whatsapp" className={`nav-item nav-item-whatsapp ${isActive('/dashboard/whatsapp')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-whatsapp"></i>
                                 {isSidebarOpen && <span>{language === 'ar' ? 'واتساب' : 'WhatsApp'}</span>}
                             </Link>
@@ -139,18 +145,12 @@ const DashboardLayout = () => {
                         )}
                         {activeIntegrations.includes('instagram') && (
                         <li>
-                            <Link to="/dashboard/instagram" className={`nav-item ${isActive('/dashboard/instagram')}`} onClick={handleNavItemClick}>
+                            <Link to="/dashboard/instagram" className={`nav-item nav-item-instagram ${isActive('/dashboard/instagram')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-instagram"></i>
                                 {isSidebarOpen && <span>{language === 'ar' ? 'إنستاجرام' : 'Instagram'}</span>}
                             </Link>
                         </li>
                         )}
-                        <li>
-                            <Link to="/dashboard/chatbot-editor" className={`nav-item ${isActive('/dashboard/chatbot-editor')}`} onClick={handleNavItemClick}>
-                                <i className="fas fa-wand-magic-sparkles"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'مصمم الشات بوت' : 'Chatbot Editor'}</span>}
-                            </Link>
-                        </li>
                         <li>
                             <Link to="/dashboard/settings" className={`nav-item ${isActive('/dashboard/settings')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-cog"></i>

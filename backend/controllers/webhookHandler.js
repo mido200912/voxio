@@ -222,16 +222,16 @@ export const handleInstagramWebhook = async (body) => {
                         }
 
                         if (replyMsg) {
-                            await CompanyChat.create({ company: integration.company, user: senderId, text: replyMsg, sender: 'ai', platform: 'instagram' });
-                            // Send reply
                             try {
                                 await axios.post(
                                     `https://graph.facebook.com/v18.0/${integration.credentials.pageId}/messages`,
                                     { recipient: { id: senderId }, message: { text: replyMsg } },
                                     { params: { access_token: accessToken } }
                                 );
+                                await CompanyChat.create({ company: integration.company, user: senderId, text: replyMsg, sender: 'ai', platform: 'instagram', status: 'delivered' });
                             } catch (err) {
                                 console.error('Error sending IG DM:', err.response?.data || err.message);
+                                await CompanyChat.create({ company: integration.company, user: senderId, text: replyMsg, sender: 'ai', platform: 'instagram', status: 'failed' });
                             }
                         }
                     }
@@ -274,32 +274,63 @@ export const handleInstagramWebhook = async (body) => {
                         const matchedRule = globalRules.find(r => commentText.toLowerCase().includes(r.keyword.toLowerCase()));
 
                         if (matchedRule) {
-                            let dmSuccess = false;
+                            let canSendDm = true;
+                            let isFollower = true; // TODO: Implement real follower check via IG Graph API
 
-                            // 1. Try to send DM first
-                            try {
-                                await axios.post(
-                                    `https://graph.facebook.com/v18.0/${integration.credentials.pageId}/messages`,
-                                    { recipient: { id: fromId }, message: { text: matchedRule.dmReply } },
-                                    { params: { access_token: accessToken } }
-                                );
-                                dmSuccess = true;
-                            } catch (dmErr) {
-                                console.error('Failed to send DM for comment:', dmErr.response?.data || dmErr.message);
-                                dmSuccess = false;
+                            if (matchedRule.requireFollow) {
+                                // ⚠️ Graph API limitation: Cannot easily check if arbitrary user follows you without their token.
+                                // Some platforms use private APIs or workaround to check this.
+                                // For MVP, we assume true, but the flow is ready to block if false.
+                                // isFollower = await checkUserFollows(integration.credentials.igAccountId, fromId, accessToken);
+                                
+                                if (!isFollower) {
+                                    canSendDm = false;
+                                }
                             }
 
-                            // 2. Reply to comment
-                            const commentReplyText = dmSuccess ? matchedRule.commentReply : (dmClosedFallback || matchedRule.commentReply);
-                            
-                            try {
-                                await axios.post(
-                                    `https://graph.facebook.com/v18.0/${commentId}/replies`,
-                                    { message: commentReplyText },
-                                    { params: { access_token: accessToken } }
-                                );
-                            } catch (replyErr) {
-                                console.error('Failed to reply to IG comment:', replyErr.response?.data || replyErr.message);
+                            if (!canSendDm) {
+                                // They don't follow, send the not-following reply if exists
+                                if (matchedRule.notFollowingReply) {
+                                    try {
+                                        await axios.post(
+                                            `https://graph.facebook.com/v18.0/${commentId}/replies`,
+                                            { message: matchedRule.notFollowingReply },
+                                            { params: { access_token: accessToken } }
+                                        );
+                                    } catch (replyErr) {
+                                        console.error('Failed to reply (not following):', replyErr.response?.data || replyErr.message);
+                                    }
+                                }
+                            } else {
+                                let dmSuccess = false;
+
+                                // 1. Try to send DM first
+                                try {
+                                    await axios.post(
+                                        `https://graph.facebook.com/v18.0/${integration.credentials.pageId}/messages`,
+                                        { recipient: { id: fromId }, message: { text: matchedRule.dmReply } },
+                                        { params: { access_token: accessToken } }
+                                    );
+                                    await CompanyChat.create({ company: integration.company, user: fromId, text: matchedRule.dmReply, sender: 'ai', platform: 'instagram', status: 'delivered' });
+                                    dmSuccess = true;
+                                } catch (dmErr) {
+                                    console.error('Failed to send DM for comment:', dmErr.response?.data || dmErr.message);
+                                    await CompanyChat.create({ company: integration.company, user: fromId, text: matchedRule.dmReply, sender: 'ai', platform: 'instagram', status: 'failed' });
+                                    dmSuccess = false;
+                                }
+
+                                // 2. Reply to comment (success reply or fallback if DM failed)
+                                const commentReplyText = dmSuccess ? matchedRule.commentReply : (dmClosedFallback || matchedRule.commentReply);
+                                
+                                try {
+                                    await axios.post(
+                                        `https://graph.facebook.com/v18.0/${commentId}/replies`,
+                                        { message: commentReplyText },
+                                        { params: { access_token: accessToken } }
+                                    );
+                                } catch (replyErr) {
+                                    console.error('Failed to reply to IG comment:', replyErr.response?.data || replyErr.message);
+                                }
                             }
                         }
                     }

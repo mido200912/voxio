@@ -116,8 +116,8 @@ Remember: Modify the code to fulfill the current request while respecting the co
     console.log("🤖 Chatbot Editor: Saved. New HTML length:", parsed.code.length);
     res.json({ message: parsed.message, code: parsed.code });
   } catch (err) {
-    console.error("🤖 Chatbot Editor Error:", err.message);
-    res.status(500).json({ error: "فشل التعديل، حاول تاني" });
+    console.error("🤖 Chatbot Editor Edit Error:", err);
+    res.status(500).json({ error: "فشل التعديل، حاول تاني", details: err.message });
   }
 });
 
@@ -139,6 +139,7 @@ router.post("/reset", requireAuth, async (req, res) => {
 
     res.json({ message: "تم إعادة التصميم للقالب الأصلي بنجاح ✅", code: defaultHtml });
   } catch (err) {
+    console.error("🤖 Chatbot Editor Reset Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -161,6 +162,7 @@ router.get("/page/:slug", async (req, res) => {
       slug: company.slug
     });
   } catch (err) {
+    console.error("🤖 Chatbot Editor Page Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -174,14 +176,17 @@ router.post("/save", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    company.websiteConfig = {
-      ...company.websiteConfig,
+    // Directly update Firestore to be safe
+    const websiteConfig = {
+      ...(company.websiteConfig || {}),
       htmlContent: htmlContent
     };
-    await company.save();
+
+    await Company.collection.doc(company._id).set({ websiteConfig }, { merge: true });
 
     res.json({ message: "تم حفظ الكود بنجاح ✅" });
   } catch (err) {
+    console.error("🤖 Chatbot Editor Save Error:", err);
     res.status(500).json({ error: err.message });
   }
 });

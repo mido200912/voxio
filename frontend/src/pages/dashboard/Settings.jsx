@@ -4,11 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion } from 'framer-motion';
+import PageLoader from '../../components/PageLoader';
+import { useToast } from '../../components/Toast';
 import './Settings.css';
 
 const Settings = () => {
     const { user, changePassword } = useAuth();
     const { t, language } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [pwdSaving, setPwdSaving] = useState(false);
@@ -122,10 +125,10 @@ const Settings = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            alert(`✅ ${t.dashboard.settingsPage.saveSuccess}`);
+            toast.success(t.dashboard.settingsPage.saveSuccess);
         } catch (error) {
             console.error("Error updating settings:", error);
-            alert(`❌ ${t.dashboard.settingsPage.saveError}`);
+            toast.error(t.dashboard.settingsPage.saveError);
         } finally {
             setSaving(false);
         }
@@ -144,15 +147,15 @@ const Settings = () => {
         setPwdSaving(true);
         const success = await changePassword(pwdData.oldPassword, pwdData.newPassword);
         if (success) {
-            alert('✅ Password changed successfully');
+            toast.success(language === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully');
             setPwdData({ oldPassword: '', newPassword: '', confirmPassword: '' });
         } else {
-            alert('❌ Failed to change password. Check your old password.');
+            toast.error(language === 'ar' ? 'فشل تغيير كلمة المرور. تأكد من كلمة المرور القديمة.' : 'Failed to change password. Check your old password.');
         }
         setPwdSaving(false);
     };
 
-    if (loading) return <div className="loading-state">{t.dashboard.settingsPage.loading}</div>;
+    if (loading) return <PageLoader text={t.dashboard.settingsPage.loading} />;
 
     const containerVariants = {
         hidden: { opacity: 0 },

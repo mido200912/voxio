@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion } from 'framer-motion';
+import PageLoader from '../../components/PageLoader';
 import './DashboardHome.css';
 
 const DashboardHome = () => {
@@ -39,7 +40,7 @@ const DashboardHome = () => {
         return () => clearInterval(interval);
     }, []);
 
-    if (loading) return <div className="loading-state">{t.dashboard.homePage.loading}</div>;
+    if (loading) return <PageLoader text={t.dashboard.homePage.loading} />;
     // We can show error but might prefer showing zeros or a safe state
 
     const containerVariants = {
@@ -114,8 +115,8 @@ const DashboardHome = () => {
                 <h3>{t.dashboard.homePage.recentActivity}</h3>
                 {stats.recentActivity.length > 0 ? (
                     <div className="activity-list">
-                        {stats.recentActivity.map((activity) => (
-                            <div key={activity.id} className="activity-item">
+                        {stats.recentActivity.map((activity, idx) => (
+                            <div key={activity.id || activity._id || idx} className="activity-item">
                                 <div className="activity-icon">
                                     <i className="fas fa-comment-alt"></i>
                                 </div>

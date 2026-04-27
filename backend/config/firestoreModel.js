@@ -28,7 +28,6 @@ export class FirestoreModel {
   }
 
   async findOne(query) {
-    // Special case: if _id is in query, use findById directly
     if (query._id) {
       const doc = await this.findById(query._id);
       if (!doc) return null;
@@ -38,7 +37,6 @@ export class FirestoreModel {
       return doc;
     }
 
-    // ⚡ Cache for simple single-field queries (e.g. { email: "..." })
     const queryKeys = Object.keys(query).filter(k => !k.includes('.'));
     const queryCacheKey = queryKeys.length === 1
       ? `${this.collectionName}:${queryKeys[0]}:${query[queryKeys[0]]}`
@@ -49,58 +47,98 @@ export class FirestoreModel {
       if (cached !== null) return cached;
     }
 
-    let ref = this.collection;
-    for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined && !key.includes('.')) {
-        ref = ref.where(key, '==', value);
+    try {
+      let ref = this.collection;
+      for (const [key, value] of Object.entries(query)) {
+        if (value !== undefined && !key.includes('.')) {
+          ref = ref.where(key, '==', value);
+        }
       }
-    }
-    const snapshot = await ref.limit(1).get();
-    if (snapshot.empty) {
-      if (queryCacheKey) cacheSet(queryCacheKey, null, 60 * 1000); // cache "not found" for 1 min
-      return null;
-    }
-    const doc = snapshot.docs[0];
-    const instance = this._createDocumentInstance(doc.id, doc.data());
-
-    // Filter nested queries in JS (e.g. 'credentials.phoneNumberId')
-    for (const [key, value] of Object.entries(query)) {
-      if (key.includes('.')) {
-        const [parent, child] = key.split('.');
-        if (instance[parent]?.[child] !== value) return null;
+      const snapshot = await ref.limit(1).get();
+      if (snapshot.empty) {
+        if (queryCacheKey) cacheSet(queryCacheKey, null, 60 * 1000);
+        return null;
       }
-    }
+      const doc = snapshot.docs[0];
+      const instance = this._createDocumentInstance(doc.id, doc.data());
 
-    if (queryCacheKey) cacheSet(queryCacheKey, instance, 2 * 60 * 1000);
-    return instance;
+      for (const [key, value] of Object.entries(query)) {
+        if (key.includes('.')) {
+          const [parent, child] = key.split('.');
+          if (instance[parent]?.[child] !== value) return null;
+        }
+      }
+
+      if (queryCacheKey) cacheSet(queryCacheKey, instance, 2 * 60 * 1000);
+      return instance;
+    } catch (err) {
+      // Fallback for missing indexes
+      if (err.message.includes('requires an index') || err.code === 9) {
+        console.warn(`[Firestore] Index missing for ${this.collectionName} query. Falling back to manual filter.`, query);
+        const results = await this.find(query);
+        return results.length > 0 ? results[0] : null;
+      }
+      throw err;
+    }
   }
 
   async find(query = {}) {
-    // Special case: if _id is in query, return array with single doc
     if (query._id) {
       const doc = await this.findById(query._id);
       return doc ? [doc] : [];
     }
 
-    let ref = this.collection;
-    for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined && !key.includes('.')) {
-        ref = ref.where(key, '==', value);
-      }
-    }
-    const snapshot = await ref.get();
-    const docs = snapshot.docs.map(doc => this._createDocumentInstance(doc.id, doc.data()));
-
-    // Apply nested field filtering in JS
-    return docs.filter(doc => {
+    try {
+      let ref = this.collection;
+      const simpleKeys = Object.keys(query).filter(k => !k.includes('.'));
+      
       for (const [key, value] of Object.entries(query)) {
-        if (key.includes('.')) {
-          const [parent, child] = key.split('.');
-          if (doc[parent]?.[child] !== value) return false;
+        if (value !== undefined && !key.includes('.')) {
+          ref = ref.where(key, '==', value);
         }
       }
-      return true;
-    });
+      const snapshot = await ref.get();
+      const docs = snapshot.docs.map(doc => this._createDocumentInstance(doc.id, doc.data()));
+
+      return docs.filter(doc => {
+        for (const [key, value] of Object.entries(query)) {
+          if (key.includes('.')) {
+            const [parent, child] = key.split('.');
+            if (doc[parent]?.[child] !== value) return false;
+          }
+        }
+        return true;
+      });
+    } catch (err) {
+      // Fallback for missing indexes
+      if (err.message.includes('requires an index') || err.code === 9) {
+        console.warn(`[Firestore] Index missing for ${this.collectionName} find. Falling back to manual filter.`);
+        // Just fetch everything (or use first key if possible) and filter
+        const simpleKeys = Object.keys(query).filter(k => !k.includes('.'));
+        let ref = this.collection;
+        
+        // At least use the first key to narrow it down
+        if (simpleKeys.length > 0) {
+          ref = ref.where(simpleKeys[0], '==', query[simpleKeys[0]]);
+        }
+        
+        const snapshot = await ref.get();
+        const docs = snapshot.docs.map(doc => this._createDocumentInstance(doc.id, doc.data()));
+        
+        return docs.filter(doc => {
+          for (const [key, value] of Object.entries(query)) {
+            const parts = key.split('.');
+            let val = doc;
+            for (const part of parts) {
+                val = val?.[part];
+            }
+            if (val !== value) return false;
+          }
+          return true;
+        });
+      }
+      throw err;
+    }
   }
 
   async create(data) {

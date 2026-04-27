@@ -20,6 +20,7 @@ import WhatsappTab from './pages/dashboard/WhatsappTab';
 import InstagramTab from './pages/dashboard/InstagramTab';
 import ModelTest from './pages/dashboard/ModelTest';
 import Settings from './pages/dashboard/Settings';
+import WidgetTab from './pages/dashboard/WidgetTab';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import AboutUs from './pages/AboutUs';
@@ -30,6 +31,7 @@ import AgentsExplorer, { AgentChat } from './pages/AgentsExplorer';
 import ChatWidget from './pages/ChatWidget';
 import ChatbotEditor from './pages/dashboard/ChatbotEditor';
 import ChatPage from './pages/ChatPage';
+import ToastProvider from './components/Toast';
 import './App.css';
 
 function App() {
@@ -38,6 +40,7 @@ function App() {
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
+            <ToastProvider>
             <div className="app">
               <Routes>
                 <Route path="/" element={<Home />} />
@@ -68,10 +71,12 @@ function App() {
                   <Route path="whatsapp" element={<WhatsappTab />} />
                   <Route path="instagram" element={<InstagramTab />} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="widget" element={<WidgetTab />} />
                   <Route path="chatbot-editor" element={<ChatbotEditor />} />
                 </Route>
               </Routes>
             </div>
+            </ToastProvider>
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>

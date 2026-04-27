@@ -3,12 +3,14 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/Input';
 import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from '../../components/Toast';
 import './Auth.css';
 
 const ForgotPassword = () => {
     const { t } = useLanguage();
     const { forgotPassword, resetPassword, loading, error } = useAuth();
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -44,7 +46,7 @@ const ForgotPassword = () => {
 
         const result = await resetPassword(emailTrimmed, formData.otp, formData.newPassword);
         if (result && result.message) {
-            alert('Password reset successfully. Please login.');
+            toast.success('Password reset successfully. Please login.');
             navigate('/login');
         }
     };

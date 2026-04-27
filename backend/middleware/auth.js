@@ -23,6 +23,7 @@ export const requireAuth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    res.status(401).json({ error: "Unauthorized" });
+    console.error("Auth Middleware Error:", err.message);
+    res.status(401).json({ error: "Unauthorized", details: err.message });
   }
 };

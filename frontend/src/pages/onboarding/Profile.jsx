@@ -2,11 +2,14 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import { secureStorage } from '../../utils/secureStorage';
+import { useToast } from '../../components/Toast';
 import '../../pages/auth/Auth.css';
 
 const OnboardingProfile = () => {
     const { t } = useLanguage();
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -18,8 +21,8 @@ const OnboardingProfile = () => {
         values: ''
     });
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    const token = localStorage.getItem('token');
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const token = secureStorage.getItem('token');
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -45,7 +48,7 @@ const OnboardingProfile = () => {
             navigate('/dashboard');
         } catch (error) {
             console.error("Error updating profile:", error);
-            alert("حدث خطأ: " + (error.response?.data?.error || error.message));
+            toast.error("حدث خطأ: " + (error.response?.data?.error || error.message));
         } finally {
             setLoading(false);
         }

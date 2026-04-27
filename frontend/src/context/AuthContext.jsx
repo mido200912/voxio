@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
     const [error, setError] = useState(null);
     const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
     useEffect(() => {
         const initAuth = async () => {
@@ -32,6 +32,24 @@ export const AuthProvider = ({ children }) => {
             setIsAuthChecked(true);
         };
         initAuth();
+
+        // Setup global Axios interceptor for 401 errors
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response && error.response.status === 401) {
+                    console.error('Global 401 intercepted. Logging out.');
+                    setUser(null);
+                    secureStorage.removeItem('token');
+                    secureStorage.removeItem('user');
+                    localStorage.removeItem('token'); // Fallback cleanup
+                    delete axios.defaults.headers.common['Authorization'];
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => axios.interceptors.response.eject(interceptor);
     }, []);
 
     const login = async (email, password) => {

@@ -1,0 +1,443 @@
+/* --- Variables (Light Mode Default) --- */
+:root {
+    /* ألوان الخلفية والنصوص */
+    --bg-color: #ffffff;
+    --card-bg: #ffffff;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --border-color: #eaeaea;
+    
+    /* الألوان الأساسية (أبيض وأسود) */
+    --accent-color: #000000;
+    --accent-hover: #333333;
+    --accent-light: rgba(0, 0, 0, 0.04);
+    --accent-text: #ffffff; /* لون النص داخل العناصر السوداء */
+    
+    /* ألوان الحالة (Semantic Colors) */
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    
+    /* صندوق الكود */
+    --code-bg: #111111;
+    --code-header: #000000;
+    --code-text: #e2e8f0;
+}
+
+/* --- Dark Mode Variables --- */
+/* قم بتغيير [data-theme="dark"] حسب الطريقة التي تستخدمونها (مثلاً .dark أو غيره) */
+[data-theme="dark"], .dark-mode {
+    --bg-color: #000000;
+    --card-bg: #0a0a0a;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --border-color: #222222;
+    
+    --accent-color: #ffffff;
+    --accent-hover: #cccccc;
+    --accent-light: rgba(255, 255, 255, 0.08);
+    --accent-text: #000000;
+    
+    --code-bg: #050505;
+    --code-header: #000000;
+}
+
+/* --- Global & Animations --- */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.widget-tab {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    color: var(--text-primary);
+    background-color: var(--bg-color);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    animation: fadeInUp 0.5s ease-out forwards;
+    transition: background-color 0.3s ease, color 0.3s ease; /* انتقال ناعم عند تغيير المود */
+}
+
+/* --- Header --- */
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    gap: 2rem;
+}
+
+.tab-switcher {
+    display: flex;
+    background: var(--accent-light);
+    padding: 0.5rem;
+    border-radius: 1rem;
+    gap: 0.5rem;
+}
+
+.tab-switcher button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+.tab-switcher button i {
+    font-size: 1.1rem;
+}
+
+.tab-switcher button.active {
+    background: var(--accent-color);
+    color: var(--accent-text);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.tab-switcher button:hover:not(.active) {
+    background: rgba(0,0,0,0.05);
+}
+
+.header-content h1 {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.header-content p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 500px;
+    line-height: 1.6;
+}
+
+/* --- Badges --- */
+.badge-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border-radius: 99px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    transition: all 0.3s ease;
+}
+
+.badge-status i {
+    font-size: 0.8rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* --- Grid & Sections --- */
+.widget-grid {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2.5rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.section-title i {
+    font-size: 1.25rem;
+    color: var(--accent-color);
+    background: var(--accent-light);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.section-title h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* --- Steps Section --- */
+.setup-steps {
+    margin-bottom: 3rem;
+}
+
+.steps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.step-card {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 1.25rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.step-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-color);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .step-card:hover {
+    box-shadow: 0 10px 30px -10px rgba(255, 255, 255, 0.05);
+}
+
+.step-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-color);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-text);
+    font-size: 1.4rem;
+}
+
+.step-content h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.step-content p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* --- Code Section --- */
+.code-container {
+    background: var(--code-bg);
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.code-header {
+    background: var(--code-header);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.file-name {
+    color: #a0a0a0;
+    font-size: 0.85rem;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+    background: #ffffff;
+    color: #000000;
+}
+
+.copy-btn.copied {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: #ffffff;
+}
+
+.code-block {
+    margin: 0;
+    padding: 1.5rem;
+    overflow-x: auto;
+}
+
+/* Custom Scrollbar */
+.code-block::-webkit-scrollbar {
+    height: 8px;
+}
+.code-block::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+.code-block::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.code-block code {
+    color: var(--code-text);
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: pre;
+}
+
+.code-tip {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(245, 158, 11, 0.05);
+    border-radius: 0.75rem;
+    color: var(--warning-color);
+    font-size: 0.9rem;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* --- Sidebar Info Cards --- */
+.widget-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 1.25rem;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.info-card:hover {
+    border-color: var(--text-secondary);
+}
+
+.card-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 0.75rem;
+    background: var(--accent-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-color);
+    font-size: 1.2rem;
+}
+
+.info-card h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.info-card p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 0;
+    margin-top: auto;
+    transition: gap 0.2s ease;
+}
+
+.card-link:hover {
+    gap: 0.75rem;
+}
+
+/* Support Card (Inverted colors for emphasis) */
+.support-card {
+    background: var(--accent-color);
+    padding: 2.5rem 2rem;
+    border-radius: 1.25rem;
+    color: var(--accent-text);
+    text-align: center;
+}
+
+.support-card h3 {
+    margin-bottom: 0.75rem;
+    font-size: 1.3rem;
+    color: var(--accent-text);
+}
+
+.support-card p {
+    color: var(--accent-text);
+    opacity: 0.8;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.support-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 1rem;
+    background: var(--accent-text);
+    color: var(--accent-color);
+    text-decoration: none;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    transition: transform 0.2s ease;
+}
+
+.support-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* --- Media Queries --- */
+@media (max-width: 1024px) {
+    .widget-grid { grid-template-columns: 1fr; }
+    .widget-sidebar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .widget-tab { padding: 1.5rem; }
+    .header-content h1 { font-size: 2.2rem; }
+    .tab-header { flex-direction: column; gap: 1.5rem; }
+    .steps-container { grid-template-columns: 1fr; }
+}

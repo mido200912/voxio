@@ -39,6 +39,7 @@ router.post('/upload', protect, (req, res, next) => {
         }
 
         const newResource = {
+            id: Date.now().toString(),
             fileName: req.file.originalname,
             fileUrl: req.file.path,
             fileType: req.file.originalname.split('.').pop(),
@@ -52,34 +53,32 @@ router.post('/upload', protect, (req, res, next) => {
 
             const extractionPrompt = `أنت مساعد ذكي متخصص في تحليل الملفات واستخراج المعلومات المهمة.
             
-تم رفع ملف: ${req.file.originalname}
+تم رفع ملف جديد: ${req.file.originalname}
 نوع الملف: ${newResource.fileType}
 
+المعلومات المستخرجة سابقاً من ملفات أخرى (إن وجدت):
+${company.extractedKnowledge || 'لا توجد معلومات سابقة.'}
+
 مهمتك:
-1. استخراج جميع المعلومات المهمة من هذا الملف
-2. تنظيم المعلومات بشكل واضح
-3. التركيز على:
+1. استخراج جميع المعلومات المهمة من هذا الملف الجديد.
+2. دمج هذه المعلومات بذكاء مع المعلومات المستخرجة سابقاً (بحيث لا يتكرر الكلام، ويتم تحديث المعلومات القديمة إذا كانت هناك معلومات أحدث).
+3. تنظيم كل المعلومات النهائية (القديمة والجديدة) في دليل واحد واضح ومنسق، يسهل على بوت الدردشة قراءته والرد منه.
+4. التركيز على:
    - معلومات عن المنتجات والخدمات
    - الأسعار
    - سياسات الشركة
    - معلومات الاتصال
    - أي تفاصيل مفيدة للعملاء
 
-ملاحظة: لا يمكنني قراءة محتوى الملف مباشرة، لكن من فضلك قم بإنشاء ملخص نموذجي للمعلومات التي قد تكون في ملف بهذا الاسم والنوع. 
-إذا كان الملف يبدو أنه كتالوج أو قائمة أسعار، قم بإنشاء بنية نموذجية لكيفية تنظيم هذه المعلومات.
-
-الرد يجب أن يكون نصاً منظماً وجاهزاً للاستخدام في الدعم الآلي للعملاء.`;
+الرد يجب أن يحتوي فقط على الدليل الموحد والمحدث بالكامل كنص منسق بدون مقدمات.`;
 
             // استخدام الدالة الموحدة المدمج بها Fallback
             const extractedText = await fetchAiResponse(extractionPrompt, '');
 
             if (extractedText) {
-                // ✨ Append to existing knowledge (don't replace)
-                const separator = company.extractedKnowledge ? '\n\n---\n\n' : '';
-                const fileHeader = `📄 من ملف: ${req.file.originalname}\n`;
-                company.extractedKnowledge += separator + fileHeader + extractedText;
-
-                console.log('✅ Knowledge extracted and appended successfully');
+                // ✨ Replace existing knowledge with the new intelligently merged knowledge
+                company.extractedKnowledge = extractedText;
+                console.log('✅ Knowledge extracted and merged intelligently');
             }
 
         } catch (aiError) {
@@ -97,6 +96,79 @@ router.post('/upload', protect, (req, res, next) => {
     } catch (error) {
         console.error('Upload error:', error);
         res.status(500).json({ error: 'Server error during upload' });
+    }
+});
+
+// ✨ Scrape URL and extract knowledge
+router.post('/scrape-url', protect, async (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: 'URL is required' });
+
+        const company = await Company.findOne({ owner: req.user.id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        // Fetch HTML
+        console.log(`🌐 Scraping URL: ${url}`);
+        const response = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
+        const html = response.data;
+        
+        // Strip HTML tags and extra spaces
+        const rawText = typeof html === 'string' 
+            ? html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                  .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                  .replace(/<[^>]*>?/gm, ' ')
+                  .replace(/\s+/g, ' ')
+                  .trim()
+            : JSON.stringify(html);
+
+        // Limit to 6000 chars to avoid token limits
+        const truncatedText = rawText.substring(0, 6000);
+
+        const extractionPrompt = `أنت مساعد ذكي متخصص في تحليل مواقع الويب وصفحات السوشيال ميديا واستخراج المعلومات المهمة لتدريب بوت الدردشة.
+        
+رابط الموقع/الصفحة الجديد: ${url}
+
+محتوى الموقع المستخرج:
+${truncatedText}
+
+معلومات الروابط المستخرجة والمحفوظة سابقاً (إن وجدت):
+${company.urlExtractedKnowledge || 'لا توجد معلومات سابقة.'}
+
+مهمتك:
+1. استخراج جميع المعلومات المهمة من هذا الموقع عن المنتجات، الخدمات، الأسعار، وطبيعة عمل الشركة.
+2. دمج هذه المعلومات بذكاء مع "معلومات الروابط المحفوظة سابقاً" (بحيث لا يحدث تكرار، ويتم تحديث المعلومات القديمة بالمعلومات الجديدة إذا تعارضت).
+3. تنظيم جميع المعلومات النهائية بشكل واضح لتصبح جزءاً من قاعدة المعرفة الخاصة بالبوت (URL Knowledge Base).
+4. الرد يجب أن يحتوي فقط على المعلومات الموحدة والنهائية كنص منسق بدون مقدمات.`;
+
+        const extractedText = await fetchAiResponse(extractionPrompt, '');
+
+        if (extractedText) {
+            // ✨ Replace existing url knowledge with the new intelligently merged knowledge
+            company.urlExtractedKnowledge = extractedText;
+            
+            // Also append the tone/instructions to customInstructions intelligently
+            const tonePrompt = `بناءً على المحتوى التالي من الرابط (${url}):\n\n${truncatedText.substring(0, 2000)}\n\nتعليمات البوت الحالية هي:\n${company.customInstructions || 'لا توجد تعليمات سابقة.'}\n\nاكتب قواعد سريعة تحدد "أسلوب وطريقة رد البوت" (Tone of Voice) لتضاف أو تدمج مع التعليمات الحالية. الرد يجب أن يحتوي على التعليمات المحدثة بالكامل فقط.`;
+            const toneResult = await fetchAiResponse(tonePrompt, '');
+            if (toneResult) {
+                company.customInstructions = toneResult;
+            }
+
+            await company.save();
+
+            res.json({
+                message: 'URL scraped successfully',
+                urlExtractedKnowledge: company.urlExtractedKnowledge,
+                customInstructions: company.customInstructions
+            });
+        } else {
+            res.status(500).json({ error: 'AI failed to extract knowledge' });
+        }
+    } catch (error) {
+        console.error('Scrape error:', error.message);
+        res.status(500).json({ error: 'Failed to scrape URL. Please check if the link is correct and accessible.' });
     }
 });
 
@@ -147,6 +219,40 @@ router.put('/extracted-knowledge', protect, async (req, res) => {
     }
 });
 
+// ✨ Get URL extracted knowledge text
+router.get('/url-extracted-knowledge', protect, async (req, res) => {
+    try {
+        const company = await Company.findOne({ owner: req.user.id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+        res.json({ urlExtractedKnowledge: company.urlExtractedKnowledge || '' });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// ✨ Update URL extracted knowledge text (editable by user)
+router.put('/url-extracted-knowledge', protect, async (req, res) => {
+    try {
+        const { urlExtractedKnowledge } = req.body;
+        const company = await Company.findOne({ owner: req.user.id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        company.urlExtractedKnowledge = urlExtractedKnowledge || '';
+        await company.save();
+
+        res.json({
+            message: 'URL extracted knowledge updated successfully',
+            urlExtractedKnowledge: company.urlExtractedKnowledge
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Update custom instructions
 router.put('/instructions', protect, async (req, res) => {
     try {
@@ -172,7 +278,19 @@ router.delete('/:fileId', protect, async (req, res) => {
             return res.status(404).json({ error: 'Company not found' });
         }
 
-        const fileIndex = company.knowledgeBase.findIndex(f => f._id.toString() === req.params.fileId);
+        let fileIndex = company.knowledgeBase.findIndex(f => 
+            (f.id && f.id.toString() === req.params.fileId) || 
+            (f._id && f._id.toString() === req.params.fileId)
+        );
+
+        if (fileIndex === -1 && !isNaN(req.params.fileId)) {
+            // Fallback for existing files without id, assuming fileId might be the index
+            const possibleIndex = parseInt(req.params.fileId);
+            if (possibleIndex >= 0 && possibleIndex < company.knowledgeBase.length) {
+                fileIndex = possibleIndex;
+            }
+        }
+
         if (fileIndex === -1) {
             return res.status(404).json({ error: 'File not found' });
         }

@@ -3,16 +3,23 @@ import axios from 'axios';
 import { secureStorage } from '../../utils/secureStorage';
 import { useLanguage } from '../../context/LanguageContext';
 import { motion } from 'framer-motion';
+import { useToast } from '../../components/Toast';
 import './AiTraining.css';
 
 const AiTraining = () => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+    const isArabic = language === 'ar';
+    const { toast } = useToast();
     const [files, setFiles] = useState([]);
     const [instructions, setInstructions] = useState('');
-    const [extractedKnowledge, setExtractedKnowledge] = useState(''); // ✨ جديد
+    const [extractedKnowledge, setExtractedKnowledge] = useState(''); // PDF
+    const [urlExtractedKnowledge, setUrlExtractedKnowledge] = useState(''); // URL
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [savingKnowledge, setSavingKnowledge] = useState(false); // ✨ جديد
+    const [savingKnowledge, setSavingKnowledge] = useState(false); 
+    const [savingUrlKnowledge, setSavingUrlKnowledge] = useState(false);
+    const [scrapeUrl, setScrapeUrl] = useState('');
+    const [scraping, setScraping] = useState(false);
 
     const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
     const token = secureStorage.getItem('token');
@@ -20,7 +27,8 @@ const AiTraining = () => {
     useEffect(() => {
         fetchFiles();
         fetchInstructions();
-        fetchExtractedKnowledge(); // ✨ جديد
+        fetchExtractedKnowledge();
+        fetchUrlExtractedKnowledge();
     }, []);
 
     const fetchFiles = async () => {
@@ -45,7 +53,6 @@ const AiTraining = () => {
         }
     };
 
-    // ✨ جلب المعلومات المستخرجة
     const fetchExtractedKnowledge = async () => {
         try {
             const res = await axios.get(`${BACKEND_URL}/ai/extracted-knowledge`, {
@@ -54,6 +61,17 @@ const AiTraining = () => {
             setExtractedKnowledge(res.data.extractedKnowledge || '');
         } catch (error) {
             console.error('Error fetching extracted knowledge:', error);
+        }
+    };
+
+    const fetchUrlExtractedKnowledge = async () => {
+        try {
+            const res = await axios.get(`${BACKEND_URL}/ai/url-extracted-knowledge`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUrlExtractedKnowledge(res.data.urlExtractedKnowledge || '');
+        } catch (error) {
+            console.error('Error fetching url extracted knowledge:', error);
         }
     };
 
@@ -73,7 +91,7 @@ const AiTraining = () => {
                 }
             });
 
-            alert('✅ تم رفع الملف واستخراج المعلومات بنجاح!');
+            toast.success(isArabic ? 'تم رفع الملف واستخراج المعلومات بنجاح!' : 'File uploaded and knowledge extracted!');
             fetchFiles();
 
             // ✨ تحديث المعلومات المستخرجة فوراً
@@ -82,7 +100,7 @@ const AiTraining = () => {
             }
         } catch (error) {
             console.error('Upload error:', error);
-            alert('حدث خطأ أثناء رفع الملف');
+            toast.error(isArabic ? 'حدث خطأ أثناء رفع الملف' : 'Error uploading file');
         } finally {
             setUploading(false);
             e.target.value = '';
@@ -97,10 +115,10 @@ const AiTraining = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchFiles();
-            alert('تم حذف الملف بنجاح');
+            toast.success(isArabic ? 'تم حذف الملف بنجاح' : 'File deleted');
         } catch (error) {
             console.error('Delete error:', error);
-            alert('حدث خطأ أثناء حذف الملف');
+            toast.error(isArabic ? 'حدث خطأ أثناء حذف الملف' : 'Error deleting file');
         }
     };
 
@@ -111,16 +129,34 @@ const AiTraining = () => {
                 { instructions },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            alert('✅ تم حفظ التعليمات بنجاح!');
+            toast.success(isArabic ? 'تم حفظ التعليمات بنجاح!' : 'Instructions saved!');
         } catch (error) {
             console.error('Save error:', error);
-            alert('حدث خطأ أثناء الحفظ');
+            toast.error(isArabic ? 'حدث خطأ أثناء الحفظ' : 'Error saving');
         } finally {
             setSaving(false);
         }
     };
 
-    // ✨ حفظ المعلومات المستخرجة
+    const handleScrapeUrl = async () => {
+        if (!scrapeUrl) return toast.warning(isArabic ? 'يرجى إدخال رابط صحيح' : 'Please enter a valid URL');
+        setScraping(true);
+        try {
+            const res = await axios.post(`${BACKEND_URL}/ai/scrape-url`, { url: scrapeUrl }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success(isArabic ? 'تم قراءة الرابط واستخراج المعلومات وتحديد طريقة الرد بنجاح!' : 'URL scraped successfully!');
+            if (res.data.urlExtractedKnowledge) setUrlExtractedKnowledge(res.data.urlExtractedKnowledge);
+            if (res.data.customInstructions) setInstructions(res.data.customInstructions);
+            setScrapeUrl('');
+        } catch (error) {
+            console.error('Scrape error:', error);
+            toast.error(isArabic ? 'حدث خطأ أثناء محاولة قراءة الرابط. يرجى التأكد من الرابط والمحاولة مجدداً.' : 'Error scraping URL.');
+        } finally {
+            setScraping(false);
+        }
+    };
+
     const handleSaveExtractedKnowledge = async () => {
         setSavingKnowledge(true);
         try {
@@ -128,12 +164,28 @@ const AiTraining = () => {
                 { extractedKnowledge },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            alert('✅ تم حفظ المعلومات المستخرجة بنجاح!');
+            toast.success(isArabic ? 'تم حفظ معلومات الملفات بنجاح!' : 'Saved!');
         } catch (error) {
             console.error('Save error:', error);
-            alert('حدث خطأ أثناء الحفظ');
+            toast.error(isArabic ? 'حدث خطأ أثناء الحفظ' : 'Error saving');
         } finally {
             setSavingKnowledge(false);
+        }
+    };
+
+    const handleSaveUrlExtractedKnowledge = async () => {
+        setSavingUrlKnowledge(true);
+        try {
+            await axios.put(`${BACKEND_URL}/ai/url-extracted-knowledge`,
+                { urlExtractedKnowledge },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toast.success(isArabic ? 'تم حفظ معلومات الروابط بنجاح!' : 'Saved!');
+        } catch (error) {
+            console.error('Save error:', error);
+            toast.error(isArabic ? 'حدث خطأ أثناء الحفظ' : 'Error saving');
+        } finally {
+            setSavingUrlKnowledge(false);
         }
     };
 
@@ -196,37 +248,74 @@ const AiTraining = () => {
 
                         <div className="files-list">
                             {files.length === 0 ? (
-                                <p className="empty-state">{t.dashboard.trainingPage.noFiles}</p>
+                                <p className="empty-state">{t.dashboard?.trainingPage?.noFiles || 'لا توجد ملفات'}</p>
                             ) : (
-                                files.map((file) => (
-                                    <div key={file._id} className="file-item">
-                                        <div className="file-info">
-                                            <i className={`fas fa-file-${file.fileType === 'pdf' ? 'pdf' : file.fileType === 'docx' ? 'word' : 'alt'}`}></i>
-                                            <span>{file.fileName}</span>
+                                files.map((file, index) => {
+                                    const fileId = file.id || file._id || index;
+                                    return (
+                                        <div key={fileId} className="file-item">
+                                            <div className="file-info">
+                                                <i className={`fas fa-file-${file.fileType === 'pdf' ? 'pdf' : file.fileType === 'docx' ? 'word' : 'alt'}`}></i>
+                                                <span>{file.fileName}</span>
+                                            </div>
+                                            <button
+                                                className="btn-icon-delete"
+                                                onClick={() => handleDeleteFile(fileId)}
+                                                title={t.dashboard?.trainingPage?.delete || 'حذف'}
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
                                         </div>
-                                        <button
-                                            className="btn-icon-delete"
-                                            onClick={() => handleDeleteFile(file._id)}
-                                            title={t.dashboard.trainingPage.delete}
-                                        >
-                                            <i className="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>
                 </motion.div>
 
-                {/* ✨ Extracted Knowledge Section - جديد */}
-                <motion.div variants={itemVariants} className="card full-width">
+                {/* ✨ URL Scraping Section - منفصل عن الكارد الأول */}
+                <motion.div variants={itemVariants} className="card">
                     <div className="card-header">
-                        <i className="fas fa-brain"></i>
-                        <h3>{t.dashboard.trainingPage.extractedTitle}</h3>
+                        <i className="fas fa-link" style={{ color: '#6C63FF' }}></i>
+                        <h3>{isArabic ? 'التدريب عبر الروابط' : 'URL Training'}</h3>
+                    </div>
+                    <div className="card-body">
+                        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                            {isArabic ? 'ضع رابط صفحتك (إنستاجرام، فيسبوك) أو موقعك وسيقوم الذكاء الاصطناعي بقراءة محتواها واستنتاج "طريقة وأسلوب الرد" المناسب لعملائك تلقائياً.' : 'Enter your page/website link, and the AI will read its content and automatically deduce the best "Tone of Voice" and rules for your customers.'}
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: 'auto' }}>
+                            <input 
+                                type="url" 
+                                placeholder={isArabic ? 'مثال: https://instagram.com/yourpage' : 'e.g. https://instagram.com/yourpage'} 
+                                value={scrapeUrl}
+                                onChange={(e) => setScrapeUrl(e.target.value)}
+                                style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.95rem' }}
+                                disabled={scraping}
+                            />
+                            <button 
+                                onClick={handleScrapeUrl} 
+                                disabled={scraping || !scrapeUrl}
+                                style={{ width: '100%', padding: '14px 24px', borderRadius: '12px', background: scraping ? 'var(--color-text-secondary)' : '#6C63FF', color: 'white', border: 'none', cursor: scraping ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s' }}
+                            >
+                                {scraping ? (
+                                    <><i className="fas fa-spinner fa-spin"></i> {isArabic ? 'جاري التحليل والتدريب...' : 'Analyzing & Training...'}</>
+                                ) : (
+                                    <><i className="fas fa-magic"></i> {isArabic ? 'تحليل وتدريب البوت' : 'Analyze & Train Bot'}</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* ✨ Extracted Knowledge Section - PDF */}
+                <motion.div variants={itemVariants} className="card">
+                    <div className="card-header">
+                        <i className="fas fa-file-alt" style={{ color: '#E4405F' }}></i>
+                        <h3>{isArabic ? 'معلومات الملفات المرفوعة' : 'PDF/Docs Knowledge'}</h3>
                     </div>
                     <div className="card-body">
                         <p className="card-description">
-                            {t.dashboard.trainingPage.extractedDesc}
+                            {isArabic ? 'هذه هي المعلومات التي استخرجها الذكاء الاصطناعي من ملفات الـ PDF أو Word التي قمت برفعها. يمكنك تعديلها يدوياً وتنسيقها.' : 'This is the knowledge extracted from uploaded files. You can edit it manually.'}
                         </p>
 
                         <textarea
@@ -234,8 +323,8 @@ const AiTraining = () => {
                             value={extractedKnowledge}
                             onChange={(e) => setExtractedKnowledge(e.target.value)}
                             placeholder={t.dashboard.trainingPage.extractedPlaceholder}
-                            rows="15"
-                            style={{ minHeight: '300px' }}
+                            rows="10"
+                            style={{ minHeight: '200px' }}
                         />
 
                         <button
@@ -244,6 +333,36 @@ const AiTraining = () => {
                             disabled={savingKnowledge}
                         >
                             {savingKnowledge ? t.dashboard.trainingPage.saving : t.dashboard.trainingPage.saveExtracted}
+                        </button>
+                    </div>
+                </motion.div>
+
+                {/* ✨ URL Extracted Knowledge Section - URL */}
+                <motion.div variants={itemVariants} className="card">
+                    <div className="card-header">
+                        <i className="fas fa-globe" style={{ color: '#26A5E4' }}></i>
+                        <h3>{isArabic ? 'معلومات الروابط المستخرجة' : 'URL Knowledge'}</h3>
+                    </div>
+                    <div className="card-body">
+                        <p className="card-description">
+                            {isArabic ? 'هذه هي المعلومات التي تم استخراجها وتلخيصها من روابط صفحاتك أو موقعك الإلكتروني. يمكن تعديلها لتحسين ردود البوت.' : 'This is the knowledge extracted from URLs. You can edit it manually.'}
+                        </p>
+
+                        <textarea
+                            className="instructions-textarea"
+                            value={urlExtractedKnowledge}
+                            onChange={(e) => setUrlExtractedKnowledge(e.target.value)}
+                            placeholder={isArabic ? 'اكتب أو عدّل المعلومات المستخرجة من الروابط هنا...' : 'Edit URL extracted knowledge here...'}
+                            rows="10"
+                            style={{ minHeight: '200px' }}
+                        />
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleSaveUrlExtractedKnowledge}
+                            disabled={savingUrlKnowledge}
+                        >
+                            {savingUrlKnowledge ? t.dashboard.trainingPage.saving : (isArabic ? 'حفظ معلومات الروابط' : 'Save URL Knowledge')}
                         </button>
                     </div>
                 </motion.div>

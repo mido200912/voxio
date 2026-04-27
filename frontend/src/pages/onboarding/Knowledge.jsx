@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import { secureStorage } from '../../utils/secureStorage';
 import '../../pages/auth/Auth.css';
 
 const OnboardingKnowledge = () => {
@@ -11,8 +12,8 @@ const OnboardingKnowledge = () => {
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    const token = localStorage.getItem('token');
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const token = secureStorage.getItem('token');
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {

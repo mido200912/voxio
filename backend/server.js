@@ -17,6 +17,7 @@ import chatHistoryRoutes from "./routes/chatHistoryRoutes.js";
 import integrationManagerRoutes from "./routes/integrationManagerRoutes.js";
 import voxioChatRoutes from "./routes/VOXIOChatRoutes.js";
 import chatbotEditorRoutes from "./routes/chatbotEditorRoutes.js";
+import widgetEditorRoutes from "./routes/widgetEditorRoutes.js";
 
 const app = express();
 
@@ -90,8 +91,6 @@ const authLimiter = rateLimit({
 });
 app.use("/api/auth/login", authLimiter);
 
-// ✅ تم إزالة اتصال MongoDB لأنه تم التحويل إلى Firebase
-
 // ✅ Routes 
 app.use("/api/chat", chatRoutes);
 app.use("/api/auth", authRoutes);
@@ -104,78 +103,160 @@ app.use("/api/support-chat", chatHistoryRoutes);
 app.use("/api/integration-manager", integrationManagerRoutes);
 app.use("/api/voxio-chat", voxioChatRoutes);
 app.use("/api/chatbot-editor", chatbotEditorRoutes);
+app.use("/api/widget-editor", widgetEditorRoutes);
 
 // ✅ Route افتراضي
 app.get("/", (req, res) => {
     res.send("VOXIO API is running");
 });
 
-// ✅ Serve Widget JS Direct Content (الحل النهائي لمنع 404 على Vercel)
+// ✅ Serve Widget JS Direct Content (Premium Redesigned Version)
 app.get('/widget.js', (req, res) => {
     res.setHeader('Content-Type', 'application/javascript');
+    const baseUrl = process.env.BASE_URL || 'https://aithor1.vercel.app';
     const widgetCode = `
 (function() {
     const script = document.currentScript;
     const apiKey = script.getAttribute('data-api-key');
-    const baseUrl = script.getAttribute('data-base-url') || 'https://aithor1.vercel.app';
-    const primaryColor = script.getAttribute('data-primary-color') || '#000';
+    const primaryColor = script.getAttribute('data-primary-color') || '#6C63FF';
     
     if (!apiKey) {
         console.error('VOXIO Widget Error: data-api-key is missing.');
         return;
     }
 
-    // إضافة FontAwesome للأيقونات
-    const fa = document.createElement('link');
-    fa.rel = 'stylesheet';
-    fa.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
-    document.head.appendChild(fa);
+    // Load Fonts & Icons
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
+    document.head.appendChild(link);
 
-    // ستايلات الودجت
     const style = document.createElement('style');
     style.innerHTML = \`
-        #voxio-widget-container { position: fixed; bottom: 20px; right: 20px; z-index: 999999; direction: rtl; }
-        #voxio-widget-button { 
-            width: 56px; height: 56px; border-radius: 50%; background: \${primaryColor}; 
-            color: \${primaryColor === '#c8ff00' ? '#000' : '#fff'};
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; border: none; transition: transform 0.2s;
+        :root { --vx-primary: \${primaryColor}; }
+        #voxio-w-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2147483647;
+            font-family: 'Inter', 'Cairo', sans-serif;
+            direction: rtl;
         }
-        #voxio-widget-button:hover { transform: scale(1.05); }
-        #voxio-widget-window { 
-            position: absolute; bottom: 70px; right: 0; width: 380px; height: 520px; 
-            max-width: calc(100vw - 40px); max-height: calc(100vh - 100px);
-            background: #fff; border-radius: 16px; box-shadow: 0 12px 24px rgba(0,0,0,0.18); 
-            display: none; flex-direction: column; border: 1px solid rgba(0,0,0,0.1); overflow: hidden;
-            transform-origin: bottom right; transition: transform 0.25s, opacity 0.2s; opacity: 0; transform: scale(0.9) translateY(20px);
+        #voxio-w-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--vx-primary);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
-        #voxio-widget-window.open { display: flex; opacity: 1; transform: scale(1) translateY(0); }
-        #voxio-widget-window iframe { border: none; width: 100%; height: 100%; }
+        #voxio-w-btn:hover { transform: scale(1.05) rotate(5deg); }
+        #voxio-w-btn i { font-size: 24px; transition: all 0.3s; }
+        #voxio-w-btn .pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--vx-primary);
+            opacity: 0.5;
+            z-index: -1;
+            animation: vx-pulse 2s infinite;
+        }
+        @keyframes vx-pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        #voxio-w-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 400px;
+            height: 600px;
+            max-width: calc(100vw - 48px);
+            max-height: calc(100vh - 120px);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transform-origin: bottom right;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: scale(0.8) translateY(40px);
+        }
+        #voxio-w-window.vx-open {
+            display: flex;
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+        #voxio-w-window iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+        .vx-powered {
+            position: absolute;
+            bottom: 6px;
+            right: 0;
+            left: 0;
+            text-align: center;
+            font-size: 10px;
+            color: rgba(0,0,0,0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+        #voxio-w-window.vx-open .vx-powered { opacity: 1; }
+        
+        @media (max-width: 480px) {
+            #voxio-w-window {
+                width: calc(100vw - 32px);
+                height: calc(100vh - 100px);
+                bottom: 72px;
+                right: -4px;
+            }
+        }
     \`;
     document.head.appendChild(style);
 
     const container = document.createElement('div');
-    container.id = 'voxio-widget-container';
+    container.id = 'voxio-w-container';
     document.body.appendChild(container);
 
     const button = document.createElement('button');
-    button.id = 'voxio-widget-button';
-    button.innerHTML = '<i class="fas fa-message"></i>';
+    button.id = 'voxio-w-btn';
+    button.innerHTML = '<div class="pulse"></div><i class="fas fa-comment-dots"></i>';
     container.appendChild(button);
 
     const win = document.createElement('div');
-    win.id = 'voxio-widget-window';
-    win.innerHTML = '<iframe src="' + baseUrl + '/widget/' + apiKey + '" title="VOXIO Chat"></iframe>';
+    win.id = 'voxio-w-window';
+    win.innerHTML = '<iframe src="' + baseUrl + '/widget/' + apiKey + '" title="VOXIO Chat"></iframe><div class="vx-powered">Powered by VOXIO</div>';
     container.appendChild(win);
 
     let isOpen = false;
     button.onclick = () => {
         isOpen = !isOpen;
         if (isOpen) {
-            win.classList.add('open');
-            button.innerHTML = '<i class="fas fa-xmark"></i>';
+            win.style.display = 'flex';
+            setTimeout(() => win.classList.add('vx-open'), 10);
+            button.innerHTML = '<i class="fas fa-times"></i>';
         } else {
-            win.classList.remove('open');
-            button.innerHTML = '<i class="fas fa-message"></i>';
+            win.classList.remove('vx-open');
+            button.innerHTML = '<div class="pulse"></div><i class="fas fa-comment-dots"></i>';
+            setTimeout(() => { if(!isOpen) win.style.display = 'none'; }, 400);
         }
     };
 })();`;
@@ -214,7 +295,8 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
 
-// ضروي جداً للرفع على Vercel
 export default app;

@@ -4,73 +4,30 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '../../components/Toast';
 import './Integrations.css';
 
-// ─── Toast Notification Component ────────────────────────────────────────────
-const Toast = ({ toast, onClose }) => {
-    if (!toast) return null;
-    const colors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
-    const icons = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
-    const bg = colors[toast.type] || colors.info;
-    const icon = icons[toast.type] || icons.info;
 
-    return (
-        <AnimatePresence>
-            {toast && (
-                <motion.div
-                    initial={{ x: 400, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: 400, opacity: 0 }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    style={{
-                        position: 'fixed', top: '24px', right: '24px', zIndex: 99999,
-                        minWidth: '340px', maxWidth: '440px',
-                        background: '#fff', borderRadius: '16px',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
-                        overflow: 'hidden', cursor: 'pointer'
-                    }}
-                    onClick={onClose}
-                >
-                    <div style={{ height: '4px', background: bg }} />
-                    <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-                        <div style={{
-                            width: '38px', height: '38px', borderRadius: '10px',
-                            background: `${bg}15`, color: bg,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '1.1rem', flexShrink: 0
-                        }}>
-                            <i className={`fas ${icon}`} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1a1a1a', marginBottom: '4px' }}>
-                                {toast.title}
-                            </div>
-                            <div style={{ fontSize: '0.83rem', color: '#666', lineHeight: '1.5', whiteSpace: 'pre-line' }}>
-                                {toast.message}
-                            </div>
-                        </div>
-                        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', padding: '4px', fontSize: '0.9rem' }}>
-                            <i className="fas fa-times" />
-                        </button>
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
-};
 
 const Integrations = () => {
     const { t } = useLanguage();
     const [integrations, setIntegrations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [toast, setToast] = useState(null);
+    const { toast } = useToast();
 
     const showToast = (type, title, message = '') => {
-        setToast({ type, title, message });
-        setTimeout(() => setToast(null), 4500);
+        const fullMsg = message ? `${title}: ${message}` : title;
+        if (type === 'success') toast.success(fullMsg);
+        else if (type === 'error') toast.error(fullMsg);
+        else if (type === 'warning') toast.warning(fullMsg);
+        else toast.info(fullMsg);
     };
     const [showWhatsappModal, setShowWhatsappModal] = useState(false);
     const [whatsappData, setWhatsappData] = useState({ phoneNumberId: '', accessToken: '' });
+
+    // Instagram State
+    const [showInstagramModal, setShowInstagramModal] = useState(false);
+    const [instagramData, setInstagramData] = useState({ pageId: '', igAccountId: '', accessToken: '' });
     
     // Telegram State
     const [showTelegramModal, setShowTelegramModal] = useState(false);
@@ -189,12 +146,15 @@ const Integrations = () => {
             const userStr = secureStorage.getItem('user');
             const user = userStr ? userStr : null;
 
-            if (integration.id === 'facebook' || integration.id === 'instagram') {
+            if (integration.id === 'facebook') {
                 const companyRes = await axios.get(`${BACKEND_URL}/company`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const companyId = companyRes.data._id;
                 window.location.href = `${BACKEND_URL}/integrations/meta/login?companyId=${companyId}`;
+            }
+            else if (integration.id === 'instagram') {
+                setShowInstagramModal(true);
             }
             else if (integration.id === 'whatsapp') {
                 setShowWhatsappModal(true);
@@ -382,6 +342,29 @@ const Integrations = () => {
                 accessToken: integration.credentials?.accessToken || ''
             });
             setShowWhatsappModal(true);
+        } else if (platformId === 'instagram') {
+            setInstagramData({
+                pageId: integration.credentials?.pageId || '',
+                igAccountId: integration.credentials?.igAccountId || '',
+                accessToken: integration.credentials?.accessToken || ''
+            });
+            setShowInstagramModal(true);
+        }
+    };
+
+    const handleInstagramSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.post(`${BACKEND_URL}/integration-manager/instagram`, instagramData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast('success', t.language === 'ar' ? 'تم الربط!' : 'Connected!', t.language === 'ar' ? 'تم حفظ إعدادات إنستاجرام' : 'Instagram settings saved');
+            setShowInstagramModal(false);
+            setInstagramData({ pageId: '', igAccountId: '', accessToken: '' });
+            fetchIntegrations();
+        } catch (error) {
+            console.error('Error configuring Instagram:', error);
+            showToast('error', t.language === 'ar' ? 'خطأ' : 'Error', 'Failed to configure Instagram');
         }
     };
 
@@ -495,35 +478,20 @@ const Integrations = () => {
                         <p>{t.language === 'ar' ? 'أضف شات بوت VOXIO لموقعك الإلكتروني بضغطة واحدة.' : 'Add VOXIO chatbot to your website with a single script.'}</p>
                     </div>
                     <div className="integration-action">
-                        <button 
-                            className="btn btn-primary"
-                            onClick={() => {
-                                const btn = document.getElementById('copy-widget-btn');
-                                const apiKey = secureStorage.getItem('user')?.apiKey || 'YOUR_API_KEY';
-                                const code = `<script \n  src="https://voxio-v1.vercel.app/widget.js" \n  data-api-key="${apiKey}" \n  data-base-url="https://voxio-v1.vercel.app"\n></script>`;
-                                navigator.clipboard.writeText(code);
-                                const originalText = btn.innerText;
-                                btn.innerText = t.language === 'ar' ? 'تم النسخ!' : 'Copied!';
-                                setTimeout(() => btn.innerText = originalText, 2000);
-                            }}
-                            id="copy-widget-btn"
-                        >
-                            <i className="fas fa-copy" style={{ marginInlineEnd: '8px' }}></i>
-                            {t.language === 'ar' ? 'نسخ الكود' : 'Copy Code'}
-                        </button>
+                        <Link to="/dashboard/widget" className="btn btn-primary">
+                            <i className="fas fa-cog" style={{ marginInlineEnd: '8px' }}></i>
+                            {language === 'ar' ? 'إعداد الودجت' : 'Configure Widget'}
+                        </Link>
                     </div>
                 </div>
                 
-                <div className="widget-code-preview">
-                    <pre>
-                        <code>
-{`<script 
-  src="https://voxio-v1.vercel.app/widget.js" 
-  data-api-key="${secureStorage.getItem('user')?.apiKey || 'YOUR_API_KEY'}" 
-  data-base-url="https://voxio-v1.vercel.app"
-></script>`}
-                        </code>
-                    </pre>
+                <div className="integration-footer" style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <i className="fas fa-info-circle" style={{ color: 'var(--primary-color)' }}></i>
+                        {language === 'ar' 
+                            ? 'أفضل طريقة لزيادة مبيعاتك هي إضافة الودجت لموقعك. اضغط على "إعداد الودجت" لمعرفة التفاصيل.' 
+                            : 'The best way to increase sales is by adding the widget to your site. Click "Configure Widget" for details.'}
+                    </p>
                 </div>
             </motion.div>
 
@@ -822,6 +790,55 @@ const Integrations = () => {
                                 </button>
                                 <button type="submit" className="btn btn-primary" style={{ background: '#26A5E4', borderColor: '#26A5E4' }}>
                                     {t.dashboard.integrationsPage.whatsappSave || 'Save & Connect'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Instagram Modal */}
+            {showInstagramModal && (
+                <div className="modal-overlay" onClick={() => setShowInstagramModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h2>{t.language === 'ar' ? 'ربط إنستاجرام (API)' : 'Instagram Integration (API)'}</h2>
+                        <form onSubmit={handleInstagramSubmit} className="whatsapp-form">
+                            <div className="form-group">
+                                <label>{t.language === 'ar' ? 'معرف الصفحة (Page ID)' : 'Page ID'}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={instagramData.pageId}
+                                    onChange={(e) => setInstagramData({ ...instagramData, pageId: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t.language === 'ar' ? 'معرف إنستاجرام (IG Account ID)' : 'IG Account ID'}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={instagramData.igAccountId}
+                                    onChange={(e) => setInstagramData({ ...instagramData, igAccountId: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t.language === 'ar' ? 'رمز الوصول (Access Token)' : 'Access Token'}</label>
+                                <textarea
+                                    required
+                                    rows="3"
+                                    value={instagramData.accessToken}
+                                    onChange={(e) => setInstagramData({ ...instagramData, accessToken: e.target.value })}
+                                ></textarea>
+                            </div>
+                            <p className="help-text" style={{ fontSize: '0.9rem', color: '#666', marginBottom: '20px' }}>
+                                {t.language === 'ar' ? 'احصل على هذه البيانات من منصة مطوري ميتا.' : 'Get these details from the Meta Developer Dashboard.'}
+                            </p>
+                            <div className="modal-actions">
+                                <button type="button" className="btn btn-outline" onClick={() => setShowInstagramModal(false)}>
+                                    {t.language === 'ar' ? 'إلغاء' : 'Cancel'}
+                                </button>
+                                <button type="submit" className="btn btn-primary" style={{ background: '#E4405F', borderColor: '#E4405F' }}>
+                                    {t.language === 'ar' ? 'حفظ وربط' : 'Save & Connect'}
                                 </button>
                             </div>
                         </form>

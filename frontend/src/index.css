@@ -3,28 +3,42 @@
 ======================================== */
 :root[data-theme="light"] {
   --color-bg: #ffffff;
+  --color-bg-rgb: 255, 255, 255;
   --color-text: #000000;
+  --color-text-rgb: 0, 0, 0;
   --color-text-secondary: #666666;
   --color-border: #e0e0e0;
   --color-card-bg: #ffffff;
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-shadow-hover: rgba(0, 0, 0, 0.15);
+  --color-primary: #000000;
+  --color-secondary: #333333;
+  --color-accent: #666666;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.1);
 }
 
 :root[data-theme="dark"] {
   --color-bg: #000000;
+  --color-bg-rgb: 0, 0, 0;
   --color-text: #ffffff;
+  --color-text-rgb: 255, 255, 255;
   --color-text-secondary: #b3b3b3;
   --color-border: #333333;
   --color-card-bg: #1a1a1a;
   --color-shadow: rgba(255, 255, 255, 0.05);
   --color-shadow-hover: rgba(255, 255, 255, 0.1);
+  --color-primary: #ffffff;
+  --color-secondary: #cccccc;
+  --color-accent: #999999;
+  --glass-bg: rgba(26, 26, 26, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 :root {
   /* Fonts */
-  --font-ar: 'Cairo', sans-serif;
-  --font-en: 'Poppins', sans-serif;
+  --font-ar: 'Outfit', 'Cairo', sans-serif;
+  --font-en: 'Outfit', 'Poppins', sans-serif;
 
   /* Spacing */
   --spacing-xs: 0.5rem;

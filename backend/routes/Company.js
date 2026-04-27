@@ -34,7 +34,7 @@ router.get("/export-website/:slug", requireAuth, async (req, res) => {
     const widgetScript = `
     <!-- VOXIO Full-Screen Chat Logic -->
     <script>
-      const API_URL = "https://aithor1.vercel.app/api"; // Default production API
+      const API_URL = (typeof process !== 'undefined' && process.env.BASE_URL) ? process.env.BASE_URL + "/api" : "http://localhost:5000/api";
       const API_KEY = "${company.apiKey}";
 
       document.addEventListener('DOMContentLoaded', () => {
@@ -177,7 +177,7 @@ router.get("/view-website/:slug", async (req, res) => {
     const widgetScript = `
     <!-- VOXIO Full-Screen Chat Logic -->
     <script>
-      const API_URL = "https://aithor1.vercel.app/api"; // Default production API
+      const API_URL = (typeof process !== 'undefined' && process.env.BASE_URL) ? process.env.BASE_URL + "/api" : "http://localhost:5000/api";
       const API_KEY = "${company.apiKey}";
 
       document.addEventListener('DOMContentLoaded', () => {
