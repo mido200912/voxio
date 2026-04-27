@@ -131,6 +131,7 @@ app.get('/widget.js', (req, res) => {
     const script = document.currentScript;
     const apiKey = script.getAttribute('data-api-key');
     const primaryColor = script.getAttribute('data-primary-color') || '#6C63FF';
+    const launcherColor = script.getAttribute('data-launcher-color') || '#1e293b';
     
     if (!apiKey) {
         console.error('VOXIO Widget Error: data-api-key is missing.');
@@ -144,7 +145,7 @@ app.get('/widget.js', (req, res) => {
 
     const style = document.createElement('style');
     style.innerHTML = \`
-        :root { --vx-primary: \${primaryColor}; }
+        :root { --vx-primary: \${primaryColor}; --vx-launcher: \${launcherColor}; }
         #voxio-w-container {
             position: fixed;
             bottom: 24px;
@@ -157,7 +158,7 @@ app.get('/widget.js', (req, res) => {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: var(--vx-primary);
+            background: var(--vx-launcher);
             color: #fff;
             box-shadow: 0 8px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1);
             cursor: pointer;

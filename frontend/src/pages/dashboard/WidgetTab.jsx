@@ -104,8 +104,8 @@ const WidgetTab = () => {
                         {language === 'ar' ? 'التركيب' : 'Installation'}
                     </button>
                     <button className={activeTab === 'customize' ? 'active' : ''} onClick={() => setActiveTab('customize')}>
-                        <i className="fas fa-wand-magic-sparkles"></i>
-                        {language === 'ar' ? 'تعديل التصميم بالـ AI' : 'AI Customization'}
+                        <i className="fas fa-sliders-h"></i>
+                        {language === 'ar' ? 'الإعدادات والمظهر' : 'Settings & Appearance'}
                     </button>
                 </div>
             </header>

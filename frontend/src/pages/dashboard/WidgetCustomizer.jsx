@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { secureStorage } from '../../utils/secureStorage';
@@ -12,39 +12,25 @@ const WidgetCustomizer = () => {
     const { toast } = useToast();
     const isArabic = language === 'ar';
     
-    const [activeTab, setActiveTab] = useState('settings'); // 'settings', 'ai', 'embed'
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('settings'); // 'settings', 'embed'
     
     // Default config fallback
     const defaultConfig = { 
-        primaryColor: '#6C63FF', 
+        primaryColor: '#6C63FF',
+        launcherColor: '#1e293b',
         welcomeMessage: isArabic ? 'مرحباً! كيف يمكنني مساعدتك؟' : 'Hello! How can I help you?',
-        customCss: ''
     };
     const [config, setConfig] = useState(defaultConfig);
     const [isSaving, setIsSaving] = useState(false);
-    const [aiProcessing, setAiProcessing] = useState(false);
-    
-    const messagesEndRef = useRef(null);
-
     const [apiKey, setApiKey] = useState('');
 
     useEffect(() => {
         fetchCurrentConfig();
     }, []);
 
-    useEffect(() => {
-        if (activeTab === 'ai') {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [messages, activeTab]);
-
     const fetchCurrentConfig = async () => {
         try {
             const token = secureStorage.getItem('token');
-            // Fetch the whole company to get the API key and widget config
             const res = await axios.get(`${BACKEND_URL}/company`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -54,13 +40,6 @@ const WidgetCustomizer = () => {
                     setConfig({ ...defaultConfig, ...res.data.widgetConfig });
                 }
             }
-            setMessages([{
-                id: 1,
-                role: 'ai',
-                content: isArabic 
-                    ? 'أنا مصمم الودجت الخاص بك. أخبرني كيف تريد تغيير شكل الودجت العائم؟ (مثلاً: "غير لون الفقاعة للأزرق" أو "اجعل الخط أكبر")' 
-                    : 'I am your Widget Architect. How would you like to style the floating bubble? (e.g., "Change bubble to blue")'
-            }]);
         } catch (err) { console.error("Error fetching config:", err); }
     };
 
@@ -68,11 +47,6 @@ const WidgetCustomizer = () => {
         setIsSaving(true);
         try {
             const token = secureStorage.getItem('token');
-            // We can reuse the edit endpoint by passing a specific command, or create a save endpoint.
-            // Wait, there's no manual save endpoint for widget config in backend yet!
-            // I'll create one or simulate saving for now.
-            // Actually, I can use the existing update logic if I send a direct update.
-            // Let's use the company update endpoint.
             await axios.post(`${BACKEND_URL}/company`, { widgetConfig: config }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -85,48 +59,89 @@ const WidgetCustomizer = () => {
         }
     };
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!input.trim() || loading) return;
-
-        const userMsg = { id: Date.now(), role: 'user', content: input };
-        setMessages(prev => [...prev, userMsg]);
-        const request = input;
-        setInput('');
-        setLoading(true);
-        setAiProcessing(true);
-
-        try {
-            const token = secureStorage.getItem('token');
-            const res = await axios.post(
-                `${BACKEND_URL}/widget-editor/edit`,
-                { userRequest: request, history: messages },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            if (res.data.config) {
-                setConfig(res.data.config);
-            }
-            setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: res.data.message || 'Updated! ✅' }]);
-        } catch (err) { 
-            console.error(err);
-            toast.error(isArabic ? 'فشل الاتصال' : 'Connection failed');
-        } finally { setLoading(false); setAiProcessing(false); }
-    };
-
-    // Use current origin so it works flawlessly in local development
+    // Construct live preview overrides
     const queryParams = new URLSearchParams({
         color: config.primaryColor || '',
         welcome: config.welcomeMessage || '',
-        css: config.customCss || '',
         t: Date.now()
     }).toString();
-    const previewUrl = apiKey ? `${window.location.origin}/widget/${apiKey}?${queryParams}` : '';
+    const iframeUrl = apiKey ? `${window.location.origin}/widget/${apiKey}?${queryParams}` : '';
+
+    // Generate full widget preview script to show the launcher button + chat window
+    const previewSrcDoc = `
+<!DOCTYPE html>
+<html lang="${isArabic ? 'ar' : 'en'}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { margin: 0; overflow: hidden; background: #f8fafc; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .bg-pattern { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; z-index: -1; }
+        .hint-text { color: #64748b; font-size: 1.2rem; font-weight: bold; opacity: 0.5; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.95); } 50% { opacity: 0.8; transform: scale(1); } 100% { opacity: 0.4; transform: scale(0.95); } }
+
+        /* Widget Styles injected dynamically */
+        #voxio-w-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; direction: ${isArabic ? 'rtl' : 'ltr'}; }
+        #voxio-w-btn {
+            width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer;
+            background: ${config.launcherColor || '#1e293b'}; color: #fff;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; font-size: 24px;
+        }
+        #voxio-w-btn:hover { transform: scale(1.05) rotate(5deg); }
+        #voxio-w-window {
+            position: absolute; bottom: 80px; right: 0; width: 380px; height: 550px;
+            max-width: calc(100vw - 40px); background: #fff; border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2); display: none; overflow: hidden;
+            transform-origin: bottom right; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0; transform: scale(0.8) translateY(40px);
+        }
+        #voxio-w-window.vx-open { display: flex; opacity: 1; transform: scale(1) translateY(0); }
+        #voxio-w-window iframe { border: none; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="hint-text"><i class="fas fa-arrow-down" style="margin-right: 8px;"></i> ${isArabic ? 'جرب الودجت من هنا' : 'Try widget here'}</div>
+    
+    <div id="voxio-w-container">
+        <div id="voxio-w-window">
+            <iframe src="${iframeUrl}"></iframe>
+        </div>
+        <button id="voxio-w-btn" onclick="toggleWidget()">
+            <i class="fas fa-comment-dots" id="voxio-w-icon"></i>
+        </button>
+    </div>
+
+    <script>
+        let isOpen = false;
+        function toggleWidget() {
+            isOpen = !isOpen;
+            const win = document.getElementById('voxio-w-window');
+            const icon = document.getElementById('voxio-w-icon');
+            if (isOpen) {
+                win.style.display = 'flex';
+                setTimeout(() => win.classList.add('vx-open'), 10);
+                icon.className = 'fas fa-times';
+            } else {
+                win.classList.remove('vx-open');
+                setTimeout(() => win.style.display = 'none', 300);
+                icon.className = 'fas fa-comment-dots';
+            }
+        }
+        // Open by default for preview
+        setTimeout(toggleWidget, 1000);
+    </script>
+</body>
+</html>
+    `;
 
     const embedCode = `<script 
   src="${BACKEND_URL.replace('/api', '')}/widget.js" 
   data-api-key="${apiKey}" 
-  data-primary-color="${config.primaryColor}">
+  data-primary-color="${config.primaryColor || '#6C63FF'}"
+  data-launcher-color="${config.launcherColor || '#1e293b'}">
 </script>`;
 
     const copyEmbedCode = () => {
@@ -144,7 +159,7 @@ const WidgetCustomizer = () => {
         contentArea: { background: 'var(--color-card-bg)', borderRadius: '12px', padding: '24px', border: '1px solid var(--color-border)', minHeight: '400px' },
         inputGroup: { marginBottom: '20px' },
         label: { display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-primary)' },
-        input: { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--text-primary)' },
+        input: { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' },
         colorPickerWrap: { display: 'flex', alignItems: 'center', gap: '15px' },
         colorInput: { width: '50px', height: '50px', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: 0 },
         codeBlock: { background: '#1e293b', padding: '20px', borderRadius: '12px', color: '#e2e8f0', fontFamily: 'monospace', overflowX: 'auto', whiteSpace: 'pre-wrap', direction: 'ltr', textAlign: 'left' }
@@ -155,10 +170,7 @@ const WidgetCustomizer = () => {
             <div className="customizer-controls">
                 <div style={styles.tabsHeader}>
                     <button style={styles.tabBtn(activeTab === 'settings')} onClick={() => setActiveTab('settings')}>
-                        <i className="fas fa-sliders-h"></i> {isArabic ? 'الإعدادات اليدوية' : 'Manual Settings'}
-                    </button>
-                    <button style={styles.tabBtn(activeTab === 'ai')} onClick={() => setActiveTab('ai')}>
-                        <i className="fas fa-magic"></i> {isArabic ? 'مصمم الذكاء الاصطناعي' : 'AI Designer'}
+                        <i className="fas fa-sliders-h"></i> {isArabic ? 'الإعدادات والمظهر' : 'Settings & Appearance'}
                     </button>
                     <button style={styles.tabBtn(activeTab === 'embed')} onClick={() => setActiveTab('embed')}>
                         <i className="fas fa-code"></i> {isArabic ? 'كود التضمين' : 'Embed Code'}
@@ -170,42 +182,60 @@ const WidgetCustomizer = () => {
                         {activeTab === 'settings' && (
                             <motion.div key="settings" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>{isArabic ? 'اللون الأساسي' : 'Primary Color'}</label>
-                                    <div style={styles.colorPickerWrap}>
-                                        <input 
-                                            type="color" 
-                                            value={config.primaryColor || '#6C63FF'} 
-                                            onChange={e => setConfig({...config, primaryColor: e.target.value})}
-                                            style={styles.colorInput}
-                                        />
-                                        <input 
-                                            type="text" 
-                                            value={config.primaryColor || '#6C63FF'} 
-                                            onChange={e => setConfig({...config, primaryColor: e.target.value})}
-                                            style={{...styles.input, width: '120px'}}
-                                        />
-                                    </div>
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>{isArabic ? 'رسالة الترحيب الافتراضية' : 'Default Welcome Message'}</label>
+                                    <label style={styles.label}>{isArabic ? 'رسالة الترحيب' : 'Welcome Message'}</label>
                                     <textarea 
                                         rows={3}
                                         value={config.welcomeMessage || ''} 
                                         onChange={e => setConfig({...config, welcomeMessage: e.target.value})}
-                                        style={styles.input}
+                                        style={{...styles.input, resize: 'none'}}
                                         placeholder={isArabic ? 'مرحباً! كيف أساعدك؟' : 'Hello! How can I help?'}
                                     />
                                 </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>{isArabic ? 'أكواد CSS إضافية (متقدم)' : 'Custom CSS (Advanced)'}</label>
-                                    <textarea 
-                                        rows={5}
-                                        value={config.customCss || ''} 
-                                        onChange={e => setConfig({...config, customCss: e.target.value})}
-                                        style={{...styles.input, fontFamily: 'monospace', direction: 'ltr', textAlign: 'left'}}
-                                        placeholder=".vx-bubble { border-radius: 0; }"
-                                    />
+
+                                <div style={{display: 'flex', gap: '20px', marginBottom: '20px'}}>
+                                    <div style={{flex: 1}}>
+                                        <label style={styles.label}>{isArabic ? 'اللون الأساسي للودجت' : 'Widget Primary Color'}</label>
+                                        <div style={styles.colorPickerWrap}>
+                                            <input 
+                                                type="color" 
+                                                value={config.primaryColor || '#6C63FF'} 
+                                                onChange={e => setConfig({...config, primaryColor: e.target.value})}
+                                                style={styles.colorInput}
+                                            />
+                                            <input 
+                                                type="text" 
+                                                value={config.primaryColor || '#6C63FF'} 
+                                                onChange={e => setConfig({...config, primaryColor: e.target.value})}
+                                                style={{...styles.input}}
+                                            />
+                                        </div>
+                                        <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '8px'}}>
+                                            {isArabic ? 'يستخدم في الشات والرسائل.' : 'Used in chat header & messages.'}
+                                        </p>
+                                    </div>
+
+                                    <div style={{flex: 1}}>
+                                        <label style={styles.label}>{isArabic ? 'لون الزر الخارجي (اللوجو)' : 'Launcher Button Color'}</label>
+                                        <div style={styles.colorPickerWrap}>
+                                            <input 
+                                                type="color" 
+                                                value={config.launcherColor || '#1e293b'} 
+                                                onChange={e => setConfig({...config, launcherColor: e.target.value})}
+                                                style={styles.colorInput}
+                                            />
+                                            <input 
+                                                type="text" 
+                                                value={config.launcherColor || '#1e293b'} 
+                                                onChange={e => setConfig({...config, launcherColor: e.target.value})}
+                                                style={{...styles.input}}
+                                            />
+                                        </div>
+                                        <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '8px'}}>
+                                            {isArabic ? 'لون الزر العائم في الموقع.' : 'Color of the floating button.'}
+                                        </p>
+                                    </div>
                                 </div>
+
                                 <button 
                                     onClick={handleSaveSettings} 
                                     disabled={isSaving}
@@ -213,31 +243,6 @@ const WidgetCustomizer = () => {
                                 >
                                     {isSaving ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-save"></i> {isArabic ? 'حفظ الإعدادات' : 'Save Settings'}</>}
                                 </button>
-                            </motion.div>
-                        )}
-
-                        {activeTab === 'ai' && (
-                            <motion.div key="ai" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} className="ai-chat-view" style={{height: '500px', display: 'flex', flexDirection: 'column'}}>
-                                <div className="chat-messages" style={{flex: 1, overflowY: 'auto', padding: '10px', background: 'var(--color-bg)', borderRadius: '12px', marginBottom: '15px'}}>
-                                    {messages.map(m => (
-                                        <div key={m.id} className={`chat-bubble ${m.role}`} style={{padding: '12px 18px', margin: '8px 0', borderRadius: '18px', background: m.role === 'user' ? 'var(--color-primary)' : 'var(--color-card-bg)', color: m.role === 'user' ? '#fff' : 'var(--text-primary)', maxWidth: '80%', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', float: m.role === 'user' ? (isArabic ? 'left' : 'right') : (isArabic ? 'right' : 'left'), clear: 'both'}}>
-                                            {m.content}
-                                        </div>
-                                    ))}
-                                    {loading && <div style={{clear: 'both', padding: '10px'}}><i className="fas fa-spinner fa-spin"></i></div>}
-                                    <div ref={messagesEndRef} />
-                                </div>
-                                <form className="chat-input" onSubmit={handleSendMessage} style={{display: 'flex', gap: '10px'}}>
-                                    <input 
-                                        placeholder={isArabic ? 'اطلب تعديل الودجت...' : 'Describe widget change...'} 
-                                        value={input}
-                                        onChange={e => setInput(e.target.value)}
-                                        style={{...styles.input, flex: 1}}
-                                    />
-                                    <button type="submit" disabled={!input.trim() || loading} style={styles.tabBtn(true)}>
-                                        <i className="fas fa-paper-plane"></i>
-                                    </button>
-                                </form>
                             </motion.div>
                         )}
 
@@ -274,11 +279,13 @@ const WidgetCustomizer = () => {
                         Live
                     </div>
                 </div>
-                <div className="preview-window widget-preview-mode" style={{ position: 'relative', width: '100%', height: '550px', background: '#f8fafc', borderRadius: '24px', overflow: 'hidden', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.05)', border: '4px solid #e2e8f0' }}>
+                
+                {/* True Widget Preview Window */}
+                <div className="preview-window" style={{ position: 'relative', width: '100%', height: '600px', background: '#e2e8f0', borderRadius: '24px', overflow: 'hidden', border: '4px solid #cbd5e1' }}>
                     {apiKey ? (
                         <iframe 
                             key={JSON.stringify(config)} 
-                            src={previewUrl} 
+                            srcDoc={previewSrcDoc} 
                             title="Widget Preview" 
                             style={{width: '100%', height: '100%', border: 'none'}}
                         />
@@ -287,19 +294,6 @@ const WidgetCustomizer = () => {
                             Loading preview...
                         </div>
                     )}
-                    
-                    <AnimatePresence>
-                        {aiProcessing && (
-                            <motion.div 
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="ai-working-overlay"
-                                style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}
-                            >
-                                <div style={{fontSize: '2rem', color: 'var(--color-primary)', marginBottom: '15px'}}><i className="fas fa-magic fa-bounce"></i></div>
-                                <p style={{fontWeight: 'bold', color: 'var(--text-primary)'}}>{isArabic ? 'جاري تحديث الودجت...' : 'Updating Widget...'}</p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
                 </div>
             </div>
             <style>{`
