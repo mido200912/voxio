@@ -150,23 +150,24 @@ const WidgetCustomizer = () => {
     };
 
     const styles = {
-        tabsHeader: { display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' },
+        tabsHeader: { display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' },
         tabBtn: (active) => ({
-            padding: '10px 20px', background: active ? 'var(--color-primary)' : 'transparent',
-            color: active ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer',
-            fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.3s'
+            padding: '12px 24px', background: active ? '#6C63FF' : 'transparent',
+            color: active ? '#fff' : 'var(--color-text-secondary)', border: 'none', borderRadius: '12px', cursor: 'pointer',
+            fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: active ? '0 4px 12px rgba(108, 99, 255, 0.2)' : 'none'
         }),
-        contentArea: { background: 'var(--color-card-bg)', borderRadius: '12px', padding: '24px', border: '1px solid var(--color-border)', minHeight: '400px' },
-        inputGroup: { marginBottom: '20px' },
-        label: { display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-primary)' },
-        input: { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' },
-        colorPickerWrap: { display: 'flex', alignItems: 'center', gap: '15px' },
-        colorInput: { width: '50px', height: '50px', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: 0 },
-        codeBlock: { background: '#1e293b', padding: '20px', borderRadius: '12px', color: '#e2e8f0', fontFamily: 'monospace', overflowX: 'auto', whiteSpace: 'pre-wrap', direction: 'ltr', textAlign: 'left' }
+        contentArea: { background: 'var(--color-card-bg)', borderRadius: '20px', padding: '28px', border: '1px solid var(--color-border)', minHeight: '400px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' },
+        inputGroup: { marginBottom: '24px' },
+        label: { display: 'block', marginBottom: '10px', fontWeight: '700', color: 'var(--color-text)', fontSize: '0.95rem' },
+        input: { width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text)', outline: 'none', transition: 'all 0.2s', fontSize: '0.95rem', fontWeight: '500' },
+        colorPickerWrap: { display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--color-bg)', padding: '8px', borderRadius: '14px', border: '1px solid var(--color-border)' },
+        colorInput: { width: '44px', height: '44px', border: 'none', borderRadius: '10px', cursor: 'pointer', padding: 0, overflow: 'hidden' },
+        codeBlock: { background: '#0f172a', padding: '20px', borderRadius: '16px', color: '#e2e8f0', fontFamily: 'monospace', overflowX: 'auto', whiteSpace: 'pre-wrap', direction: 'ltr', textAlign: 'left', border: '1px solid #1e293b' }
     };
 
     return (
-        <div className="widget-customizer" style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '30px', alignItems: 'start' }}>
+        <div className="widget-customizer" style={{ display: 'grid', gridTemplateColumns: '450px 1fr', gap: '32px', alignItems: 'start' }}>
             <div className="customizer-controls">
                 <div style={styles.tabsHeader}>
                     <button style={styles.tabBtn(activeTab === 'settings')} onClick={() => setActiveTab('settings')}>
@@ -248,10 +249,10 @@ const WidgetCustomizer = () => {
 
                         {activeTab === 'embed' && (
                             <motion.div key="embed" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
-                                <h3 style={{marginBottom: '15px', color: 'var(--text-primary)'}}>
+                                <h3 style={{marginBottom: '15px', color: 'var(--color-text)'}}>
                                     {isArabic ? 'ضع هذا الكود في موقعك' : 'Put this code in your website'}
                                 </h3>
-                                <p style={{color: 'var(--text-secondary)', marginBottom: '20px'}}>
+                                <p style={{color: 'var(--color-text-secondary)', marginBottom: '20px'}}>
                                     {isArabic ? 'انسخ الكود التالي وضعه قبل إغلاق وسم </body> في صفحات موقعك.' : 'Copy the code below and paste it before the closing </body> tag in your website.'}
                                 </p>
                                 <div style={{position: 'relative'}}>
@@ -281,7 +282,7 @@ const WidgetCustomizer = () => {
                 </div>
                 
                 {/* True Widget Preview Window */}
-                <div className="preview-window" style={{ position: 'relative', width: '100%', height: '600px', background: '#e2e8f0', borderRadius: '24px', overflow: 'hidden', border: '4px solid #cbd5e1' }}>
+                <div className="preview-window" style={{ position: 'relative', width: '100%', height: '700px', background: '#e2e8f0', borderRadius: '24px', overflow: 'hidden', border: '4px solid #cbd5e1' }}>
                     {apiKey ? (
                         <iframe 
                             key={JSON.stringify(config)} 
@@ -299,6 +300,9 @@ const WidgetCustomizer = () => {
             <style>{`
                 @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
                 @media (max-width: 1024px) { .widget-customizer { grid-template-columns: 1fr !important; } }
+                .widget-customizer input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+                .widget-customizer input[type="color"]::-webkit-color-swatch { border: none; border-radius: 10px; }
+                .widget-customizer input[type="color"]::-moz-color-swatch { border: none; border-radius: 10px; }
             `}</style>
         </div>
     );
