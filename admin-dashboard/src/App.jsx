@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import './index.css';
 
-const API_URL = 'http://localhost:5001/api/admin';
+const API_URL = 'https://aithor0-8op9.vercel.app/api/admin';
 
 axios.interceptors.request.use(config => {
   const token = localStorage.getItem('adminToken');
