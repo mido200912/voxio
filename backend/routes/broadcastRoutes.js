@@ -1,21 +1,19 @@
 import express from "express";
-import admin from "firebase-admin";
+import { FirestoreModel } from "../config/firestoreModel.js";
 
 const router = express.Router();
-const db = admin.firestore();
+const SystemSettings = new FirestoreModel("SystemSettings");
 
 /**
  * 📢 Get current active system broadcast
  */
 router.get("/current", async (req, res) => {
   try {
-    const broadcastDoc = await db.collection("SystemSettings").doc("broadcast").get();
+    const broadcast = await SystemSettings.findOne({ _id: "broadcast" });
     
-    if (!broadcastDoc.exists) {
+    if (!broadcast) {
       return res.json({ success: true, broadcast: null });
     }
-
-    const broadcast = broadcastDoc.data();
     
     // Check if it's still active (optional: could add expiration logic)
     if (broadcast.active === false) {

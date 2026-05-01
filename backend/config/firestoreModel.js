@@ -1,204 +1,89 @@
-import { db } from './firebase.js';
-import admin from './firebase.js';
+import mongoose from 'mongoose';
 import { cacheGet, cacheSet, cacheDelete } from '../utils/cache.js';
 
+// Connect to MongoDB using the URI from .env
+const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/voxio';
+if (mongoose.connection.readyState === 0) {
+    mongoose.connect(mongoUri).then(() => console.log('🍃 Connected to MongoDB')).catch(err => console.error('❌ MongoDB Connection Error:', err));
+}
+
+// Define a dynamic schema that accepts anything (NoSQL style)
+const dynamicSchema = new mongoose.Schema({}, { strict: false, timestamps: true });
+
 export class FirestoreModel {
-  constructor(collectionName) {
-    this.collectionName = collectionName;
-  }
-
-  get collection() {
-    if (!db) throw new Error("Firestore database is not initialized. Check your environment variables.");
-    return db.collection(this.collectionName);
-  }
-
-  async findById(id) {
-    if (!id) return null;
-
-    // ⚡ Cache by ID
-    const cacheKey = `${this.collectionName}:id:${id}`;
-    const cached = cacheGet(cacheKey);
-    if (cached) return cached;
-
-    const doc = await this.collection.doc(id.toString()).get();
-    if (!doc.exists) return null;
-    const instance = this._createDocumentInstance(doc.id, doc.data());
-    cacheSet(cacheKey, instance, 2 * 60 * 1000); // 2 min cache
-    return instance;
-  }
-
-  async findOne(query) {
-    if (query._id) {
-      const doc = await this.findById(query._id);
-      if (!doc) return null;
-      for (const [key, value] of Object.entries(query)) {
-        if (key !== '_id' && doc[key] !== value) return null;
-      }
-      return doc;
+    constructor(collectionName) {
+        this.collectionName = collectionName;
+        // Map collection name to a Mongoose model
+        this.Model = mongoose.models[collectionName] || mongoose.model(collectionName, dynamicSchema);
     }
 
-    const queryKeys = Object.keys(query).filter(k => !k.includes('.'));
-    const queryCacheKey = queryKeys.length === 1
-      ? `${this.collectionName}:${queryKeys[0]}:${query[queryKeys[0]]}`
-      : null;
+    async findById(id) {
+        if (!id) return null;
+        const cacheKey = `${this.collectionName}:id:${id}`;
+        const cached = cacheGet(cacheKey);
+        if (cached) return cached;
 
-    if (queryCacheKey) {
-      const cached = cacheGet(queryCacheKey);
-      if (cached !== null) return cached;
+        const doc = await this.Model.findById(id);
+        if (!doc) return null;
+        
+        const instance = this._createDocumentInstance(doc);
+        cacheSet(cacheKey, instance, 2 * 60 * 1000);
+        return instance;
     }
 
-    try {
-      let ref = this.collection;
-      for (const [key, value] of Object.entries(query)) {
-        if (value !== undefined && !key.includes('.')) {
-          ref = ref.where(key, '==', value);
+    async findOne(query) {
+        // Translate _id if present
+        const mongoQuery = { ...query };
+        if (mongoQuery._id) {
+            mongoQuery._id = mongoQuery._id;
         }
-      }
-      const snapshot = await ref.limit(1).get();
-      if (snapshot.empty) {
-        if (queryCacheKey) cacheSet(queryCacheKey, null, 60 * 1000);
-        return null;
-      }
-      const doc = snapshot.docs[0];
-      const instance = this._createDocumentInstance(doc.id, doc.data());
 
-      for (const [key, value] of Object.entries(query)) {
-        if (key.includes('.')) {
-          const [parent, child] = key.split('.');
-          if (instance[parent]?.[child] !== value) return null;
-        }
-      }
+        const doc = await this.Model.findOne(mongoQuery);
+        if (!doc) return null;
 
-      if (queryCacheKey) cacheSet(queryCacheKey, instance, 2 * 60 * 1000);
-      return instance;
-    } catch (err) {
-      // Fallback for missing indexes
-      if (err.message.includes('requires an index') || err.code === 9) {
-        console.warn(`[Firestore] Index missing for ${this.collectionName} query. Falling back to manual filter.`, query);
-        const results = await this.find(query);
-        return results.length > 0 ? results[0] : null;
-      }
-      throw err;
-    }
-  }
-
-  async find(query = {}) {
-    if (query._id) {
-      const doc = await this.findById(query._id);
-      return doc ? [doc] : [];
+        return this._createDocumentInstance(doc);
     }
 
-    try {
-      let ref = this.collection;
-      const simpleKeys = Object.keys(query).filter(k => !k.includes('.'));
-      
-      for (const [key, value] of Object.entries(query)) {
-        if (value !== undefined && !key.includes('.')) {
-          ref = ref.where(key, '==', value);
-        }
-      }
-      const snapshot = await ref.get();
-      const docs = snapshot.docs.map(doc => this._createDocumentInstance(doc.id, doc.data()));
+    async find(query = {}) {
+        const docs = await this.Model.find(query);
+        return docs.map(doc => this._createDocumentInstance(doc));
+    }
 
-      return docs.filter(doc => {
-        for (const [key, value] of Object.entries(query)) {
-          if (key.includes('.')) {
-            const [parent, child] = key.split('.');
-            if (doc[parent]?.[child] !== value) return false;
-          }
-        }
+    async create(data) {
+        const doc = await this.Model.create(data);
+        const instance = this._createDocumentInstance(doc);
+        cacheSet(`${this.collectionName}:id:${doc._id}`, instance, 2 * 60 * 1000);
+        return instance;
+    }
+
+    async findByIdAndDelete(id) {
+        if (!id) return false;
+        await this.Model.findByIdAndDelete(id);
+        cacheDelete(`${this.collectionName}:id:${id}`);
         return true;
-      });
-    } catch (err) {
-      // Fallback for missing indexes
-      if (err.message.includes('requires an index') || err.code === 9) {
-        console.warn(`[Firestore] Index missing for ${this.collectionName} find. Falling back to manual filter.`);
-        // Just fetch everything (or use first key if possible) and filter
-        const simpleKeys = Object.keys(query).filter(k => !k.includes('.'));
-        let ref = this.collection;
-        
-        // At least use the first key to narrow it down
-        if (simpleKeys.length > 0) {
-          ref = ref.where(simpleKeys[0], '==', query[simpleKeys[0]]);
-        }
-        
-        const snapshot = await ref.get();
-        const docs = snapshot.docs.map(doc => this._createDocumentInstance(doc.id, doc.data()));
-        
-        return docs.filter(doc => {
-          for (const [key, value] of Object.entries(query)) {
-            const parts = key.split('.');
-            let val = doc;
-            for (const part of parts) {
-                val = val?.[part];
-            }
-            if (val !== value) return false;
-          }
-          return true;
-        });
-      }
-      throw err;
     }
-  }
 
-  async create(data) {
-    const docRef = await this.collection.add({
-      ...data,
-      createdAt: new Date()
-    });
-    const instance = this._createDocumentInstance(docRef.id, { ...data, createdAt: new Date() });
-    // ⚡ Warm up cache for the new doc
-    cacheSet(`${this.collectionName}:id:${docRef.id}`, instance, 2 * 60 * 1000);
-    return instance;
-  }
+    // Mimic the Firestore instance behavior with a .save() method
+    _createDocumentInstance(mongoDoc) {
+        const docObj = mongoDoc.toObject();
+        const instance = { ...docObj, _id: docObj._id.toString(), id: docObj._id.toString() };
+        const Model = this.Model;
 
-  async findByIdAndDelete(id) {
-    if (!id) return false;
-    await this.collection.doc(id.toString()).delete();
-    // ⚡ Invalidate cache
-    cacheDelete(`${this.collectionName}:id:${id}`);
-    return true;
-  }
+        Object.defineProperty(instance, 'save', {
+            value: async function () {
+                const dataToSave = { ...this };
+                const id = dataToSave._id;
+                delete dataToSave._id;
+                delete dataToSave.id;
+                delete dataToSave.save;
 
-  // Create an instance that has a .save() method to mimic Mongoose documents
-  _createDocumentInstance(id, data) {
-    const collectionName = this.collectionName;
-    const instance = { ...data, _id: id, id: id };
+                await Model.findByIdAndUpdate(id, dataToSave, { upsert: true });
+                cacheDelete(`${Model.modelName}:id:${id}`);
+                return this;
+            }.bind(instance),
+            enumerable: false
+        });
 
-    Object.defineProperty(instance, 'save', {
-      value: async function () {
-        const dataToSave = { ...this };
-        delete dataToSave._id;
-        delete dataToSave.id;
-        delete dataToSave.save;
-        delete dataToSave._collectionName;
-
-        // ⚡ No more dynamic import() every save — admin is imported at module load
-        // Firestore ignoreUndefinedProperties is set in firebase.js, so no need to convert undefined manually
-
-        await db.collection(collectionName).doc(this._id).set(dataToSave, { merge: true });
-
-        // ⚡ Invalidate stale cache entries after save
-        cacheDelete(`${collectionName}:id:${this._id}`);
-        // Also clear email-based cache if present
-        if (dataToSave.email) cacheDelete(`${collectionName}:email:${dataToSave.email}`);
-        // Clear slug-based cache if present
-        if (dataToSave.slug) cacheDelete(`${collectionName}:slug:${dataToSave.slug}`);
-        // Clear apiKey-based cache if present
-        if (dataToSave.apiKey) cacheDelete(`${collectionName}:apiKey:${dataToSave.apiKey}`);
-        // Clear owner-based cache if present
-        if (dataToSave.owner) cacheDelete(`${collectionName}:owner:${dataToSave.owner}`);
-
-        return this;
-      }.bind(instance),
-      enumerable: false
-    });
-
-    Object.defineProperty(instance, '_collectionName', {
-      value: collectionName,
-      enumerable: false
-    });
-
-    return instance;
-  }
+        return instance;
+    }
 }

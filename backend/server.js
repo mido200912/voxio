@@ -267,13 +267,13 @@ app.get('/api/ping', (req, res) => {
 });
 
 // 🩺 Health check
-app.get('/api/health', async (req, res) => {
-    try {
-        const { db } = await import('./config/firebase.js');
-        res.json({ status: "ok", dbInitialized: !!db });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+app.get('/api/health', (req, res) => {
+    const dbStatus = mongoose.connection.readyState === 1 ? "Connected" : "Disconnected";
+    res.json({ 
+        status: "ok", 
+        database: "MongoDB",
+        connection: dbStatus 
+    });
 });
 
 // ✅ التعامل مع الأخطاء
@@ -282,9 +282,24 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: err.message });
 });
 
+import mongoose from 'mongoose';
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/voxio';
+
+mongoose.connect(MONGO_URI)
+    .then(() => {
+        console.log('🍃 Connected to MongoDB');
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+        });
+    })
+    .catch(err => {
+        console.error('❌ MongoDB Connection Error:', err.message);
+        // Fallback: Start server anyway so webhooks don't die if Mongo is down briefly
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT} (Warning: MongoDB disconnected)`);
+        });
+    });
 
 export default app;
