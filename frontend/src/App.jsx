@@ -34,6 +34,8 @@ import ChatPage from './pages/ChatPage';
 import ToastProvider from './components/Toast';
 import './App.css';
 
+import PublicLayout from './layouts/PublicLayout';
+
 function App() {
   return (
     <Router>
@@ -43,19 +45,25 @@ function App() {
             <ToastProvider>
             <div className="app">
               <Routes>
-                <Route path="/" element={<Home />} />
+                {/* Public Routes with Widget */}
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/about" element={<AboutUs />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/docs" element={<Docs />} />
+                  <Route path="/support" element={<Support />} />
+                </Route>
+
+                {/* Auth Routes (No Widget) */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/onboarding/profile" element={<OnboardingProfile />} />
                 <Route path="/onboarding/knowledge" element={<OnboardingKnowledge />} />
                 <Route path="/onboarding/connect" element={<OnboardingConnect />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/about" element={<AboutUs />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/docs" element={<Docs />} />
-                <Route path="/support" element={<Support />} />
+                
                 <Route path="/agents" element={<AgentsExplorer />} />
                 <Route path="/agents/:apiKey" element={<AgentChat />} />
                 <Route path="/widget/:apiKey" element={<ChatWidget />} />
