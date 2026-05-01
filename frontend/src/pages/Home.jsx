@@ -6,7 +6,6 @@ import Contact from '../components/Contact';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
-import VOXIOChatWidget from '../components/VOXIOChatWidget';
 
 const Home = () => {
     return (
@@ -20,7 +19,6 @@ const Home = () => {
                 <Contact />
             </main>
             <Footer />
-            <VOXIOChatWidget />
         </div>
     );
 };

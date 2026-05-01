@@ -442,8 +442,9 @@ console.log(reply); // AI response`}</pre>
               <pre>{`<!-- VOXIO Web Widget -->
 <script 
   src="https://aithor1.vercel.app/widget.js" 
-  data-api-key="YOUR_API_KEY" 
-  data-base-url="https://aithor1.vercel.app"
+  data-api-key="fe22aaf150819d660081b15d5209a650414f620ab929511a"
+  data-primary-color="#6C63FF"
+  data-launcher-color="#1e293b"
   async
 ></script>
 `}</pre>
