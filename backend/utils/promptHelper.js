@@ -1,21 +1,26 @@
 /**
  * Helper to generate a unified, restrictive system prompt for AI agents.
  */
-export async function getCompanyAIContext(companyDoc) {
+export async function getCompanyAIContext(companyDoc, integration = null) {
     if (!companyDoc) return "You are a general business assistant.";
 
+    // Integration-specific settings (e.g. Website, Products, About)
+    const settings = integration?.settings || {};
+
     // Dynamic import Project model to fetch product info
-    let productsInfo = "No specific products listed.";
-    try {
-        const Project = (await import("../models/Project.js")).default;
-        const projects = await Project.find({ companyId: companyDoc._id });
-        if (projects.length > 0) {
-            productsInfo = projects.map(p => {
-                return `Project: ${p.name}\nProducts: ${p.products.map(prod => `- ${prod.title} (${prod.price} $)`).join(", ")}`;
-            }).join("\n\n");
+    let productsInfo = settings.products || "No specific products listed.";
+    if (!settings.products) {
+        try {
+            const Project = (await import("../models/Project.js")).default;
+            const projects = await Project.find({ companyId: companyDoc._id });
+            if (projects.length > 0) {
+                productsInfo = projects.map(p => {
+                    return `Project: ${p.name}\nProducts: ${p.products.map(prod => `- ${prod.title} (${prod.price} $)`).join(", ")}`;
+                }).join("\n\n");
+            }
+        } catch (e) {
+            console.error("Error fetching projects in context helper:", e);
         }
-    } catch (e) {
-        console.error("Error fetching projects in context helper:", e);
     }
 
     const knowledgeContext = companyDoc.extractedKnowledge || "لا توجد معلومات إضافية متاحة حالياً.";
@@ -33,7 +38,11 @@ export async function getCompanyAIContext(companyDoc) {
         "",
         "Company Profile:",
         `- Industry: ${companyDoc.industry || "N/A"}`,
-        `- Description: ${companyDoc.description || "No description provided"}`,
+        `- Description: ${settings.about || companyDoc.description || "No description provided"}`,
+        `- Website: ${settings.website || "N/A"}`,
+        `- Facebook: ${settings.facebook || "N/A"}`,
+        `- Instagram: ${settings.instagram || "N/A"}`,
+        `- Contact Phone: ${settings.contactPhone || "N/A"}`,
         `- Vision: ${companyDoc.vision || "No vision provided"}`,
         `- Mission: ${companyDoc.mission || "No mission provided"}`,
         `- Values: ${(companyDoc.values || []).join(", ") || "No values provided"}`,

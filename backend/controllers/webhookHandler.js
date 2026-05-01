@@ -140,7 +140,7 @@ export const handleWhatsAppMessage = async (body) => {
                             }
                             const accessToken = integration.credentials.accessToken;
 
-                            const context = await getCompanyAIContext(company);
+                            const context = await getCompanyAIContext(company, integration);
                             const history = await getChatHistory(company._id, from, 'whatsapp', 5);
                             const historyContext = formatHistoryForPrompt(history);
 
@@ -272,7 +272,7 @@ export const handleInstagramWebhook = async (body) => {
                             // 2. AI Fallback
                             const company = await Company.findById(integration.company);
                             if (company) {
-                                const context = await getCompanyAIContext(company);
+                                const context = await getCompanyAIContext(company, integration);
                                 replyMsg = await fetchAiResponse(`${context}\n\nClient asking on Instagram: ${messageText}`);
                             }
                         }
@@ -572,7 +572,7 @@ export const handleTelegramWebhook = async (req, res) => {
             } else {
                 // AI type
                 const companyDoc = await Company.findById(companyId);
-                const context = await getCompanyAIContext(companyDoc);
+                const context = await getCompanyAIContext(companyDoc, integration);
                 const history = await getChatHistory(companyId, userId, 'telegram', 5);
                 const historyContext = formatHistoryForPrompt(history);
                 const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${text}`);
@@ -595,7 +595,7 @@ export const handleTelegramWebhook = async (req, res) => {
 
         // ── No command matched → Default AI reply ───────────────────────────
         const companyDoc = await Company.findById(companyId);
-        const context = await getCompanyAIContext(companyDoc);
+        const context = await getCompanyAIContext(companyDoc, integration);
 
         await saveChatMsg(companyId, userId, text, 'user');
         const history = await getChatHistory(companyId, userId, 'telegram', 5);
