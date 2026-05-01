@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import admin from 'firebase-admin';
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -9,34 +9,82 @@ import rateLimit from 'express-rate-limit';
 const app = express();
 
 // 🛡️ Security Hardening
-app.use(helmet()); // Sets various security-related HTTP headers
+app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*', // Restrict this in production
+  origin: process.env.FRONTEND_URL || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json({ limit: '10kb' })); // Limit body size to prevent DoS
+app.use(express.json({ limit: '50mb' }));
 
-// 🚦 Rate Limiting - Prevent Brute Force on Login
+// 🚦 Rate Limiting
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login requests per window
-  message: { error: 'Too many login attempts, please try again after 15 minutes' }
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many login attempts, please try again later' }
 });
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    }),
-  });
-}
-const db = admin.firestore();
+// 🔌 MongoDB Connection
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ Admin Backend connected to MongoDB'))
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// Admin Credentials (Should be in .env but keeping for compatibility)
+// 📝 Mongoose Schemas (Simplified for Admin use)
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  isSuspended: { type: Boolean, default: false },
+  blockReason: String,
+  blockedAt: Date,
+}, { timestamps: true });
+
+const companySchema = new mongoose.Schema({
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  name: String,
+  industry: String,
+  description: String,
+  vision: String,
+  mission: String,
+  values: [String],
+  apiKey: String,
+  slug: String,
+  messageLimit: { type: Number, default: 1000 },
+  isSuspended: { type: Boolean, default: false },
+  customInstructions: String,
+  extractedKnowledge: String,
+  urlExtractedKnowledge: String,
+  websiteUrl: String,
+}, { timestamps: true });
+
+const integrationSchema = new mongoose.Schema({
+  company: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+  platform: String,
+  isActive: { type: Boolean, default: true },
+  credentials: Object,
+}, { timestamps: true });
+
+const chatSchema = new mongoose.Schema({
+  company: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+  sender: String,
+  message: String,
+}, { timestamps: true });
+
+const supportMessageSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  subject: String,
+  message: String,
+  status: { type: String, default: 'unread' },
+}, { timestamps: true });
+
+const User = mongoose.model('User', userSchema);
+const Company = mongoose.model('Company', companySchema);
+const Integration = mongoose.model('Integration', integrationSchema);
+const Chat = mongoose.model('company_chats', chatSchema);
+const SupportMessage = mongoose.model('support_messages', supportMessageSchema);
+
+// Admin Credentials
 const ADMIN_EMAIL = 'midovoxio@gmail.com';
 const ADMIN_PASS = 'mido927010';
 
@@ -56,6 +104,8 @@ const adminAuth = (req, res, next) => {
   }
 };
 
+// 🛣️ Routes
+
 app.post('/api/admin/login', loginLimiter, (req, res) => {
   const { email, password } = req.body;
   if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
@@ -68,20 +118,16 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
 
 app.get('/api/admin/users', adminAuth, async (req, res) => {
   try {
-    const usersSnapshot = await db.collection('users').get();
-    const companiesSnapshot = await db.collection('companies').get();
-    const integrationsSnapshot = await db.collection('integrations').get();
+    const users = await User.find().lean();
+    const companies = await Company.find().lean();
+    const integrations = await Integration.find().lean();
 
-    const companies = companiesSnapshot.docs.map(d => ({ _id: d.id, ...d.data() }));
-    const integrations = integrationsSnapshot.docs.map(d => ({ _id: d.id, ...d.data() }));
-
-    const users = usersSnapshot.docs.map(doc => {
-      const u = doc.data();
-      const company = companies.find(c => c.owner === doc.id);
-      const userIntegrations = company ? integrations.filter(i => i.company === company._id) : [];
+    const formattedUsers = users.map(u => {
+      const company = companies.find(c => c.owner?.toString() === u._id.toString());
+      const userIntegrations = company ? integrations.filter(i => i.company?.toString() === company._id.toString()) : [];
 
       return {
-        _id: doc.id,
+        _id: u._id,
         name: u.name,
         email: u.email,
         isSuspended: u.isSuspended || false,
@@ -91,7 +137,7 @@ app.get('/api/admin/users', adminAuth, async (req, res) => {
         integrationsCount: userIntegrations.length
       };
     });
-    res.json(users);
+    res.json(formattedUsers);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch users' });
   }
@@ -99,23 +145,15 @@ app.get('/api/admin/users', adminAuth, async (req, res) => {
 
 app.get('/api/admin/companies/:id', adminAuth, async (req, res) => {
   try {
-    const companyDoc = await db.collection('companies').doc(req.params.id).get();
-    if (!companyDoc.exists) return res.status(404).json({ error: 'Company not found' });
+    const company = await Company.findById(req.params.id).lean();
+    if (!company) return res.status(404).json({ error: 'Company not found' });
     
-    const companyData = companyDoc.data();
-    
-    // Fetch owner info
-    const ownerDoc = await db.collection('users').doc(companyData.owner).get();
-    const ownerData = ownerDoc.exists ? ownerDoc.data() : { email: 'Unknown' };
-
-    // Fetch integrations
-    const intgSnap = await db.collection('integrations').where('company', '==', req.params.id).get();
-    const integrations = intgSnap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    const owner = await User.findById(company.owner).lean();
+    const integrations = await Integration.find({ company: req.params.id }).lean();
 
     res.json({
-      _id: companyDoc.id,
-      ...companyData,
-      ownerEmail: ownerData.email,
+      ...company,
+      ownerEmail: owner ? owner.email : 'Unknown',
       integrations
     });
   } catch (e) {
@@ -126,21 +164,15 @@ app.get('/api/admin/companies/:id', adminAuth, async (req, res) => {
 app.delete('/api/admin/users/:userId', adminAuth, async (req, res) => {
   try {
     const userId = req.params.userId;
-    const companiesSnapshot = await db.collection('companies').where('owner', '==', userId).get();
+    const companies = await Company.find({ owner: userId });
     
-    for (const doc of companiesSnapshot.docs) {
-      const companyId = doc.id;
-      
-      const intgSnap = await db.collection('integrations').where('company', '==', companyId).get();
-      for (const iDoc of intgSnap.docs) await db.collection('integrations').doc(iDoc.id).delete();
-      
-      const chatSnap = await db.collection('company_chats').where('company', '==', companyId).get();
-      for (const cDoc of chatSnap.docs) await db.collection('company_chats').doc(cDoc.id).delete();
-      
-      await db.collection('companies').doc(companyId).delete();
+    for (const company of companies) {
+      await Integration.deleteMany({ company: company._id });
+      await Chat.deleteMany({ company: company._id });
+      await Company.findByIdAndDelete(company._id);
     }
     
-    await db.collection('users').doc(userId).delete();
+    await User.findByIdAndDelete(userId);
     res.json({ message: 'User and associated data deleted' });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete user' });
@@ -149,19 +181,15 @@ app.delete('/api/admin/users/:userId', adminAuth, async (req, res) => {
 
 app.put('/api/admin/users/:userId/suspend', adminAuth, async (req, res) => {
   try {
-    const userRef = db.collection('users').doc(req.params.userId);
-    const userDoc = await userRef.get();
-    if (!userDoc.exists) return res.status(404).json({ error: 'User not found' });
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
     
-    const isSuspended = !userDoc.data().isSuspended;
-    await userRef.update({ isSuspended });
+    user.isSuspended = !user.isSuspended;
+    await user.save();
     
-    const compSnap = await db.collection('companies').where('owner', '==', req.params.userId).get();
-    for (const doc of compSnap.docs) {
-      await db.collection('companies').doc(doc.id).update({ isSuspended });
-    }
+    await Company.updateMany({ owner: req.params.userId }, { isSuspended: user.isSuspended });
     
-    res.json({ message: 'Status updated', isSuspended });
+    res.json({ message: 'Status updated', isSuspended: user.isSuspended });
   } catch (e) {
     res.status(500).json({ error: 'Failed to update status' });
   }
@@ -170,32 +198,29 @@ app.put('/api/admin/users/:userId/suspend', adminAuth, async (req, res) => {
 app.put('/api/admin/companies/:companyId/limit', adminAuth, async (req, res) => {
   try {
     const limit = parseInt(req.body.limit);
-    await db.collection('companies').doc(req.params.companyId).update({ messageLimit: limit });
+    await Company.findByIdAndUpdate(req.params.companyId, { messageLimit: limit });
     res.json({ message: 'Limit updated' });
   } catch (e) {
     res.status(500).json({ error: 'Failed to update limit' });
   }
 });
 
-// 🤖 Manage AI Knowledge & Prompts (Full Control)
 app.get('/api/admin/companies/:companyId/ai-config', adminAuth, async (req, res) => {
   try {
-    const compDoc = await db.collection('companies').doc(req.params.companyId).get();
-    if (!compDoc.exists) return res.status(404).json({ error: 'Company not found' });
+    const company = await Company.findById(req.params.companyId).lean();
+    if (!company) return res.status(404).json({ error: 'Company not found' });
     
-    const data = compDoc.data();
     res.json({
-      name: data.name || '',
-      industry: data.industry || '',
-      description: data.description || '',
-      vision: data.vision || '',
-      mission: data.mission || '',
-      values: data.values || '',
-      systemPrompt: data.customInstructions || '',
-      extractedKnowledge: data.extractedKnowledge || '',
-      urlExtractedKnowledge: data.urlExtractedKnowledge || '',
-      knowledgeBase: data.knowledgeBase || [],
-      websiteUrl: data.websiteUrl || ''
+      name: company.name || '',
+      industry: company.industry || '',
+      description: company.description || '',
+      vision: company.vision || '',
+      mission: company.mission || '',
+      values: company.values || '',
+      systemPrompt: company.customInstructions || '',
+      extractedKnowledge: company.extractedKnowledge || '',
+      urlExtractedKnowledge: company.urlExtractedKnowledge || '',
+      websiteUrl: company.websiteUrl || ''
     });
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch AI config' });
@@ -214,57 +239,25 @@ app.put('/api/admin/companies/:companyId/ai-config', adminAuth, async (req, res)
       customInstructions: req.body.systemPrompt,
       extractedKnowledge: req.body.extractedKnowledge,
       urlExtractedKnowledge: req.body.urlExtractedKnowledge,
-      updatedAt: new Date(),
-      updatedBy: 'admin'
     };
 
-    // Remove undefined fields
-    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
-
-    await db.collection('companies').doc(req.params.companyId).update(updateData);
+    await Company.findByIdAndUpdate(req.params.companyId, updateData);
     res.json({ message: 'Company AI configuration synchronized successfully' });
   } catch (e) {
     res.status(500).json({ error: 'Failed to update AI config' });
   }
 });
 
-// 🚫 Advanced Blocking
-app.post('/api/admin/users/:userId/block', adminAuth, async (req, res) => {
-  try {
-    const { reason } = req.body;
-    const userRef = db.collection('users').doc(req.params.userId);
-    await userRef.update({ 
-      isSuspended: true, 
-      blockReason: reason,
-      blockedAt: new Date()
-    });
-    
-    const compSnap = await db.collection('companies').where('owner', '==', req.params.userId).get();
-    for (const doc of compSnap.docs) {
-      await db.collection('companies').doc(doc.id).update({ isSuspended: true });
-    }
-    
-    res.json({ message: 'User and associated companies blocked' });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to block user' });
-  }
-});
-
 app.get('/api/admin/agents', adminAuth, async (req, res) => {
   try {
-    const intgSnap = await db.collection('integrations').get();
-    const compSnap = await db.collection('companies').get();
-    const userSnap = await db.collection('users').get();
+    const integrations = await Integration.find().populate('company').lean();
+    const users = await User.find().lean();
 
-    const companies = compSnap.docs.reduce((acc, doc) => ({...acc, [doc.id]: doc.data()}), {});
-    const users = userSnap.docs.reduce((acc, doc) => ({...acc, [doc.id]: doc.data()}), {});
-
-    const agents = intgSnap.docs.map(doc => {
-      const a = doc.data();
-      const comp = companies[a.company];
-      const owner = comp ? users[comp.owner] : null;
+    const agents = integrations.map(a => {
+      const comp = a.company;
+      const owner = comp ? users.find(u => u._id.toString() === comp.owner?.toString()) : null;
       return {
-        _id: doc.id,
+        _id: a._id,
         platform: a.platform,
         isActive: a.isActive,
         companyName: comp ? comp.name : 'Unknown',
@@ -279,26 +272,16 @@ app.get('/api/admin/agents', adminAuth, async (req, res) => {
 
 app.delete('/api/admin/agents/:agentId', adminAuth, async (req, res) => {
   try {
-    await db.collection('integrations').doc(req.params.agentId).delete();
+    await Integration.findByIdAndDelete(req.params.agentId);
     res.json({ message: 'Agent deleted' });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete agent' });
   }
 });
 
-app.post('/api/admin/broadcast', adminAuth, async (req, res) => {
-  try {
-    await db.collection('SystemSettings').doc('broadcast').set({ ...req.body, updatedAt: new Date() }, { merge: true });
-    res.json({ message: 'Broadcast updated' });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to update broadcast' });
-  }
-});
-
 app.get('/api/admin/support-messages', adminAuth, async (req, res) => {
   try {
-    const snapshot = await db.collection('support_messages').orderBy('createdAt', 'desc').get();
-    const messages = snapshot.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
+    const messages = await SupportMessage.find().sort({ createdAt: -1 }).lean();
     res.json(messages);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch messages' });
@@ -307,7 +290,7 @@ app.get('/api/admin/support-messages', adminAuth, async (req, res) => {
 
 app.put('/api/admin/support-messages/:id/read', adminAuth, async (req, res) => {
   try {
-    await db.collection('support_messages').doc(req.params.id).update({ status: 'read' });
+    await SupportMessage.findByIdAndUpdate(req.params.id, { status: 'read' });
     res.json({ message: 'Message marked as read' });
   } catch (e) {
     res.status(500).json({ error: 'Failed to update message' });
@@ -316,7 +299,7 @@ app.put('/api/admin/support-messages/:id/read', adminAuth, async (req, res) => {
 
 app.delete('/api/admin/support-messages/:id', adminAuth, async (req, res) => {
   try {
-    await db.collection('support_messages').doc(req.params.id).delete();
+    await SupportMessage.findByIdAndDelete(req.params.id);
     res.json({ message: 'Message deleted' });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete message' });
@@ -325,11 +308,11 @@ app.delete('/api/admin/support-messages/:id', adminAuth, async (req, res) => {
 
 app.get('/api/admin/analytics', adminAuth, async (req, res) => {
   try {
-    const usersCount = (await db.collection('users').count().get()).data().count;
-    const integrationsCount = (await db.collection('integrations').count().get()).data().count;
-    const aiChatsCount = (await db.collection('company_chats').where('sender', '==', 'ai').count().get()).data().count;
+    const usersCount = await User.countDocuments();
+    const integrationsCount = await Integration.countDocuments();
+    const aiMessagesCount = await Chat.countDocuments({ sender: 'ai' });
     
-    res.json({ usersCount, integrationsCount, totalAIMessages: aiChatsCount });
+    res.json({ usersCount, integrationsCount, totalAIMessages: aiMessagesCount });
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch analytics' });
   }
