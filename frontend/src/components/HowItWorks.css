@@ -48,13 +48,13 @@
     border-radius: 20px;
     margin: 0 auto 1.25rem;
     font-size: 1.25rem;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 8px 24px rgba(var(--color-text-rgb), 0.15);
 }
 
 .step-item:hover .step-icon {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 16px 40px rgba(var(--color-text-rgb), 0.2);
+    transform: translateY(-6px) scale(1.08);
+    box-shadow: 0 20px 48px rgba(var(--color-text-rgb), 0.22);
 }
 
 .step-title {
@@ -102,14 +102,14 @@
     justify-content: center;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.4s ease;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.1);
 }
 
 .demo-video:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
-    border-color: rgba(var(--color-text-rgb), 0.15);
+    transform: translateY(-6px);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.14);
+    border-color: rgba(var(--color-text-rgb), 0.18);
 }
 
 .video-placeholder {

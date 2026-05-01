@@ -39,8 +39,11 @@ const Settings = () => {
         mission: '',
         values: '', // Handle as comma separated string for UI
         websiteUrl: '',
-        allowedDomains: '' // Handle as comma separated string for UI
+        allowedDomains: '', // Handle as comma separated string for UI
+        logo: ''
     });
+    const [logoFile, setLogoFile] = useState(null);
+    const [logoPreview, setLogoPreview] = useState('');
 
     const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
     const token = secureStorage.getItem('token');
@@ -61,8 +64,12 @@ const Settings = () => {
                 mission: data.mission || '',
                 values: data.values ? data.values.join(', ') : '',
                 websiteUrl: data.websiteUrl || '',
-                allowedDomains: data.allowedDomains ? data.allowedDomains.join(', ') : ''
+                allowedDomains: data.allowedDomains ? data.allowedDomains.join(', ') : '',
+                logo: data.logo || ''
             });
+            if (data.logo) {
+                setLogoPreview(data.logo);
+            }
         } catch (error) {
             console.error("Error fetching company data", error);
         } finally {
@@ -110,15 +117,42 @@ const Settings = () => {
         setCompanyData({ ...companyData, [e.target.name]: e.target.value });
     };
 
+    const handleLogoChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
+            let logoUrl = companyData.logo;
+            if (logoFile) {
+                const formDataUpload = new FormData();
+                formDataUpload.append('image', logoFile);
+                const uploadRes = await axios.post(`${BACKEND_URL}/ai/image`, formDataUpload, {
+                    headers: { 
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${token}` 
+                    }
+                });
+                logoUrl = uploadRes.data.imageUrl;
+            }
+
             // Convert values string back to array
             const payload = {
-                ...companyData,
+                name: companyData.name,
+                industry: companyData.industry,
+                description: companyData.description,
+                vision: companyData.vision,
+                mission: companyData.mission,
                 values: companyData.values.split(',').map(v => v.trim()).filter(v => v),
+                websiteUrl: companyData.websiteUrl,
                 allowedDomains: companyData.allowedDomains.split(',').map(d => d.trim()).filter(d => d),
-                size: companyData.companySize
+                size: companyData.companySize,
+                logo: logoUrl
             };
 
             await axios.post(`${BACKEND_URL}/company`, payload, {
@@ -190,6 +224,39 @@ const Settings = () => {
                         <h3>{t.dashboard.settingsPage.orgData}</h3>
                     </div>
                     <div className="card-body">
+                        <div className="form-group" style={{ textAlign: 'center', marginBottom: '25px' }}>
+                            <label htmlFor="logo-upload" style={{ cursor: 'pointer', display: 'inline-block' }}>
+                                <div style={{
+                                    width: '100px',
+                                    height: '100px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    overflow: 'hidden',
+                                    border: '2px dashed var(--border-color)',
+                                    margin: '0 auto 10px'
+                                }}>
+                                    {logoPreview ? (
+                                        <img src={logoPreview} alt="Logo Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <span style={{ fontSize: '24px', color: 'var(--text-secondary)' }}>📷</span>
+                                    )}
+                                </div>
+                                <span className="text-sm" style={{ color: 'var(--primary-color)' }}>
+                                    {language === 'ar' ? 'تحميل لوجو الشركة' : 'Upload Company Logo'}
+                                </span>
+                            </label>
+                            <input
+                                id="logo-upload"
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={handleLogoChange}
+                            />
+                        </div>
+
                         <div className="form-row">
                             <div className="form-group half">
                                 <label>{t.dashboard.settingsPage.companyName}</label>

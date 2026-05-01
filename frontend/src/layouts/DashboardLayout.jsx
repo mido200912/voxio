@@ -71,7 +71,11 @@ const DashboardLayout = () => {
             <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
                 <div className="sidebar-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <img src="/logo.png" alt="VOXIO" className="sidebar-logo" />
+                        <img 
+                            src={theme === 'dark' ? '/logodark.png' : '/logo.png'} 
+                            alt="VOXIO" 
+                            className="sidebar-logo" 
+                        />
                         {isSidebarOpen && <span className="logo-text">VOXIO</span>}
                     </div>
                     <button className="close-sidebar-btn mobile-only" onClick={() => setIsSidebarOpen(false)}>

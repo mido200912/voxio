@@ -151,11 +151,12 @@
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: none;
+    box-shadow: 0 6px 24px rgba(var(--color-text-rgb), 0.15);
 }
 
 .btn-primary-premium:hover {
     transform: translateY(-3px);
-    box-shadow: 0 20px 40px rgba(var(--color-text-rgb), 0.2);
+    box-shadow: 0 20px 50px rgba(var(--color-text-rgb), 0.25);
 }
 
 .btn-shine {
@@ -197,12 +198,13 @@
     display: flex;
     align-items: center;
     gap: 2rem;
-    padding: 1.5rem 2rem;
+    padding: 1.75rem 2.5rem;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 }
 
 .stat-item {
@@ -264,15 +266,18 @@
     border: 1px solid var(--color-border);
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 
-        0 25px 60px rgba(0, 0, 0, 0.12),
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.15),
         0 0 0 1px rgba(var(--color-text-rgb), 0.05);
     transform: perspective(1000px) rotateY(-2deg) rotateX(1deg);
-    transition: transform 0.5s ease;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-mockup:hover {
     transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+    box-shadow:
+        0 40px 100px rgba(0, 0, 0, 0.18),
+        0 0 0 1px rgba(var(--color-text-rgb), 0.08);
 }
 
 .mockup-header {
@@ -415,20 +420,20 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: 14px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     gap: 0.625rem;
     font-weight: 600;
     font-size: 0.875rem;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 5;
 }
 
 .floating-card:hover {
-    transform: translateY(-8px) !important;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
-    border-color: rgba(var(--color-text-rgb), 0.15);
+    transform: translateY(-10px) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14);
+    border-color: rgba(var(--color-text-rgb), 0.2);
 }
 
 .floating-card i {

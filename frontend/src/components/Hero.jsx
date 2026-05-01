@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import './Hero.css';
 import { BackgroundPaths } from './ui/background-paths';
 
@@ -110,7 +111,6 @@ const Hero = () => {
                         )}
                     </div>
 
-                    {/* 
                     <div className="hero-stats animate-fade-in delay-3" ref={statsRef}>
                         <div className="stat-item">
                             <div className="stat-value">
@@ -136,7 +136,6 @@ const Hero = () => {
                             <span className="stat-label">{t.hero.statSatisfaction}</span>
                         </div>
                     </div>
-                    */}
                 </div>
 
                 <div className="hero-visual">

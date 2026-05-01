@@ -6,6 +6,18 @@ import { getChatbotTemplate } from "../utils/chatbotTemplates.js";
 
 const router = express.Router();
 
+function unescapeHTML(str) {
+  if (!str) return str;
+  return str
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+}
+
+
 /*-------------------------------
   Get current chatbot code (for editor)
 -------------------------------*/
@@ -14,7 +26,8 @@ router.get("/current", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const htmlContent = company.websiteConfig?.htmlContent || getChatbotTemplate('default', company);
+    let htmlContent = company.websiteConfig?.htmlContent || getChatbotTemplate('default', company);
+    htmlContent = unescapeHTML(htmlContent);
 
     res.json({
       htmlContent,
@@ -38,7 +51,7 @@ router.post("/edit", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const currentHtml = company.websiteConfig?.htmlContent || getChatbotTemplate('default', company);
+    const currentHtml = unescapeHTML(company.websiteConfig?.htmlContent || getChatbotTemplate('default', company));
 
     // Format chat history for context
     const historyContext = (history || [])
@@ -67,6 +80,7 @@ CRITICAL TECHNICAL RULES:
 - PRESERVE FUNCTIONALITY: Never remove or break the IDs: chat-box, user-input, send-btn.
 - PRESERVE LOGIC: Keep the <script> section that handles fetching and sending messages. You can style the elements, but don't break the 'async function send()' or 'append()' logic.
 - COMPLETE CODE: Always return the full HTML starting from <!DOCTYPE html>.
+- NO ESCAPING: Use raw < and > characters. DO NOT use HTML entities like &lt; or &gt; in the code.
 - CREATIVITY: If the user says "make it better", use your designer expertise to add professional touches like gradients, shadows, or refined spacing.`;
 
     const userPrompt = `Existing code:
@@ -105,13 +119,14 @@ Remember: Modify the code to fulfill the current request while respecting the co
     }
 
     // Save updated HTML using the instance method
+    const finalCode = unescapeHTML(parsed.code);
     company.websiteConfig = {
       ...company.websiteConfig,
-      htmlContent: parsed.code
+      htmlContent: finalCode
     };
     await company.save();
 
-    res.json({ message: parsed.message, code: parsed.code });
+    res.json({ message: parsed.message, code: finalCode });
   } catch (err) {
     console.error("🤖 Chatbot Editor Edit Error:", err);
     res.status(500).json({ error: "فشل التعديل، حاول تاني", details: err.message });
@@ -149,7 +164,8 @@ router.get("/page/:slug", async (req, res) => {
     const company = await Company.findOne({ slug });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const htmlContent = company.websiteConfig?.htmlContent || getChatbotTemplate('default', company);
+    let htmlContent = company.websiteConfig?.htmlContent || getChatbotTemplate('default', company);
+    htmlContent = unescapeHTML(htmlContent);
 
     res.json({
       htmlContent,
@@ -173,7 +189,7 @@ router.post("/save", requireAuth, async (req, res) => {
 
     company.websiteConfig = {
       ...(company.websiteConfig || {}),
-      htmlContent: htmlContent
+      htmlContent: unescapeHTML(htmlContent)
     };
     await company.save();
 

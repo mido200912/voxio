@@ -20,7 +20,7 @@
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     text-align: center;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
 }
@@ -42,8 +42,8 @@
 }
 
 .integration-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    transform: translateY(-10px);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.1);
 }
 
 .integration-card:hover::after {
@@ -67,7 +67,7 @@
     margin: 0 auto 1.25rem;
     border-radius: 18px;
     font-size: 1.5rem;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .integration-logo.facebook {
@@ -101,7 +101,8 @@
 }
 
 .integration-card:hover .integration-logo {
-    transform: scale(1.1);
+    transform: scale(1.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .integration-card h3 {

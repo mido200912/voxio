@@ -45,7 +45,7 @@
   --spacing-sm: 1rem;
   --spacing-md: 2rem;
   --spacing-lg: 4rem;
-  --spacing-xl: 6rem;
+  --spacing-xl: 7rem;
 
   /* Border Radius */
   --radius-sm: 0.5rem;
@@ -154,11 +154,12 @@ p {
 .btn-primary {
   background: var(--color-text);
   color: var(--color-bg);
+  box-shadow: 0 4px 14px rgba(var(--color-text-rgb), 0.12);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px var(--color-shadow-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(var(--color-text-rgb), 0.18);
 }
 
 .btn-secondary {
@@ -350,4 +351,40 @@ p {
 ::selection {
   background: var(--color-text);
   color: var(--color-bg);
+}
+
+/* ========================================
+   Scroll Reveal Animations
+======================================== */
+.reveal-section {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-section.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reveal-delay] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-reveal-delay].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-section,
+  [data-reveal-delay] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

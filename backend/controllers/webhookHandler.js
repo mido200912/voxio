@@ -24,17 +24,50 @@ async function tgSend(botToken, chatId, text, extra = {}) {
 
 // ─── Helper: send product menu with inline buttons ──────────────────────────
 async function tgSendProductMenu(botToken, chatId, products, introText = 'اختر المنتج:') {
-    const keyboard = products.map(p => ([{
-        text: `${p.name}${p.price ? ` - ${p.price}` : ''}`,
-        callback_data: `order:${p.name}`
-    }]));
-
+    // Send intro text first
     await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         chat_id: chatId,
         text: introText,
-        parse_mode: 'HTML',
-        reply_markup: { inline_keyboard: keyboard }
+        parse_mode: 'HTML'
     });
+
+    // Send each product as a separate message
+    for (const p of products) {
+        const caption = `<b>${p.name}</b>\n${p.price ? `💰 السعر: ${p.price}\n` : ''}${p.description ? `\n📝 ${p.description}` : ''}`;
+        const keyboard = [[{
+            text: `🛒 طلب ${p.name}`,
+            callback_data: `order:${p.name}`
+        }]];
+
+        if (p.imageUrl) {
+            try {
+                await axios.post(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                    chat_id: chatId,
+                    photo: p.imageUrl,
+                    caption: caption,
+                    parse_mode: 'HTML',
+                    reply_markup: { inline_keyboard: keyboard }
+                });
+            } catch (e) {
+                console.error('Failed to send photo, fallback to text', e.message);
+                await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    chat_id: chatId,
+                    text: caption,
+                    parse_mode: 'HTML',
+                    reply_markup: { inline_keyboard: keyboard },
+                    disable_web_page_preview: false
+                });
+            }
+        } else {
+            await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                chat_id: chatId,
+                text: caption,
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: keyboard },
+                disable_web_page_preview: false
+            });
+        }
+    }
 }
 
 // ─── Save chat message to DB ────────────────────────────────────────────────
@@ -99,52 +132,75 @@ export const handleWhatsAppMessage = async (body) => {
                             continue;
                         }
 
-                        const company = await Company.findById(integration.company);
-                        if (!company) {
-                            console.log(`[WhatsApp Webhook] Associated company not found in DB!`);
-                            continue;
-                        }
-                        const accessToken = integration.credentials.accessToken;
-
-                        const context = await getCompanyAIContext(company);
-
-                        const history = await getChatHistory(company._id, from, 'whatsapp', 5);
-                        const historyContext = formatHistoryForPrompt(history);
-
                         try {
-                            await CompanyChat.create({ company: company._id, user: from, text: messageText, sender: 'user', platform: 'whatsapp' });
-                            console.log(`[WhatsApp Webhook] Saved user chat in DB successfully.`);
-                        } catch (dbErr) {
-                            console.error(`[WhatsApp Webhook] Error saving user message:`, dbErr.message);
-                        }
+                            const company = await Company.findById(integration.company);
+                            if (!company) {
+                                console.log(`[WhatsApp Webhook] Associated company not found in DB!`);
+                                continue;
+                            }
+                            const accessToken = integration.credentials.accessToken;
 
-                        console.log(`[WhatsApp Webhook] Fetching AI response...`);
-                        
-                        // ✅ [PRO TIP] Mark message as read (Meta Standard)
-                        try {
+                            const context = await getCompanyAIContext(company);
+                            const history = await getChatHistory(company._id, from, 'whatsapp', 5);
+                            const historyContext = formatHistoryForPrompt(history);
+
+                            // Save user message to DB
+                            await CompanyChat.create({ company: company._id, user: from, text: messageText, sender: 'user', platform: 'whatsapp' }).catch(e => console.error("DB Save Err:", e.message));
+
+                            console.log(`[WhatsApp Webhook] Fetching AI response...`);
+                            
+                            // ✅ [PRO TIP] Mark message as read (Meta Standard)
                             await axios.post(
                                 `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`,
                                 { messaging_product: "whatsapp", status: "read", message_id: messageId },
                                 { headers: { Authorization: `Bearer ${accessToken}` } }
-                            );
-                        } catch (readErr) {
-                            console.warn("Failed to mark as read:", readErr.message);
-                        }
+                            ).catch(e => console.warn("Read Status Err:", e.message));
 
-                        const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${messageText}`);
-                        console.log(`[WhatsApp Webhook] AI generated response: ${reply.substring(0, 30)}...`);
+                            const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${messageText}`, "AI_ERROR_RETRY_LATER");
+                            
+                            if (reply === "AI_ERROR_RETRY_LATER") {
+                                throw new Error("AI Assistant failed to generate a response (Both CoreX and OpenRouter failed). Please check API keys.");
+                            }
 
+                            console.log(`[WhatsApp Webhook] AI generated response: ${reply.substring(0, 30)}...`);
 
-                        try {
+                            // Send AI Reply
                             await axios.post(
                                 `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`,
                                 { messaging_product: "whatsapp", to: from, type: "text", text: { body: reply } },
                                 { headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" } }
                             );
                             await CompanyChat.create({ company: company._id, user: from, text: reply, sender: 'ai', platform: 'whatsapp' });
-                        } catch (sendError) {
-                            console.error(`❌ Failed to send WA reply:`, sendError.response?.data || sendError.message);
-                            await CompanyChat.create({ company: company._id, user: 'SYSTEM_ERROR', text: `Failed to send to Meta: ${sendError.message}`, sender: 'ai', platform: 'whatsapp' });
+
+                        } catch (msgError) {
+                            console.error(`❌ WhatsApp Message Error:`, msgError.message);
+                            
+                            // Construct error message for the user
+                            const errorMsg = `⚠️ *WhatsApp Bot Error*\n\n*Error:* ${msgError.message}\n${msgError.response?.data ? `*Details:* ${JSON.stringify(msgError.response.data)}` : ''}\n\n_Fix this to restore AI responses._`;
+
+                            // Try to send error back to user
+                            if (integration?.credentials?.accessToken) {
+                                try {
+                                    await axios.post(
+                                        `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`,
+                                        { messaging_product: "whatsapp", to: from, type: "text", text: { body: errorMsg } },
+                                        { headers: { Authorization: `Bearer ${integration.credentials.accessToken}`, "Content-Type": "application/json" } }
+                                    );
+                                } catch (reportErr) {
+                                    console.error("Failed to send error report to WA:", reportErr.response?.data || reportErr.message);
+                                }
+                            }
+
+                            // Log to DB
+                            if (integration?.company) {
+                                await CompanyChat.create({ 
+                                    company: integration.company, 
+                                    user: 'SYSTEM_ERROR', 
+                                    text: `Loop Error: ${msgError.message}`, 
+                                    sender: 'ai', 
+                                    platform: 'whatsapp' 
+                                }).catch(() => {});
+                            }
                         }
                     }
                 }

@@ -506,6 +506,19 @@ router.get("/public/:slug", async (req, res) => {
 -------------------------------*/
 router.post("/", requireAuth, async (req, res) => {
   try {
+    const {
+      name, industry, size, companySize, description,
+      vision, mission, values, websiteUrl, allowedDomains, logo
+    } = req.body;
+
+    const safeData = {
+      name, industry, description, vision, mission, logo,
+      size: size || companySize || "",
+      websiteUrl: websiteUrl || "",
+      values: Array.isArray(values) ? values : [],
+      allowedDomains: Array.isArray(allowedDomains) ? allowedDomains : [],
+    };
+
     const existing = await Company.findOne({ owner: req.user._id });
 
     if (existing) {
@@ -515,18 +528,18 @@ router.post("/", requireAuth, async (req, res) => {
       if (!existing.chatToken) {
         existing.chatToken = `vchat_${crypto.randomBytes(16).toString("hex")}`;
       }
-      if (!existing.slug && req.body.name) {
-        existing.slug = req.body.name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4);
+      if (!existing.slug && name) {
+        existing.slug = name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4);
       }
-      Object.assign(existing, req.body, { apiKey: existing.apiKey, chatToken: existing.chatToken });
+      Object.assign(existing, safeData);
       await existing.save();
       return res.json(existing);
     }
 
     const apiKey = crypto.randomBytes(24).toString("hex");
-    const slug = req.body.name ? req.body.name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4) : `company-${Date.now()}`;
+    const slug = name ? name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4) : `company-${Date.now()}`;
     const company = await Company.create({
-      ...req.body,
+      ...safeData,
       owner: req.user._id,
       apiKey,
       slug,
@@ -535,6 +548,7 @@ router.post("/", requireAuth, async (req, res) => {
 
     res.status(201).json(company);
   } catch (err) {
+    console.error("POST /company error:", err);
     res.status(500).json({ error: err.message });
   }
 });

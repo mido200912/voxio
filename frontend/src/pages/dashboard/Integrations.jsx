@@ -32,7 +32,8 @@ const Integrations = () => {
     const [showTelegramModal, setShowTelegramModal] = useState(false);
     const [telegramData, setTelegramData] = useState({ botToken: '', commands: [] });
     const [newCommand, setNewCommand] = useState({ command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] });
-    const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '' });
+    const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '', imageUrl: '' });
+    const [isUploadingProductImg, setIsUploadingProductImg] = useState(false);
 
     // Reveal Token state
     const [revealOtpVisible, setRevealOtpVisible] = useState(false);
@@ -241,7 +242,7 @@ const Integrations = () => {
             showToast('warning', t.language === 'ar' ? 'بيانات ناقصة' : 'Missing Data', t.language === 'ar' ? 'اكتب اسم المنتج الأول!' : 'Enter product name first!');
             return;
         }
-        const productToAdd = { name: newProduct.name, price: newProduct.price, description: newProduct.description };
+        const productToAdd = { name: newProduct.name, price: newProduct.price, description: newProduct.description, imageUrl: newProduct.imageUrl };
         setNewCommand(prev => {
             const updated = { ...prev, products: [...(prev.products || []), productToAdd] };
             // Sync the ref IMMEDIATELY so it's always up-to-date
@@ -249,7 +250,30 @@ const Integrations = () => {
             console.log(`📦 Product added! Total: ${updated.products.length}`, updated.products);
             return updated;
         });
-        setNewProduct({ name: '', price: '', description: '' });
+        setNewProduct({ name: '', price: '', description: '', imageUrl: '' });
+    };
+
+    const handleProductImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsUploadingProductImg(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            const uploadRes = await axios.post(`${BACKEND_URL}/ai/image`, formData, {
+                headers: { 
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}` 
+                }
+            });
+            setNewProduct(prev => ({ ...prev, imageUrl: uploadRes.data.imageUrl }));
+            showToast('success', t.language === 'ar' ? 'تم رفع الصورة' : 'Image Uploaded');
+        } catch (error) {
+            console.error('Error uploading product image:', error);
+            showToast('error', t.language === 'ar' ? 'فشل رفع الصورة' : 'Image Upload Failed');
+        } finally {
+            setIsUploadingProductImg(false);
+        }
     };
 
     const addTelegramCommand = () => {
@@ -269,7 +293,7 @@ const Integrations = () => {
         const emptyCmd = { command: '', description: '', category: '', type: 'ai', message: '', successMessage: '', products: [] };
         setNewCommand(emptyCmd);
         newCommandRef.current = emptyCmd;
-        setNewProduct({ name: '', price: '', description: '' });
+        setNewProduct({ name: '', price: '', description: '', imageUrl: '' });
     };
 
     const removeTelegramCommand = (index) => {
@@ -752,24 +776,45 @@ const Integrations = () => {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
                                                 {(newCommand.products || []).map((p, i) => (
                                                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px', background: '#f8fbfc', borderRadius: '10px', border: '1px solid #ececec' }}>
-                                                        <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{p.name} <small style={{ color: '#26A5E4', marginInlineStart: '10px' }}>{p.price}</small></span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            {p.imageUrl && <img src={p.imageUrl} alt={p.name} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />}
+                                                            <div>
+                                                                <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{p.name} <small style={{ color: '#26A5E4', marginInlineStart: '10px' }}>{p.price}</small></span>
+                                                                {p.description && <div style={{ fontSize: '0.75rem', color: '#666' }}>{p.description}</div>}
+                                                            </div>
+                                                        </div>
                                                         <button type="button" onClick={() => removeProductFromCommand(i)} style={{ color: '#ff4d4f', background: 'none', border: 'none', cursor: 'pointer' }}>
                                                             <i className="fas fa-times" />
                                                         </button>
                                                     </div>
                                                 ))}
                                             </div>
-                                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                                <input type="text" placeholder={t.language === 'ar' ? 'اسم المنتج' : 'Product name'} value={newProduct.name}
-                                                    onChange={e => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
-                                                    style={{ flex: 2, padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-                                                <input type="text" placeholder={t.language === 'ar' ? 'السعر' : 'Price'} value={newProduct.price}
-                                                    onChange={e => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
-                                                    style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-                                                <button type="button" onClick={addProductToCommand}
-                                                    style={{ width: '42px', height: '42px', background: '#26A5E4', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem' }}>
-                                                    <i className="fas fa-plus" />
-                                                </button>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                                    <input type="text" placeholder={t.language === 'ar' ? 'اسم المنتج' : 'Product name'} value={newProduct.name}
+                                                        onChange={e => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
+                                                        style={{ flex: 2, padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+                                                    <input type="text" placeholder={t.language === 'ar' ? 'السعر' : 'Price'} value={newProduct.price}
+                                                        onChange={e => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
+                                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+                                                </div>
+                                                <textarea placeholder={t.language === 'ar' ? 'وصف المنتج' : 'Product description'} value={newProduct.description}
+                                                    onChange={e => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
+                                                    rows="2" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+                                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: '#f0f0f0', borderRadius: '8px', cursor: 'pointer', flex: 1 }}>
+                                                        <i className="fas fa-image" style={{ color: '#666' }} />
+                                                        <span style={{ fontSize: '0.85rem', color: '#444' }}>
+                                                            {newProduct.imageUrl ? (t.language === 'ar' ? 'تم رفع الصورة' : 'Image Uploaded') : (t.language === 'ar' ? 'إرفاق صورة' : 'Attach Image')}
+                                                        </span>
+                                                        <input type="file" accept="image/*" onChange={handleProductImageUpload} style={{ display: 'none' }} disabled={isUploadingProductImg} />
+                                                        {isUploadingProductImg && <i className="fas fa-spinner fa-spin" style={{ marginInlineStart: 'auto', color: '#26A5E4' }} />}
+                                                    </label>
+                                                    <button type="button" onClick={addProductToCommand}
+                                                        style={{ width: '100px', height: '40px', background: '#26A5E4', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 'bold' }}>
+                                                        {t.language === 'ar' ? 'إضافة' : 'Add'} <i className="fas fa-plus" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     )}

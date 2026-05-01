@@ -1,8 +1,10 @@
 import { useLanguage } from '../context/LanguageContext';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import './Integrations.css';
 
 const Integrations = () => {
     const { t, language } = useLanguage();
+    const revealRef = useScrollReveal();
 
     const integrations = [
         {
@@ -60,11 +62,12 @@ const Integrations = () => {
                     </p>
                 </div>
 
-                <div className="integrations-grid">
+                <div className="integrations-grid reveal-section" ref={revealRef}>
                     {integrations.map((integration, index) => (
                         <div
                             key={index}
                             className={`integration-card ${!integration.available ? 'coming-soon' : 'active-card'}`}
+                            data-reveal-delay={index * 100}
                         >
                             <div className={`integration-logo ${integration.className}`}>
                                 <i className={`fab ${integration.icon}`}></i>

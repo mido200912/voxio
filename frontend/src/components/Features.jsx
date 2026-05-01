@@ -1,8 +1,10 @@
 import { useLanguage } from '../context/LanguageContext';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import './Features.css';
 
 const Features = () => {
     const { t } = useLanguage();
+    const revealRef = useScrollReveal();
 
     const features = [
         {
@@ -51,6 +53,7 @@ const Features = () => {
 
     return (
         <section className="features" id="features">
+            <div className="features-bg-gradient" />
             <div className="container">
                 <div className="section-header">
                     <span className="section-badge">{t.features.badge}</span>
@@ -62,11 +65,12 @@ const Features = () => {
                     </p>
                 </div>
 
-                <div className="features-grid">
+                <div className="features-grid reveal-section" ref={revealRef}>
                     {features.map((feature, index) => (
                         <div
                             key={index}
                             className={`feature-card ${feature.featured ? 'featured' : ''}`}
+                            data-reveal-delay={index * 100}
                         >
                             {feature.featured && (
                                 <div className="featured-badge">{t.features.mostPopular}</div>

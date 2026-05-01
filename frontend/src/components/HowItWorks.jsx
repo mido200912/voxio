@@ -1,8 +1,10 @@
 import { useLanguage } from '../context/LanguageContext';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import './HowItWorks.css';
 
 const HowItWorks = () => {
     const { t } = useLanguage();
+    const revealRef = useScrollReveal();
 
     const steps = [
         {
@@ -44,9 +46,9 @@ const HowItWorks = () => {
                     </p>
                 </div>
 
-                <div className="steps-container">
+                <div className="steps-container reveal-section" ref={revealRef}>
                     {steps.map((step, index) => (
-                        <div key={index} className="step-wrapper">
+                        <div key={index} className="step-wrapper" data-reveal-delay={index * 150}>
                             <div className="step-item">
                                 <div className="step-number">{step.number}</div>
                                 <div className="step-icon">

@@ -20,6 +20,8 @@ const OnboardingProfile = () => {
         mission: '',
         values: ''
     });
+    const [logoFile, setLogoFile] = useState(null);
+    const [logoPreview, setLogoPreview] = useState('');
 
     const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
     const token = secureStorage.getItem('token');
@@ -28,16 +30,38 @@ const OnboardingProfile = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleLogoChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
+            let logoUrl = '';
+            if (logoFile) {
+                const formDataUpload = new FormData();
+                formDataUpload.append('image', logoFile);
+                const uploadRes = await axios.post(`${BACKEND_URL}/ai/image`, formDataUpload, {
+                    headers: { 
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${token}` 
+                    }
+                });
+                logoUrl = uploadRes.data.imageUrl;
+            }
+
             // Process values string to array logic handled in backend if needed or send as array
             // Here backend expects array for values, let's keep it simple string for now or split
             const payload = {
                 ...formData,
-                values: formData.values.split(',').map(v => v.trim()).filter(v => v)
+                values: formData.values.split(',').map(v => v.trim()).filter(v => v),
+                ...(logoUrl && { logo: logoUrl })
             };
 
             await axios.post(`${BACKEND_URL}/company`, payload, {
@@ -63,6 +87,37 @@ const OnboardingProfile = () => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
+                    <div className="form-group" style={{ textAlign: 'center', marginBottom: '20px' }}>
+                        <label htmlFor="logo-upload" style={{ cursor: 'pointer', display: 'inline-block' }}>
+                            <div style={{
+                                width: '100px',
+                                height: '100px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--bg-secondary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                border: '2px dashed var(--border-color)',
+                                margin: '0 auto 10px'
+                            }}>
+                                {logoPreview ? (
+                                    <img src={logoPreview} alt="Logo Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <span style={{ fontSize: '24px', color: 'var(--text-secondary)' }}>📷</span>
+                                )}
+                            </div>
+                            <span className="text-sm" style={{ color: 'var(--primary-color)' }}>تحميل لوجو الشركة</span>
+                        </label>
+                        <input
+                            id="logo-upload"
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handleLogoChange}
+                        />
+                    </div>
+
                     <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
                         <div className="form-group" style={{ flex: 1 }}>
                             <label className="form-label">اسم الشركة <span className="required">*</span></label>

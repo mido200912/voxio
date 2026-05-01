@@ -18,6 +18,18 @@
     background: linear-gradient(to bottom, transparent, var(--color-border), transparent);
 }
 
+.features-bg-gradient {
+    position: absolute;
+    top: 15%;
+    left: -15%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(var(--color-text-rgb), 0.03) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+}
+
 .features-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -32,7 +44,7 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
 }
 
@@ -49,18 +61,19 @@
 }
 
 .feature-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-    border-color: rgba(var(--color-text-rgb), 0.15);
+    transform: translateY(-10px);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.1);
+    border-color: rgba(var(--color-text-rgb), 0.18);
 }
 
 .feature-card:hover::before {
-    opacity: 0.3;
+    opacity: 0.4;
 }
 
 .feature-card.featured {
     border-color: rgba(var(--color-text-rgb), 0.2);
     background: rgba(var(--color-text-rgb), 0.03);
+    grid-column: span 2;
 }
 
 .featured-badge {
@@ -86,13 +99,14 @@
     background: rgba(var(--color-text-rgb), 0.06);
     border-radius: 16px;
     margin-bottom: 1.5rem;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .feature-card:hover .feature-icon {
     background: var(--color-text);
     color: var(--color-bg);
-    transform: scale(1.05);
+    transform: scale(1.08);
+    box-shadow: 0 8px 24px rgba(var(--color-text-rgb), 0.15);
 }
 
 .feature-icon i {
@@ -156,6 +170,10 @@
 
     .feature-card {
         padding: 2rem 1.5rem;
+    }
+
+    .feature-card.featured {
+        grid-column: span 1;
     }
 
     .features::before {

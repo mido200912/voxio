@@ -24,19 +24,34 @@ import broadcastRoutes from "./routes/broadcastRoutes.js";
 const app = express();
 
 // 🛑 XSS Clean Middleware
-const sanitize = (text) => {
-    if (typeof text !== 'string') return text;
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;');
+const sanitize = (value) => {
+    if (typeof value === 'string') {
+        return value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    if (Array.isArray(value)) {
+        return value.map(item => sanitize(item));
+    }
+    if (value && typeof value === 'object') {
+        const cleaned = {};
+        for (const key of Object.keys(value)) {
+            cleaned[key] = sanitize(value[key]);
+        }
+        return cleaned;
+    }
+    return value;
 };
 
 const xssClean = (req, res, next) => {
-    if (req.body) Object.keys(req.body).forEach(k => req.body[k] = sanitize(req.body[k]));
-    if (req.query) Object.keys(req.query).forEach(k => req.query[k] = sanitize(req.query[k]));
+    if (req.body) {
+        for (const k of Object.keys(req.body)) {
+            req.body[k] = sanitize(req.body[k]);
+        }
+    }
+    if (req.query) {
+        for (const k of Object.keys(req.query)) {
+            req.query[k] = sanitize(req.query[k]);
+        }
+    }
     next();
 };
 

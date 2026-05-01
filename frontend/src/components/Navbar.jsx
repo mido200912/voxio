@@ -41,7 +41,11 @@ const Navbar = () => {
                     scrollToSection('home');
                     navigate('/');
                 }}>
-                    <img src="/logo.png" alt="VOXIO Logo" className="logo-img" />
+                    <img 
+                        src={theme === 'dark' ? '/logodark.png' : '/logo.png'} 
+                        alt="VOXIO Logo" 
+                        className="logo-img" 
+                    />
                     <span className="logo-text">VOXIO</span>
                 </div>
 

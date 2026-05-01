@@ -25,7 +25,8 @@ try {
     } else {
         if (!admin.apps.length) {
             const app = admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
+                credential: admin.credential.cert(serviceAccount),
+                storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${serviceAccount.project_id}.appspot.com`
             });
             db = app.firestore();
         } else {

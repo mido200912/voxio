@@ -13,6 +13,16 @@ const PALETTE = [
 const getColor    = (name = '') => PALETTE[name.charCodeAt(0) % PALETTE.length];
 const getInitials = (name = '') => name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
 
+/* ── Logo/Avatar helper ── */
+const CompanyAvatar = ({ logo, name, color, className, style = {} }) => (
+  <div className={className} style={{ ...style, background: logo ? 'transparent' : color, overflow: 'hidden' }}>
+    {logo
+      ? <img src={logo} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+      : getInitials(name)
+    }
+  </div>
+);
+
 /* ══════════════════════════════════════
    صفحة عرض كل الشركات
 ══════════════════════════════════════ */
@@ -145,9 +155,7 @@ const AgentsExplorer = () => {
                   >
                     {/* Card Header */}
                     <div className="ae-card-header">
-                      <div className="ae-avatar" style={{ background: color }}>
-                        {getInitials(company.name)}
-                      </div>
+                      <CompanyAvatar logo={company.logo} name={company.name} color={color} className="ae-avatar" />
                       <div className="ae-live-badge">
                         <span className="ae-live-dot" />
                         Live
@@ -307,9 +315,7 @@ export const AgentChat = () => {
         </button>
 
         <div className="ac-header-company">
-          <div className="ac-header-avatar" style={{ background: color }}>
-            {getInitials(company.name)}
-          </div>
+          <CompanyAvatar logo={company.logo} name={company.name} color={color} className="ac-header-avatar" />
           <div className="ac-header-info">
             <h2>{company.name}</h2>
             <div className="ac-header-status">
@@ -340,9 +346,7 @@ export const AgentChat = () => {
         {company.description && (
           <div className="ac-intro-card">
             <div className="ac-intro-header">
-              <div className="ac-intro-avatar" style={{ background: color }}>
-                {getInitials(company.name)}
-              </div>
+              <CompanyAvatar logo={company.logo} name={company.name} color={color} className="ac-intro-avatar" />
               <div>
                 <strong>{company.name}</strong>
                 {company.industry && (
@@ -360,9 +364,7 @@ export const AgentChat = () => {
         {messages.map((msg, i) => (
           <div key={i} className={`ac-row ${msg.role}`}>
             {msg.role === 'ai' && (
-              <div className="ac-msg-avatar" style={{ background: color }}>
-                {getInitials(company.name)}
-              </div>
+              <CompanyAvatar logo={company.logo} name={company.name} color={color} className="ac-msg-avatar" />
             )}
             <div className={`ac-bubble ${msg.role}`} style={msg.role === 'user' ? { background: color } : {}}>
               <p>{renderText(msg.text)}</p>
@@ -374,9 +376,7 @@ export const AgentChat = () => {
         {/* Typing indicator */}
         {sending && (
           <div className="ac-row ai">
-            <div className="ac-msg-avatar" style={{ background: color }}>
-              {getInitials(company.name)}
-            </div>
+            <CompanyAvatar logo={company.logo} name={company.name} color={color} className="ac-msg-avatar" />
             <div className="ac-bubble ai ac-typing">
               <span /><span /><span />
             </div>

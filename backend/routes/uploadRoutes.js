@@ -20,6 +20,18 @@ const upload = multer({
     }
 });
 
+const imageUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Invalid file type. Only images are allowed.'), false);
+    }
+});
+
+import supabase from '../config/supabase.js';
+const IMAGEKIT_ENDPOINT = 'https://ik.imagekit.io/me43t7wdm';
+
 // Upload a file to knowledge base and extract text using AI
 router.post('/upload', protect, (req, res, next) => {
     upload.single('file')(req, res, (err) => {
@@ -96,6 +108,52 @@ ${company.extractedKnowledge || 'لا توجد معلومات سابقة.'}
     } catch (error) {
         console.error('Upload error:', error);
         res.status(500).json({ error: 'Server error during upload' });
+    }
+});
+
+// ✨ Upload an image and get ImageKit URL
+router.post('/image', protect, (req, res, next) => {
+    imageUpload.single('image')(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message });
+        next();
+    });
+}, async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No image uploaded' });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Supabase configuration missing' });
+        }
+
+        const fileExt = req.file.originalname.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `images/${req.user.id}/${fileName}`;
+
+        // Upload to Supabase Storage bucket named 'voxio'
+        const { data, error } = await supabase.storage
+            .from('voxio')
+            .upload(filePath, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: false
+            });
+
+        if (error) {
+            console.error('Supabase upload error:', error);
+            return res.status(500).json({ error: 'Failed to upload image' });
+        }
+
+        // Get public URL via ImageKit
+        const imageUrl = `${IMAGEKIT_ENDPOINT}/voxio/${filePath}`;
+
+        res.json({
+            message: 'Image uploaded successfully',
+            imageUrl
+        });
+    } catch (error) {
+        console.error('Image upload error:', error);
+        res.status(500).json({ error: 'Server error during image upload' });
     }
 });
 

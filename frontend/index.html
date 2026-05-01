@@ -26,40 +26,106 @@
 
 <body>
   <div id="root">
-    <!-- Splash Loader (disappears when React mounts) -->
-    <div id="splash-loader" style="
-      position:fixed;top:0;left:0;width:100vw;height:100vh;
-      background:#000;display:flex;flex-direction:column;
-      justify-content:center;align-items:center;z-index:99999;
-    ">
-      <div style="position:relative;width:100px;height:100px;margin-bottom:25px;">
-        <div style="
-          position:absolute;top:0;left:0;width:100%;height:100%;
-          border-radius:50%;border:3px solid transparent;
-          border-top-color:#fff;border-right-color:rgba(255,255,255,0.1);
-          animation:splashSpin 1.5s linear infinite;
-        "></div>
-        <div style="
-          position:absolute;top:15%;left:15%;width:70%;height:70%;
-          border-radius:50%;border:3px solid transparent;
-          border-bottom-color:#6C63FF;border-left-color:rgba(108,99,255,0.2);
-          animation:splashSpin 1s linear infinite reverse;
-        "></div>
-        <img src="/logo.png" alt="VOXIO" style="
-          position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-          width:45px;height:45px;object-fit:contain;
-          animation:splashPulse 2s infinite ease-in-out;
-        " />
+    <!-- Premium Splash Loader (disappears when React mounts) -->
+    <div id="splash-loader" class="premium-loader">
+      <div class="loader-bg-glow"></div>
+      <div class="floating-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
       </div>
-      <p style="
-        color:#b3b3b3;font-family:'Cairo',sans-serif;font-size:1.1rem;
-        font-weight:600;letter-spacing:1px;animation:splashFade 1.5s infinite alternate;
-      ">جاري التحميل...</p>
+      
+      <div class="loader-content">
+        <div class="loader-rings">
+          <div class="ring ring-outer"></div>
+          <div class="ring ring-middle"></div>
+          <div class="ring ring-inner"></div>
+          <div class="logo-wrapper">
+            <img id="splash-logo" src="/logodark.png" alt="VOXIO" class="loader-logo" />
+            <div class="logo-glow"></div>
+          </div>
+        </div>
+        <div class="text-container">
+          <p class="loading-text">جاري التحميل...</p>
+          <div class="loading-bar-wrapper">
+            <div class="loading-bar-progress"></div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <script>
+      // Quick Theme Detection for Splash Screen
+      (function() {
+        const savedTheme = localStorage.getItem('voxio-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const logo = document.getElementById('splash-logo');
+        if (logo) logo.src = savedTheme === 'dark' ? '/logodark.png' : '/logo.png';
+      })();
+    </script>
+
     <style>
-      @keyframes splashSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-      @keyframes splashPulse{0%,100%{transform:translate(-50%,-50%) scale(0.9);opacity:0.8}50%{transform:translate(-50%,-50%) scale(1.1);opacity:1}}
-      @keyframes splashFade{0%{opacity:0.5}100%{opacity:1}}
+      :root[data-theme="dark"] .premium-loader { --bg: #030303; --text: #ffffff; --ring: #6C63FF; }
+      :root[data-theme="light"] .premium-loader { --bg: #ffffff; --text: #1a1a1a; --ring: #000000; }
+      
+      .premium-loader {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background-color: var(--bg); display: flex; flex-direction: column;
+        justify-content: center; align-items: center; z-index: 99999;
+        font-family: 'Cairo', sans-serif; overflow: hidden; transition: background-color 0.5s ease;
+      }
+
+      .loader-bg-glow {
+        position: absolute; width: 100%; height: 100%;
+        background: radial-gradient(circle at center, rgba(108, 99, 255, 0.08) 0%, transparent 70%);
+      }
+
+      .floating-orbs .orb {
+        position: absolute; border-radius: 50%; filter: blur(80px);
+        opacity: 0.2; z-index: 1; animation: splashFloat 15s infinite alternate ease-in-out;
+      }
+      .orb-1 { width: 300px; height: 300px; background: #6C63FF; top: -50px; right: -50px; }
+      .orb-2 { width: 250px; height: 250px; background: #ff00c1; bottom: -50px; left: -50px; animation-delay: -5s; }
+
+      .loader-content { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+      
+      .loader-rings {
+        position: relative; width: 160px; height: 160px;
+        display: flex; justify-content: center; align-items: center; margin-bottom: 35px;
+      }
+
+      .ring { position: absolute; border-radius: 50%; border: 2px solid transparent; }
+      .ring-outer {
+        width: 100%; height: 100%; border-top-color: var(--ring);
+        animation: splashSpin 3s linear infinite;
+      }
+      .ring-middle {
+        width: 80%; height: 80%; border-left-color: #ff00c1;
+        animation: splashSpin 2s linear infinite reverse;
+      }
+      .ring-inner {
+        width: 60%; height: 60%; border-top-color: #00d2ff;
+        animation: splashSpin 1s linear infinite;
+      }
+
+      .logo-wrapper { position: relative; display: flex; justify-content: center; align-items: center; width: 60px; height: 60px; }
+      .loader-logo { width: 100%; height: 100%; object-fit: contain; z-index: 5; animation: splashPulse 2s infinite ease-in-out; }
+      .logo-glow { position: absolute; width: 140%; height: 140%; background: radial-gradient(circle, rgba(108, 99, 255, 0.15) 0%, transparent 70%); border-radius: 50%; animation: splashPulseGlow 2s infinite ease-in-out; }
+
+      .loading-text { color: var(--text); font-size: 1.2rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 15px; animation: splashFade 2s infinite ease-in-out; }
+      
+      .loading-bar-wrapper { width: 120px; height: 3px; background: rgba(108,99,255,0.1); border-radius: 10px; overflow: hidden; }
+      .loading-bar-progress {
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, #6C63FF, #ff00c1, #00d2ff, transparent);
+        background-size: 200% 100%; animation: splashProgress 2.5s infinite linear;
+      }
+
+      @keyframes splashSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      @keyframes splashPulse { 0%, 100% { transform: scale(0.94); } 50% { transform: scale(1.06); } }
+      @keyframes splashPulseGlow { 0%, 100% { transform: scale(0.8); opacity: 0.3; } 50% { transform: scale(1.2); opacity: 0.6; } }
+      @keyframes splashFade { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+      @keyframes splashProgress { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+      @keyframes splashFloat { 0% { transform: translate(0, 0); } 100% { transform: translate(40px, 20px); } }
     </style>
   </div>
   <script type="module" src="/src/main.jsx"></script>
