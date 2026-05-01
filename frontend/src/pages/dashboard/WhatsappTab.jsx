@@ -293,21 +293,21 @@ const WhatsappTab = () => {
                                 />
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                <div style={s.inputGroup}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                                <div style={{ ...s.inputGroup, flex: '1 1 300px' }}>
                                     <label style={s.label}>{isArabic ? 'رابط فيسبوك' : 'Facebook Link'}</label>
                                     <input 
                                         style={s.input} 
-                                        placeholder="facebook.com/yourpage" 
+                                        placeholder="https://facebook.com/..." 
                                         value={settings.facebook}
                                         onChange={e => setSettings({...settings, facebook: e.target.value})}
                                     />
                                 </div>
-                                <div style={s.inputGroup}>
+                                <div style={{ ...s.inputGroup, flex: '1 1 300px' }}>
                                     <label style={s.label}>{isArabic ? 'رابط إنستجرام' : 'Instagram Link'}</label>
                                     <input 
                                         style={s.input} 
-                                        placeholder="instagram.com/yourpage" 
+                                        placeholder="https://instagram.com/..." 
                                         value={settings.instagram}
                                         onChange={e => setSettings({...settings, instagram: e.target.value})}
                                     />

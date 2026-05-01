@@ -107,9 +107,11 @@ app.use(helmet({
 
 app.set('trust proxy', 1);
 const limiter = rateLimit({
-    max: 100,
+    max: 2000, // Increased for development and dashboard stability
     windowMs: 15 * 60 * 1000,
-    message: "Too many requests, please try again in 15 minutes."
+    message: "Too many requests, please try again in 15 minutes.",
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 app.use('/api', limiter);
 

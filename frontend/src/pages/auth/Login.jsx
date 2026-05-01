@@ -7,8 +7,15 @@ import './Auth.css';
 
 const Login = () => {
     const { t } = useLanguage();
-    const { login, verifyOtp, googleLogin, loading, error } = useAuth();
+    const { user, login, verifyOtp, googleLogin, loading, error, isAuthChecked } = useAuth();
     const navigate = useNavigate();
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (isAuthChecked && user) {
+            navigate('/dashboard');
+        }
+    }, [user, isAuthChecked, navigate]);
 
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
