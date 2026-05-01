@@ -10,20 +10,21 @@ import axios from 'axios';
  *   { status: 'success', response: 'النص الحقيقي' }
  */
 export function extractCorexReply(data, fallback = "لم أتمكن من الرد حالياً.") {
-  if (!data || data.status !== 'success') return fallback;
+  if (!data) return fallback;
 
-  let raw = data.response;
+  // Flexible success check
+  const isSuccess = data.status === 'success' || data.success === true || data.status === 'ok';
+  if (!isSuccess) return fallback;
+
+  let raw = data.response || data.reply || data.text || data.message;
   if (!raw) return fallback;
 
   // If it's a JSON string like {"response":"..."}, parse it
   if (typeof raw === 'string' && raw.trim().startsWith('{')) {
     try {
       const parsed = JSON.parse(raw);
-      // Try common keys
       raw = parsed.response || parsed.reply || parsed.text || parsed.message || raw;
-    } catch (_) {
-      // Not valid JSON, use as-is
-    }
+    } catch (_) { }
   }
 
   return raw || fallback;
@@ -42,24 +43,24 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
         const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
         const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
 
-        if (!aiApiKey) {
-            console.warn("⚠️ CoreSys API Key is missing!");
-        }
-
-        console.log(`🤖 AI: Requesting CoreSys...`);
+        const payload = { key: aiApiKey, act: 'chat', a: truncatedQuestion };
+        console.log(`🤖 AI: Requesting CoreSys (Key: ${aiApiKey.substring(0, 5)}...) with act: 'chat'...`);
+        
         const aiResponse = await axios.post(apiUrl, 
-            new URLSearchParams({ key: aiApiKey, act: 'assistant', a: truncatedQuestion }).toString(),
+            new URLSearchParams(payload).toString(),
             { 
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 timeout: 30000 
             }
         );
         
+        console.log(`📡 CoreSys Raw Response:`, JSON.stringify(aiResponse.data).substring(0, 200));
         reply = extractCorexReply(aiResponse.data, null);
 
-        if (reply && typeof reply === 'string' && (reply.includes('daily limit') || reply.includes('{"success":false'))) {
-            console.warn(`🔄 CoreSys Limit/Error: ${reply}`);
-            throw new Error('CoreSys API limit or invalid response'); 
+        if (reply) {
+            console.log("✅ AI: Response from CoreSys successful.");
+        } else {
+             console.warn("⚠️ CoreSys returned success but no text content found.");
         }
     } catch (error) {
         console.error(`❌ CoreSys Primary failed:`, error.response?.data || error.message);
@@ -89,10 +90,14 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                     console.log("✅ AI: Response from OpenRouter successful.");
                 }
             } catch (fallbackError) {
-                console.error('❌ OpenRouter Fallback failed:', fallbackError.response?.data || fallbackError.message);
+                // Silent fallback failure to avoid confusing the user if they know credits are low
+                const errData = fallbackError.response?.data;
+                if (errData?.error?.code === 402) {
+                    console.warn('ℹ️ OpenRouter Fallback skipped: Insufficient Credits.');
+                } else {
+                    console.error('❌ OpenRouter Fallback failed:', errData || fallbackError.message);
+                }
             }
-        } else {
-            console.warn("⚠️ OpenRouter API Key is missing for fallback!");
         }
     }
 
