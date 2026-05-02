@@ -434,10 +434,19 @@ const Integrations = () => {
                 setTelegramData(prev => ({ ...prev, botToken: res.data.botToken }));
                 setIsTelegramTokenRevealed(true);
             } else if (revealPlatform === 'whatsapp') {
-                setWhatsappData(prev => ({ ...prev, accessToken: res.data.accessToken }));
+                setWhatsappData(prev => ({ 
+                    ...prev, 
+                    accessToken: res.data.accessToken,
+                    phoneNumberId: res.data.phoneNumberId 
+                }));
                 setIsWhatsappTokenRevealed(true);
             } else if (revealPlatform === 'instagram') {
-                setInstagramData(prev => ({ ...prev, accessToken: res.data.accessToken }));
+                setInstagramData(prev => ({ 
+                    ...prev, 
+                    accessToken: res.data.accessToken,
+                    pageId: res.data.pageId,
+                    igAccountId: res.data.igAccountId
+                }));
                 setIsInstagramTokenRevealed(true);
             }
             
@@ -616,12 +625,18 @@ const Integrations = () => {
                         <form onSubmit={handleWhatsappSubmit} className="whatsapp-form">
                             <div className="form-group">
                                 <label>{t.dashboard.integrationsPage.whatsappPhoneNumberId || 'Phone Number ID'}</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={whatsappData.phoneNumberId}
-                                    onChange={(e) => setWhatsappData({ ...whatsappData, phoneNumberId: e.target.value })}
-                                />
+                                {isWhatsappEditing && !isWhatsappTokenRevealed ? (
+                                    <div style={{ padding: '10px 14px', background: '#f8f9fa', borderRadius: '10px', border: '1px solid #ddd', color: '#888', fontStyle: 'italic', fontSize: '0.9rem' }}>
+                                        {t.language === 'ar' ? 'مخفي - يتطلب OTP للكشف' : 'Hidden - Requires OTP to reveal'}
+                                    </div>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        required
+                                        value={whatsappData.phoneNumberId}
+                                        onChange={(e) => setWhatsappData({ ...whatsappData, phoneNumberId: e.target.value })}
+                                    />
+                                )}
                             </div>
                             <div className="form-group">
                                 <label>{t.dashboard.integrationsPage.whatsappAccessToken || 'Access Token'}</label>
