@@ -183,17 +183,17 @@ router.post('/whatsapp', requireAuth, async (req, res) => {
     try {
         const { phoneNumberId, accessToken } = req.body;
         
-        if (!phoneNumberId || !accessToken) {
-            return res.status(400).json({ error: 'Phone Number ID and Access Token are required' });
-        }
-
         const company = await Company.findOne({ owner: req.user._id });
         if (!company) {
             return res.status(404).json({ error: 'Company not found' });
         }
 
         let integration = await Integration.findOne({ company: company._id, platform: 'whatsapp' });
+
         if (!integration) {
+            if (!phoneNumberId || !accessToken) {
+                return res.status(400).json({ error: 'Phone Number ID and Access Token are required for new integration' });
+            }
             integration = await Integration.create({
                 company: company._id,
                 platform: 'whatsapp',
@@ -201,7 +201,10 @@ router.post('/whatsapp', requireAuth, async (req, res) => {
                 isActive: true
             });
         } else {
-            integration.credentials = { phoneNumberId, accessToken };
+            integration.credentials = { 
+                phoneNumberId: phoneNumberId || integration.credentials?.phoneNumberId, 
+                accessToken: accessToken || integration.credentials?.accessToken 
+            };
             integration.isActive = true;
             await integration.save();
         }
@@ -220,17 +223,17 @@ router.post('/instagram', requireAuth, async (req, res) => {
     try {
         const { pageId, igAccountId, accessToken } = req.body;
         
-        if (!pageId || !igAccountId || !accessToken) {
-            return res.status(400).json({ error: 'Page ID, IG Account ID and Access Token are required' });
-        }
-
         const company = await Company.findOne({ owner: req.user._id });
         if (!company) {
             return res.status(404).json({ error: 'Company not found' });
         }
 
         let integration = await Integration.findOne({ company: company._id, platform: 'instagram' });
+
         if (!integration) {
+            if (!pageId || !igAccountId || !accessToken) {
+                return res.status(400).json({ error: 'Page ID, IG Account ID and Access Token are required for new integration' });
+            }
             integration = await Integration.create({
                 company: company._id,
                 platform: 'instagram',
@@ -238,7 +241,11 @@ router.post('/instagram', requireAuth, async (req, res) => {
                 isActive: true
             });
         } else {
-            integration.credentials = { pageId, igAccountId, accessToken };
+            integration.credentials = { 
+                pageId: pageId || integration.credentials?.pageId, 
+                igAccountId: igAccountId || integration.credentials?.igAccountId, 
+                accessToken: accessToken || integration.credentials?.accessToken 
+            };
             integration.isActive = true;
             await integration.save();
         }
