@@ -89,18 +89,18 @@ app.use(xssClean);
 
 // ✅ إعداد حماية أكبر للموقع (Security Middlewares)
 app.use(helmet({
-    crossOriginOpenerPolicy: { policy: "unsafe-none" },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
     crossOriginResourcePolicy: { policy: "cross-origin" },
     frameguard: false, // Allow iframes
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*.fontawesome.com", "*.vercel.app"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*.fontawesome.com", "*.vercel.app", "https://accounts.google.com"],
             styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdnjs.cloudflare.com", "*.fontawesome.com"],
             fontSrc: ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com", "*.fontawesome.com"],
-            imgSrc: ["'self'", "data:", "blob:", "*.vercel.app"],
-            connectSrc: ["'self'", "*.vercel.app", "http://localhost:5000", "https://aithor1.vercel.app"],
-            frameAncestors: ["'self'", "http://localhost:5173", "https://voxio-v1.vercel.app", "*.vercel.app"],
+            imgSrc: ["'self'", "data:", "blob:", "*.vercel.app", "https://lh3.googleusercontent.com"],
+            connectSrc: ["'self'", "*.vercel.app", "http://localhost:5000", "https://aithor1.vercel.app", "https://accounts.google.com"],
+            frameAncestors: ["'self'", "http://localhost:5173", "https://voxio-v1.vercel.app", "https://aithor1.vercel.app", "*.vercel.app"],
         },
     }
 }));
@@ -146,7 +146,7 @@ app.get("/", (req, res) => {
 // ✅ Serve Widget JS Direct Content (Premium Redesigned Version)
 app.get('/widget.js', (req, res) => {
     res.setHeader('Content-Type', 'application/javascript');
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5173';
     const widgetCode = `
 (function() {
     const script = document.currentScript;
@@ -260,7 +260,7 @@ app.get('/widget.js', (req, res) => {
 
 // ✅ Route to handle iframe redirect
 app.get('/widget/:apiKey', (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/widget/${req.params.apiKey}`);
 });
 
