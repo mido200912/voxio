@@ -445,14 +445,21 @@ router.post('/verify-reveal-otp', requireAuth, async (req, res) => {
 
         // Get the integration
         const company = await Company.findOne({ owner: user._id });
-        const integration = await Integration.findOne({ company: company._id, platform: platform || 'telegram' });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+        
+        const integration = await Integration.findOne({ 
+            company: company._id, 
+            platform: platform || 'telegram' 
+        });
 
         if (!integration) return res.status(404).json({ error: 'Integration not found' });
 
         res.json({ 
             botToken: integration.credentials?.botToken,
             accessToken: integration.credentials?.accessToken,
-            phoneNumberId: integration.credentials?.phoneNumberId
+            phoneNumberId: integration.credentials?.phoneNumberId,
+            pageId: integration.credentials?.pageId,
+            igAccountId: integration.credentials?.igAccountId
         });
     } catch (error) {
         console.error('OTP verification error:', error);

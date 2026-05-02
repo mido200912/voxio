@@ -280,8 +280,23 @@ app.get('/api/health', (req, res) => {
 
 // ✅ التعامل مع الأخطاء
 app.use((err, req, res, next) => {
-    console.error("Error:", err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("❌ Global Error Handler:", err.stack || err.message);
+    res.status(500).json({ 
+        success: false, 
+        error: "Internal Server Error", 
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+});
+
+// ✅ [AUTO-RECOVERY] Prevent server from crashing permanently
+process.on('uncaughtException', (err) => {
+    console.error('🔥 CRITICAL: Uncaught Exception!', err.stack || err);
+    // In a real production app, we might want to restart the process via PM2.
+    // For now, we log it and keep the server running.
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('⚠️ CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 import mongoose from 'mongoose';

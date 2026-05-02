@@ -41,7 +41,12 @@ const Integrations = () => {
     const [isRequestingOtp, setIsRequestingOtp] = useState(false);
     const [isVerifyingRevealOtp, setIsVerifyingRevealOtp] = useState(false);
     const [isTelegramTokenRevealed, setIsTelegramTokenRevealed] = useState(false);
+    const [isWhatsappTokenRevealed, setIsWhatsappTokenRevealed] = useState(false);
+    const [isInstagramTokenRevealed, setIsInstagramTokenRevealed] = useState(false);
+    const [revealPlatform, setRevealPlatform] = useState('telegram');
     const [isTelegramEditing, setIsTelegramEditing] = useState(false);
+    const [isWhatsappEditing, setIsWhatsappEditing] = useState(false);
+    const [isInstagramEditing, setIsInstagramEditing] = useState(false);
 
     // useRef always holds the LATEST value - immune to stale closures
     const newCommandRef = useRef(newCommand);
@@ -360,16 +365,22 @@ const Integrations = () => {
             });
             setShowTelegramModal(true);
         } else if (platformId === 'whatsapp') {
+            setIsWhatsappEditing(true);
+            setIsWhatsappTokenRevealed(false);
+            setRevealOtpVisible(false);
             setWhatsappData({
                 phoneNumberId: integration.credentials?.phoneNumberId || '',
-                accessToken: integration.credentials?.accessToken || ''
+                accessToken: '' // Hide by default
             });
             setShowWhatsappModal(true);
         } else if (platformId === 'instagram') {
+            setIsInstagramEditing(true);
+            setIsInstagramTokenRevealed(false);
+            setRevealOtpVisible(false);
             setInstagramData({
                 pageId: integration.credentials?.pageId || '',
                 igAccountId: integration.credentials?.igAccountId || '',
-                accessToken: integration.credentials?.accessToken || ''
+                accessToken: '' // Hide by default
             });
             setShowInstagramModal(true);
         }
@@ -391,7 +402,8 @@ const Integrations = () => {
         }
     };
 
-    const requestRevealOtp = async () => {
+    const requestRevealOtp = async (platform) => {
+        setRevealPlatform(platform);
         setIsRequestingOtp(true);
         try {
             await axios.post(`${BACKEND_URL}/integration-manager/request-reveal-otp`, {}, {
@@ -413,13 +425,22 @@ const Integrations = () => {
         try {
             const res = await axios.post(`${BACKEND_URL}/integration-manager/verify-reveal-otp`, {
                 otp: revealOtpCode,
-                platform: 'telegram'
+                platform: revealPlatform
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            setTelegramData(prev => ({ ...prev, botToken: res.data.botToken }));
-            setIsTelegramTokenRevealed(true);
+            if (revealPlatform === 'telegram') {
+                setTelegramData(prev => ({ ...prev, botToken: res.data.botToken }));
+                setIsTelegramTokenRevealed(true);
+            } else if (revealPlatform === 'whatsapp') {
+                setWhatsappData(prev => ({ ...prev, accessToken: res.data.accessToken }));
+                setIsWhatsappTokenRevealed(true);
+            } else if (revealPlatform === 'instagram') {
+                setInstagramData(prev => ({ ...prev, accessToken: res.data.accessToken }));
+                setIsInstagramTokenRevealed(true);
+            }
+            
             setRevealOtpVisible(false);
             showToast('success', t.language === 'ar' ? 'تم التحقق!' : 'Verified!', t.language === 'ar' ? 'تم كشف التوكن.' : 'Token revealed successfully.');
         } catch (error) {
@@ -604,12 +625,48 @@ const Integrations = () => {
                             </div>
                             <div className="form-group">
                                 <label>{t.dashboard.integrationsPage.whatsappAccessToken || 'Access Token'}</label>
-                                <textarea
-                                    required
-                                    rows="3"
-                                    value={whatsappData.accessToken}
-                                    onChange={(e) => setWhatsappData({ ...whatsappData, accessToken: e.target.value })}
-                                ></textarea>
+                                {isWhatsappEditing && !isWhatsappTokenRevealed ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {!revealOtpVisible ? (
+                                            <button 
+                                                type="button" 
+                                                className="btn btn-outline"
+                                                onClick={() => requestRevealOtp('whatsapp')}
+                                                disabled={isRequestingOtp}
+                                                style={{ width: '100%', height: '45px', borderStyle: 'dashed' }}
+                                            >
+                                                {isRequestingOtp ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-eye" style={{ marginInlineEnd: '8px' }} />}
+                                                {t.language === 'ar' ? 'كشف الـ Token (يتطلب OTP)' : 'Reveal Token (Requires OTP)'}
+                                            </button>
+                                        ) : (
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input
+                                                    type="text"
+                                                    placeholder={t.language === 'ar' ? 'أدخل الكود (6 أرقام)' : 'Enter Code (6 digits)'}
+                                                    value={revealOtpCode}
+                                                    onChange={(e) => setRevealOtpCode(e.target.value)}
+                                                    style={{ flex: 1, borderRadius: '10px', padding: '10px 14px', border: '1px solid #25d366' }}
+                                                />
+                                                <button 
+                                                    type="button" 
+                                                    className="btn btn-primary"
+                                                    onClick={verifyRevealOtp}
+                                                    disabled={isVerifyingRevealOtp}
+                                                    style={{ background: '#25d366', padding: '0 20px' }}
+                                                >
+                                                    {isVerifyingRevealOtp ? <i className="fas fa-spinner fa-spin" /> : (t.language === 'ar' ? 'تأكيد' : 'Verify')}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <textarea
+                                        required
+                                        rows="3"
+                                        value={whatsappData.accessToken}
+                                        onChange={(e) => setWhatsappData({ ...whatsappData, accessToken: e.target.value })}
+                                    ></textarea>
+                                )}
                             </div>
                             <p className="help-text" style={{ fontSize: '0.9rem', color: '#666', marginBottom: '20px' }}>
                                 {t.dashboard.integrationsPage.whatsappHelp || 'Get these details from the Meta Developer Dashboard.'}
@@ -649,7 +706,7 @@ const Integrations = () => {
                                             <button 
                                                 type="button" 
                                                 className="btn btn-outline"
-                                                onClick={requestRevealOtp}
+                                                onClick={() => requestRevealOtp('telegram')}
                                                 disabled={isRequestingOtp}
                                                 style={{ width: '100%', height: '45px', borderStyle: 'dashed' }}
                                             >
