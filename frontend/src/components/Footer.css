@@ -40,7 +40,7 @@
     color: var(--color-text);
 }
 
-.footer-section > p {
+.footer-section>p {
     font-size: 0.9rem;
     line-height: 1.7;
     color: var(--color-text-secondary);

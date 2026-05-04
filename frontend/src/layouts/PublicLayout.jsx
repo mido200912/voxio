@@ -1,10 +1,10 @@
 import { Outlet } from 'react-router-dom';
-import ExternalWidget from '../components/ExternalWidget';
+import VOXIOChatWidget from '../components/VOXIOChatWidget';
 
 const PublicLayout = () => {
     return (
         <>
-            <ExternalWidget />
+            <VOXIOChatWidget />
             <Outlet />
         </>
     );

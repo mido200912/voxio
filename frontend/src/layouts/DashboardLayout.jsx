@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { secureStorage } from '../utils/secureStorage';
+import VOXIOChatWidget from '../components/VOXIOChatWidget';
 import './DashboardLayout.css';
 
 const DashboardLayout = () => {
@@ -60,8 +61,41 @@ const DashboardLayout = () => {
         return location.pathname === path ? 'active' : '';
     };
 
+    const isRailActive = (path) => {
+        return location.pathname === path || location.pathname.startsWith(path + '/');
+    };
+
     return (
         <div className="dashboard-layout">
+            {/* Icon Rail (Narrow Left Bar) */}
+            <div className="icon-rail">
+                <img
+                    src={theme === 'dark' ? '/logodark.png' : '/logo.png'}
+                    alt="V"
+                    className="icon-rail-logo"
+                />
+                <button
+                    className={`icon-rail-btn ${isRailActive('/dashboard') && location.pathname === '/dashboard' ? 'active' : ''}`}
+                    onClick={() => { window.location.href = '/dashboard'; }}
+                    title={t.dashboard.home}
+                >
+                    <i className="fas fa-home"></i>
+                </button>
+                <button
+                    className={`icon-rail-btn ${isRailActive('/dashboard/settings') ? 'active' : ''}`}
+                    onClick={() => { window.location.href = '/dashboard/settings'; }}
+                    title={t.dashboard.settings}
+                >
+                    <i className="fas fa-cog"></i>
+                </button>
+
+                <div className="icon-rail-spacer"></div>
+
+                <button className="icon-rail-btn" onClick={toggleTheme} title="Toggle Theme">
+                    {theme === 'light' ? <i className="fas fa-moon"></i> : <i className="fas fa-sun"></i>}
+                </button>
+            </div>
+
             {/* Mobile Overlay */}
             {isSidebarOpen && (
                 <div className="sidebar-overlay mobile-only" onClick={() => setIsSidebarOpen(false)}></div>
@@ -71,12 +105,13 @@ const DashboardLayout = () => {
             <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
                 <div className="sidebar-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <img 
-                            src={theme === 'dark' ? '/logodark.png' : '/logo.png'} 
-                            alt="VOXIO" 
-                            className="sidebar-logo" 
+                        <img
+                            src={theme === 'dark' ? '/logodark.png' : '/logo.png'}
+                            alt="VOXIO"
+                            className="sidebar-logo"
+                            style={{ width: '32px', height: '32px', objectFit: 'contain' }}
                         />
-                        {isSidebarOpen && <span className="logo-text">VOXIO</span>}
+                        <span style={{ fontWeight: 800, color: 'var(--dash-text)', fontSize: '1.1rem' }}>VOXIO</span>
                     </div>
                     <button className="close-sidebar-btn mobile-only" onClick={() => setIsSidebarOpen(false)}>
                         <i className="fas fa-times"></i>
@@ -88,10 +123,13 @@ const DashboardLayout = () => {
                         <span>{user?.name?.[0]?.toUpperCase() || 'U'}</span>
                     </div>
                     {isSidebarOpen && (
-                        <div className="user-info">
-                            <span className="user-name">{user?.name || 'User'}</span>
-                            <span className="user-role">Admin</span>
-                        </div>
+                        <>
+                            <div className="user-info">
+                                <span className="user-name">{user?.name || 'User'}</span>
+                                <span className="user-role">User Name</span>
+                            </div>
+                            <span className="user-badge">ADMIN</span>
+                        </>
                     )}
                 </div>
 
@@ -99,7 +137,7 @@ const DashboardLayout = () => {
                     <ul>
                         <li>
                             <Link to="/dashboard" className={`nav-item ${isActive('/dashboard')}`} onClick={handleNavItemClick}>
-                                <i className="fas fa-home"></i>
+                                <i className="fas fa-th-large"></i>
                                 {isSidebarOpen && <span>{t.dashboard.home}</span>}
                             </Link>
                         </li>
@@ -111,20 +149,25 @@ const DashboardLayout = () => {
                         </li>
                         <li>
                             <Link to="/dashboard/model-test" className={`nav-item ${isActive('/dashboard/model-test')}`} onClick={handleNavItemClick}>
-                                <i className="fas fa-robot"></i>
+                                <i className="fas fa-flask"></i>
                                 {isSidebarOpen && <span>{t.dashboard.modelTest}</span>}
                             </Link>
                         </li>
                         <li>
                             <Link to="/dashboard/integrations" className={`nav-item ${isActive('/dashboard/integrations')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-plug"></i>
-                                {isSidebarOpen && <span>{t.dashboard.integrations}</span>}
+                                {isSidebarOpen && (
+                                    <>
+                                        <span>{t.dashboard.integrations}</span>
+                                        {activeIntegrations.length > 0 && <span className="integration-dot"></span>}
+                                    </>
+                                )}
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/widget" className={`nav-item ${isActive('/dashboard/widget')}`} onClick={handleNavItemClick}>
+                            <Link to="/dashboard/widget" className={`nav-item nav-item-website ${isActive('/dashboard/widget')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-code"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'ودجت الموقع' : 'Web Widget'}</span>}
+                                {isSidebarOpen && <span>{language === 'ar' ? 'ودجت الموقع' : 'Website Widget'}</span>}
                             </Link>
                         </li>
                         <li>
@@ -134,9 +177,9 @@ const DashboardLayout = () => {
                             </Link>
                         </li>
                         <li>
-                            <Link to="/dashboard/website-chat" className={`nav-item nav-item-website ${isActive('/dashboard/website-chat')}`} onClick={handleNavItemClick}>
+                            <Link to="/dashboard/website-chat" className={`nav-item ${isActive('/dashboard/website-chat')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-globe"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'موقع الويب' : 'Website'}</span>}
+                                {isSidebarOpen && <span>{language === 'ar' ? 'موقع الويب (URL)' : 'Website (URL)'}</span>}
                             </Link>
                         </li>
                         {activeIntegrations.includes('whatsapp') && (
@@ -160,6 +203,17 @@ const DashboardLayout = () => {
                                 <i className="fas fa-cog"></i>
                                 {isSidebarOpen && <span>{t.dashboard.settings}</span>}
                             </Link>
+                        </li>
+                        <li>
+                            <a href="https://voxio.gitbook.io" target="_blank" rel="noopener noreferrer" className="nav-item" onClick={handleNavItemClick}>
+                                <i className="fas fa-question-circle"></i>
+                                {isSidebarOpen && (
+                                    <>
+                                        <span>{language === 'ar' ? 'مركز المساعدة' : 'Help Center'}</span>
+                                        <i className="fas fa-external-link-alt" style={{ fontSize: '0.65rem', marginInlineStart: 'auto', opacity: 0.4 }}></i>
+                                    </>
+                                )}
+                            </a>
                         </li>
                     </ul>
                 </nav>
@@ -204,6 +258,9 @@ const DashboardLayout = () => {
                     </AnimatePresence>
                 </div>
             </main>
+
+            {/* Global Chat Widget */}
+            <VOXIOChatWidget />
         </div>
     );
 };

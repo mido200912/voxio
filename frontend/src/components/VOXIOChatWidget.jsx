@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { useLanguage } from '../context/LanguageContext';
 import './VOXIOChatWidget.css';
 
 const VOXIOChatWidget = () => {
+    const { language } = useLanguage();
+    const isArabic = language === 'ar';
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
         {
@@ -69,7 +72,7 @@ const VOXIOChatWidget = () => {
     };
 
     return (
-        <div className="voxio-widget-container">
+        <div className="voxio-widget-container" style={{ [isArabic ? 'left' : 'right']: '20px', [isArabic ? 'right' : 'left']: 'auto' }}>
             {/* Chat Button */}
             <button
                 className={`widget-toggle-btn ${isOpen ? 'open' : ''}`}
@@ -81,7 +84,7 @@ const VOXIOChatWidget = () => {
 
             {/* Chat Window */}
             {isOpen && (
-                <div className="widget-window animate-pop-up">
+                <div className="widget-window animate-pop-up" style={{ [isArabic ? 'left' : 'right']: '0', [isArabic ? 'right' : 'left']: 'auto' }} dir={isArabic ? 'rtl' : 'ltr'}>
                     <div className="widget-header">
                         <div className="header-info">
                             <span className="status-dot"></span>

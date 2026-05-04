@@ -4,6 +4,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageLoader from '../../components/PageLoader';
+import './DashboardShared.css';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
 
@@ -111,76 +112,37 @@ const WhatsappTab = () => {
     };
 
     // ─── PREMIUM STYLES ────────────────────────────────────────────────────────
-    const s = {
-        wrapper: { padding: '32px', fontFamily: 'inherit', direction: isArabic ? 'rtl' : 'ltr' },
-        header: { display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px', background: 'linear-gradient(135deg, rgba(37, 211, 102, 0.1) 0%, rgba(37, 211, 102, 0.02) 100%)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(37, 211, 102, 0.15)' },
-        icon: { width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #25D366, #128C7E)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 10px 20px rgba(37, 211, 102, 0.3)' },
-        mainTabs: { display: 'flex', gap: '8px', background: 'var(--color-card-bg)', padding: '6px', borderRadius: '16px', width: 'fit-content', marginBottom: '32px', border: '1px solid var(--color-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
-        mainTab: (active) => ({
-            padding: '10px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-            fontWeight: active ? '700' : '500', fontSize: '0.95rem',
-            background: active ? '#25D366' : 'transparent',
-            color: active ? '#ffffff' : 'var(--color-text-secondary)',
-            boxShadow: active ? '0 4px 12px rgba(37, 211, 102, 0.3)' : 'none',
-            transition: 'all 0.3s ease',
-            display: 'flex', alignItems: 'center'
-        }),
-        chatLayout: { display: 'flex', gap: '0', height: '600px', border: '1px solid var(--color-border)', borderRadius: '24px', overflow: 'hidden', background: 'var(--color-bg)', boxShadow: '0 15px 40px rgba(0,0,0,0.05)' },
-        sidebar: { width: '280px', borderInlineEnd: '1px solid var(--color-border)', overflowY: 'auto', background: 'var(--color-card-bg)', flexShrink: 0 },
-        userItem: (active) => ({
-            padding: '16px 20px', cursor: 'pointer', borderBottom: '1px solid var(--color-border)',
-            background: active ? 'rgba(37, 211, 102, 0.05)' : 'transparent',
-            borderInlineStart: active ? '4px solid #25D366' : '4px solid transparent',
-            transition: 'all 0.2s ease'
-        }),
-        messagesArea: { flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--color-bg)' },
-        messagesBody: { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundSize: 'cover', backgroundBlendMode: 'overlay', opacity: 0.95 },
-        bubble: (sender) => ({
-            maxWidth: '75%', padding: '12px 18px', 
-            borderRadius: sender === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-            background: sender === 'user' ? '#128C7E' : 'var(--color-card-bg)',
-            color: sender === 'user' ? 'white' : 'var(--color-text)',
-            alignSelf: sender === 'user' ? 'flex-end' : 'flex-start',
-            fontSize: '0.95rem', lineHeight: '1.5', wordBreak: 'break-word',
-            border: sender !== 'user' ? '1px solid var(--color-border)' : 'none',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
-        }),
-        settingsForm: {
-            background: 'var(--color-card-bg)', padding: '32px', borderRadius: '24px',
-            border: '1px solid var(--color-border)', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '20px'
-        },
-        inputGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
-        label: { fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--color-text)' },
-        input: { padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.95rem' },
-        textarea: { padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.95rem', minHeight: '100px', resize: 'vertical' },
-        saveBtn: { background: '#25D366', color: 'white', border: 'none', padding: '14px 32px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-start', boxShadow: '0 4px 12px rgba(37, 211, 102, 0.3)', transition: 'all 0.2s ease' }
-    };
-
-    if (loading) return <PageLoader text={isArabic ? 'جاري التحميل...' : 'Loading...'} />;
-
     return (
-        <div style={s.wrapper}>
-            <div style={s.header}>
-                <div style={s.icon}><i className="fab fa-whatsapp" /></div>
-                <div>
-                    <h1 style={{ fontSize: '1.7rem', color: 'var(--text-primary)', margin: 0 }}>
-                        {isArabic ? 'واتساب' : 'WhatsApp'}
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                        {isArabic ? 'إدارة رسائل ومحادثات الواتساب' : 'Manage WhatsApp messages and chats'}
-                    </p>
+        <div className="whatsapp-tab-page animate-fade-in" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+            <div className="dash-page-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #25D366, #128C7E)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', boxShadow: '0 8px 16px rgba(37, 211, 102, 0.2)' }}>
+                        <i className="fab fa-whatsapp" />
+                    </div>
+                    <div>
+                        <h1 className="dash-page-title">{isArabic ? 'واتساب' : 'WhatsApp'}</h1>
+                        <p className="dash-page-subtitle">{isArabic ? 'إدارة رسائل ومحادثات الواتساب' : 'Manage WhatsApp messages and chats'}</p>
+                    </div>
                 </div>
-            </div>
 
-            <div style={s.mainTabs}>
-                <button style={s.mainTab(subTab === 'inbox')} onClick={() => setSubTab('inbox')}>
-                    <i className="fas fa-comments" style={{ marginInlineEnd: '6px' }} />
-                    {isArabic ? 'صندوق الرسائل' : 'Chat Inbox'}
-                </button>
-                <button style={s.mainTab(subTab === 'settings')} onClick={() => setSubTab('settings')}>
-                    <i className="fas fa-cog" style={{ marginInlineEnd: '6px' }} />
-                    {isArabic ? 'إعدادات الشركة' : 'Company Profile'}
-                </button>
+                <div style={{ display: 'flex', gap: '8px', background: 'var(--dash-card)', padding: '6px', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                    <button 
+                        className={`dash-btn ${subTab === 'inbox' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setSubTab('inbox')}
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
+                    >
+                        <i className="fas fa-comments"></i>
+                        {isArabic ? 'الرسائل' : 'Inbox'}
+                    </button>
+                    <button 
+                        className={`dash-btn ${subTab === 'settings' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setSubTab('settings')}
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
+                    >
+                        <i className="fas fa-id-card"></i>
+                        {isArabic ? 'البروفايل' : 'Profile'}
+                    </button>
+                </div>
             </div>
 
             <AnimatePresence mode="wait">
@@ -193,21 +155,30 @@ const WhatsappTab = () => {
                                 <p>{isArabic ? 'بمجرد أن يراسلك شخص عبر واتساب سيظهر هنا.' : 'Whenever someone messages you on WhatsApp, they will appear here.'}</p>
                             </div>
                         ) : (
-                            <div style={s.chatLayout}>
+                        <div style={{ display: 'flex', height: '600px', borderRadius: '24px', overflow: 'hidden', background: 'var(--dash-card)', border: '1px solid var(--dash-border)' }}>
                                 {/* Sidebar */}
-                                <div style={s.sidebar}>
-                                    <div style={{ padding: '16px', borderBottom: '1px solid var(--color-border)', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--color-text)', background: 'var(--color-card-bg)' }}>
+                                <div style={{ width: '280px', borderInlineEnd: '1px solid var(--dash-border)', overflowY: 'auto', background: 'rgba(var(--color-text-rgb), 0.02)', flexShrink: 0 }}>
+                                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--dash-border)', fontSize: '0.8rem', fontWeight: '800', color: 'var(--dash-text-sec)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         {isArabic ? 'المحادثات' : 'Chats'} ({chats.length})
                                     </div>
                                     {chats.map(chat => (
-                                        <div key={chat.id} style={s.userItem(activeChatUser === chat.id)} onClick={() => setActiveChatUser(chat.id)}>
-                                            <div style={{ fontWeight: 'bold', color: 'var(--color-text)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <span style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
+                                        <div 
+                                            key={chat.id} 
+                                            onClick={() => setActiveChatUser(chat.id)}
+                                            style={{
+                                                padding: '16px 20px', cursor: 'pointer', borderBottom: '1px solid var(--dash-border)',
+                                                background: activeChatUser === chat.id ? 'rgba(37, 211, 102, 0.08)' : 'transparent',
+                                                borderInlineStart: activeChatUser === chat.id ? '4px solid #25D366' : '4px solid transparent',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: '700', color: 'var(--dash-text)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', flexShrink: 0, fontWeight: 'bold' }}>
                                                     {(chat.name || 'U').charAt(0).toUpperCase()}
                                                 </span>
                                                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chat.name || chat.id}</span>
-                                                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--dash-text-sec)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                                                         {chat.lastMessage || (isArabic ? 'بدء محادثة جديدة' : 'New chat started')}
                                                     </span>
                                                 </div>
@@ -217,28 +188,40 @@ const WhatsappTab = () => {
                                 </div>
 
                                 {/* Chat Area */}
-                                <div style={s.messagesArea}>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--dash-bg)' }}>
                                     {activeChatUser ? (
                                         <>
-                                            <div style={{ padding: '12px 18px', background: 'var(--color-card-bg)', borderBottom: '1px solid var(--color-border)', fontWeight: 'bold', color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <span style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>
+                                            <div style={{ padding: '16px 20px', background: 'var(--dash-card)', borderBottom: '1px solid var(--dash-border)', fontWeight: '700', color: 'var(--dash-text)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <span style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 'bold' }}>
                                                     {activeChatUser.charAt(0).toUpperCase()}
                                                 </span>
                                                 {activeChatUser}
                                             </div>
-                                            <div style={s.messagesBody}>
+                                            <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundSize: 'cover', backgroundBlendMode: 'overlay', backgroundOpacity: 0.05 }}>
                                                 {messages.length === 0 && (
-                                                    <div style={{ textAlign: 'center', background: 'rgba(37, 211, 102, 0.1)', border: '1px solid rgba(37, 211, 102, 0.2)', padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem', color: '#25D366', margin: 'auto' }}>
+                                                    <div style={{ textAlign: 'center', background: 'rgba(37, 211, 102, 0.1)', border: '1px solid rgba(37, 211, 102, 0.15)', padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem', color: '#128C7E', margin: 'auto', fontWeight: 'bold' }}>
                                                         {isArabic ? 'هذه بداية رسائلك مع هذا الرقم.' : 'This is the beginning of the chat.'}
                                                     </div>
                                                 )}
                                                 {messages.map((msg, idx) => (
-                                                    <div key={idx} style={s.bubble(msg.sender)}>
-                                                        <div style={{ color: msg.sender === 'user' ? 'rgba(255,255,255,0.8)' : 'var(--color-text-secondary)', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '2px' }}>
+                                                    <div 
+                                                        key={idx} 
+                                                        style={{
+                                                            maxWidth: '75%', padding: '12px 18px', 
+                                                            borderRadius: msg.sender === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                                                            background: msg.sender === 'user' ? '#128C7E' : 'var(--dash-card)',
+                                                            color: msg.sender === 'user' ? 'white' : 'var(--dash-text)',
+                                                            alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                                                            fontSize: '0.9rem', lineHeight: '1.5', wordBreak: 'break-word',
+                                                            border: msg.sender !== 'user' ? '1px solid var(--dash-border)' : 'none',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                                                        }}
+                                                    >
+                                                        <div style={{ color: msg.sender === 'user' ? 'rgba(255,255,255,0.7)' : 'var(--dash-text-sec)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '4px' }}>
                                                             {msg.sender === 'user' ? (isArabic ? 'العميل' : 'Customer') : 'VOXIO Bot'}
                                                         </div>
                                                         {msg.text}
-                                                        <div style={{ fontSize: '0.7rem', color: msg.sender === 'user' ? 'rgba(255,255,255,0.7)' : 'var(--color-text-secondary)', marginTop: '4px', textAlign: 'right' }}>
+                                                        <div style={{ fontSize: '0.7rem', color: msg.sender === 'user' ? 'rgba(255,255,255,0.6)' : 'var(--dash-text-sec)', marginTop: '6px', textAlign: 'right' }}>
                                                             {formatTime(msg.createdAt)}
                                                         </div>
                                                     </div>
@@ -247,7 +230,7 @@ const WhatsappTab = () => {
                                             </div>
                                         </>
                                     ) : (
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--color-bg)', color: 'var(--color-text-secondary)', fontSize: '1.1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--dash-bg)', color: 'var(--dash-text-sec)', fontSize: '1rem', fontWeight: '500' }}>
                                             {isArabic ? 'اختر محادثة لعرض الرسائل' : 'Select a chat to view messages'}
                                         </div>
                                     )}
@@ -257,56 +240,58 @@ const WhatsappTab = () => {
                     </motion.div>
                 ) : (
                     <motion.div key="settings" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-                        <div style={s.settingsForm}>
-                            <h3 style={{ margin: 0, color: '#25D366' }}>{isArabic ? 'بيانات الشركة للواتساب' : 'Company Data for WhatsApp'}</h3>
-                            <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                        <div className="dash-card animate-slide-in" style={{ maxWidth: '800px' }}>
+                            <h3 style={{ margin: '0 0 8px', color: '#25D366', fontSize: '1.2rem', fontWeight: '800' }}>{isArabic ? 'بيانات الشركة للواتساب' : 'Company Data for WhatsApp'}</h3>
+                            <p style={{ margin: '0 0 24px', fontSize: '0.9rem', color: 'var(--dash-text-sec)' }}>
                                 {isArabic ? 'هذه المعلومات ستساعد الذكاء الاصطناعي على الرد بدقة أكبر على عملائك.' : 'This information helps the AI respond more accurately to your customers.'}
                             </p>
 
-                            <div style={s.inputGroup}>
-                                <label style={s.label}>{isArabic ? 'رابط الموقع الإلكتروني' : 'Website URL'}</label>
+                            <div className="dash-input-group">
+                                <label className="dash-label">{isArabic ? 'رابط الموقع الإلكتروني' : 'Website URL'}</label>
                                 <input 
-                                    style={s.input} 
+                                    className="dash-input" 
                                     placeholder="https://example.com" 
                                     value={settings.website}
                                     onChange={e => setSettings({...settings, website: e.target.value})}
                                 />
                             </div>
 
-                            <div style={s.inputGroup}>
-                                <label style={s.label}>{isArabic ? 'عن الشركة (نبذة)' : 'About Company'}</label>
+                            <div className="dash-input-group">
+                                <label className="dash-label">{isArabic ? 'عن الشركة (نبذة)' : 'About Company'}</label>
                                 <textarea 
-                                    style={s.textarea} 
+                                    className="dash-textarea" 
                                     placeholder={isArabic ? 'اكتب نبذة مختصرة عن نشاط شركتك...' : 'Briefly describe your company...'}
                                     value={settings.about}
                                     onChange={e => setSettings({...settings, about: e.target.value})}
+                                    style={{ minHeight: '100px' }}
                                 />
                             </div>
 
-                            <div style={s.inputGroup}>
-                                <label style={s.label}>{isArabic ? 'قائمة المنتجات والخدمات' : 'Products & Services'}</label>
+                            <div className="dash-input-group">
+                                <label className="dash-label">{isArabic ? 'قائمة المنتجات والخدمات' : 'Products & Services'}</label>
                                 <textarea 
-                                    style={s.textarea} 
+                                    className="dash-textarea" 
                                     placeholder={isArabic ? 'مثال: منتج أ (100 جنيه)، خدمة ب (200 جنيه)...' : 'Example: Product A ($100), Service B ($200)...'}
                                     value={settings.products}
                                     onChange={e => setSettings({...settings, products: e.target.value})}
+                                    style={{ minHeight: '120px' }}
                                 />
                             </div>
 
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-                                <div style={{ ...s.inputGroup, flex: '1 1 300px' }}>
-                                    <label style={s.label}>{isArabic ? 'رابط فيسبوك' : 'Facebook Link'}</label>
+                                <div className="dash-input-group" style={{ flex: '1 1 300px' }}>
+                                    <label className="dash-label">{isArabic ? 'رابط فيسبوك' : 'Facebook Link'}</label>
                                     <input 
-                                        style={s.input} 
+                                        className="dash-input" 
                                         placeholder="https://facebook.com/..." 
                                         value={settings.facebook}
                                         onChange={e => setSettings({...settings, facebook: e.target.value})}
                                     />
                                 </div>
-                                <div style={{ ...s.inputGroup, flex: '1 1 300px' }}>
-                                    <label style={s.label}>{isArabic ? 'رابط إنستجرام' : 'Instagram Link'}</label>
+                                <div className="dash-input-group" style={{ flex: '1 1 300px' }}>
+                                    <label className="dash-label">{isArabic ? 'رابط إنستجرام' : 'Instagram Link'}</label>
                                     <input 
-                                        style={s.input} 
+                                        className="dash-input" 
                                         placeholder="https://instagram.com/..." 
                                         value={settings.instagram}
                                         onChange={e => setSettings({...settings, instagram: e.target.value})}
@@ -314,17 +299,22 @@ const WhatsappTab = () => {
                                 </div>
                             </div>
 
-                            <div style={s.inputGroup}>
-                                <label style={s.label}>{isArabic ? 'رقم موبايل إضافي للتواصل' : 'Additional Contact Phone'}</label>
+                            <div className="dash-input-group">
+                                <label className="dash-label">{isArabic ? 'رقم موبايل إضافي للتواصل' : 'Additional Contact Phone'}</label>
                                 <input 
-                                    style={s.input} 
+                                    className="dash-input" 
                                     placeholder="+201234567890" 
                                     value={settings.contactPhone}
                                     onChange={e => setSettings({...settings, contactPhone: e.target.value})}
                                 />
                             </div>
 
-                            <button style={s.saveBtn} onClick={handleSaveSettings} disabled={saveLoading}>
+                            <button 
+                                className="dash-btn" 
+                                onClick={handleSaveSettings} 
+                                disabled={saveLoading}
+                                style={{ background: '#25D366', color: 'white', marginTop: '10px', width: 'fit-content', padding: '12px 32px' }}
+                            >
                                 {saveLoading ? (isArabic ? 'جاري الحفظ...' : 'Saving...') : (isArabic ? 'حفظ الإعدادات' : 'Save Settings')}
                             </button>
                         </div>

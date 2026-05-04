@@ -8,6 +8,7 @@ import { useToast } from '../../components/Toast';
 import WidgetCustomizer from './WidgetCustomizer';
 import './WidgetTab.css';
 import './WidgetCustomizer.css';
+import './DashboardShared.css';
 
 const WidgetTab = () => {
     const { t, language } = useLanguage();
@@ -85,36 +86,35 @@ const WidgetTab = () => {
 
     return (
         <div className="widget-tab">
-            <header className="tab-header">
-                <div className="header-content">
-                    <motion.h1 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                    >
-                        {language === 'ar' ? 'ودجت الموقع' : 'Web Widget'}
-                    </motion.h1>
-                    <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 }}
-                    >
+            <div className="dash-page-header">
+                <div>
+                    <h1 className="dash-page-title">{language === 'ar' ? 'ودجت الموقع' : 'Web Widget'}</h1>
+                    <p className="dash-page-subtitle" style={{ margin: '4px 0 0', color: 'var(--dash-text-sec)', fontSize: '0.95rem' }}>
                         {language === 'ar' 
                             ? 'أضف ذكاء VOXIO الاصطناعي إلى موقعك الإلكتروني في ثوانٍ معدودة.' 
                             : 'Add VOXIO AI to your website in just a few seconds.'}
-                    </motion.p>
+                    </p>
                 </div>
                 
-                <div className="tab-switcher">
-                    <button className={activeTab === 'install' ? 'active' : ''} onClick={() => setActiveTab('install')}>
+                <div style={{ display: 'flex', gap: '8px', background: 'var(--dash-card)', padding: '6px', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
+                    <button 
+                        className={`dash-btn ${activeTab === 'install' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setActiveTab('install')}
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
+                    >
                         <i className="fas fa-download"></i>
                         {language === 'ar' ? 'التركيب' : 'Installation'}
                     </button>
-                    <button className={activeTab === 'customize' ? 'active' : ''} onClick={() => setActiveTab('customize')}>
+                    <button 
+                        className={`dash-btn ${activeTab === 'customize' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setActiveTab('customize')}
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
+                    >
                         <i className="fas fa-sliders-h"></i>
-                        {language === 'ar' ? 'الإعدادات والمظهر' : 'Settings & Appearance'}
+                        {language === 'ar' ? 'المظهر' : 'Appearance'}
                     </button>
                 </div>
-            </header>
+            </div>
 
             <AnimatePresence mode="wait">
                 {activeTab === 'install' ? (
@@ -125,59 +125,51 @@ const WidgetTab = () => {
                         exit={{ opacity: 0, y: -20 }}
                         className="widget-grid"
                     >
-                        <div className="widget-main">
-                            <section className="setup-steps">
-                                <div className="section-title">
-                                    <i className="fas fa-list-ol"></i>
-                                    <h2>{language === 'ar' ? 'خطوات التركيب' : 'Installation Steps'}</h2>
+                        <div className="widget-main" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div className="dash-card animate-slide-in">
+                                <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                    <i className="fas fa-list-ol" style={{ color: 'var(--dash-text-sec)' }}></i>
+                                    <h2 style={{ fontSize: '1.2rem', margin: 0 }}>{language === 'ar' ? 'خطوات التركيب' : 'Installation Steps'}</h2>
                                 </div>
-                                <div className="steps-container">
+                                <div className="steps-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                                     {steps.map((step, idx) => (
-                                        <motion.div 
-                                            key={idx}
-                                            className="step-card"
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.1 }}
-                                        >
-                                            <div className="step-icon">
+                                        <div key={idx} className="step-item">
+                                            <div className="step-icon" style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(var(--dash-text-rgb), 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px', color: 'var(--dash-text)' }}>
                                                 <i className={`fas ${step.icon}`}></i>
                                             </div>
-                                            <div className="step-content">
-                                                <h3>{step.title}</h3>
-                                                <p>{step.desc}</p>
-                                            </div>
-                                        </motion.div>
+                                            <h3 style={{ fontSize: '1rem', marginBottom: '8px' }}>{step.title}</h3>
+                                            <p style={{ fontSize: '0.85rem', color: 'var(--dash-text-sec)', margin: 0, lineHeight: '1.5' }}>{step.desc}</p>
+                                        </div>
                                     ))}
                                 </div>
-                            </section>
+                            </div>
 
-                            <section className="code-section">
-                                <div className="section-title">
-                                    <i className="fas fa-terminal"></i>
-                                    <h2>{language === 'ar' ? 'كود الودجت' : 'Widget Script'}</h2>
+                            <div className="dash-card animate-slide-in">
+                                <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                    <i className="fas fa-terminal" style={{ color: 'var(--dash-text-sec)' }}></i>
+                                    <h2 style={{ fontSize: '1.2rem', margin: 0 }}>{language === 'ar' ? 'كود الودجت' : 'Widget Script'}</h2>
                                 </div>
-                                <div className="code-container">
-                                    <div className="code-header">
-                                        <span className="file-name">index.html</span>
-                                        <button className={`copy-btn ${copied ? 'copied' : ''}`} onClick={copyToClipboard}>
+                                <div className="code-container" style={{ background: '#000', borderRadius: '12px', overflow: 'hidden' }}>
+                                    <div className="code-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: '#111', borderBottom: '1px solid #222' }}>
+                                        <span className="file-name" style={{ color: '#888', fontSize: '0.8rem' }}>index.html</span>
+                                        <button className={`dash-btn dash-btn-outline ${copied ? 'copied' : ''}`} onClick={copyToClipboard} style={{ padding: '4px 12px', fontSize: '0.75rem', height: 'auto', borderColor: '#333' }}>
                                             <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`}></i>
                                             {copied ? (language === 'ar' ? 'تم النسخ' : 'Copied') : (language === 'ar' ? 'نسخ الكود' : 'Copy Code')}
                                         </button>
                                     </div>
-                                    <pre className="code-block">
+                                    <pre className="code-block" style={{ padding: '20px', margin: 0, overflowX: 'auto', color: '#50c8b4', fontSize: '0.9rem' }}>
                                         <code>{widgetCode}</code>
                                     </pre>
                                 </div>
-                                <div className="code-tip">
-                                    <i className="fas fa-lightbulb"></i>
-                                    <p>
+                                <div className="code-tip" style={{ marginTop: '16px', display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '12px', background: 'rgba(var(--dash-text-rgb), 0.03)', borderRadius: '10px' }}>
+                                    <i className="fas fa-lightbulb" style={{ color: '#f59e0b', marginTop: '3px' }}></i>
+                                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--dash-text-sec)', lineHeight: '1.5' }}>
                                         {language === 'ar' 
                                             ? 'نصيحة: تأكد من وضع الكود في جميع الصفحات التي تريد أن يظهر فيها الشات بوت.' 
                                             : 'Tip: Make sure to place the code on all pages where you want the chatbot to appear.'}
                                     </p>
                                 </div>
-                            </section>
+                            </div>
                         </div>
 
                         <div className="widget-sidebar">

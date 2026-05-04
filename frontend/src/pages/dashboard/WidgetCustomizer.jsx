@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { secureStorage } from '../../utils/secureStorage';
 import { useLanguage } from '../../context/LanguageContext';
 import { useToast } from '../../components/Toast';
+import './DashboardShared.css';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
 
@@ -149,98 +150,87 @@ const WidgetCustomizer = () => {
         toast.success(isArabic ? 'تم نسخ الكود!' : 'Code copied!');
     };
 
-    const styles = {
-        tabsHeader: { display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' },
-        tabBtn: (active) => ({
-            padding: '12px 24px', background: active ? '#6C63FF' : 'transparent',
-            color: active ? '#fff' : 'var(--color-text-secondary)', border: 'none', borderRadius: '12px', cursor: 'pointer',
-            fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: active ? '0 4px 12px rgba(108, 99, 255, 0.2)' : 'none'
-        }),
-        contentArea: { background: 'var(--color-card-bg)', borderRadius: '20px', padding: '28px', border: '1px solid var(--color-border)', minHeight: '400px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' },
-        inputGroup: { marginBottom: '24px' },
-        label: { display: 'block', marginBottom: '10px', fontWeight: '700', color: 'var(--color-text)', fontSize: '0.95rem' },
-        input: { width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text)', outline: 'none', transition: 'all 0.2s', fontSize: '0.95rem', fontWeight: '500' },
-        colorPickerWrap: { display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--color-bg)', padding: '8px', borderRadius: '14px', border: '1px solid var(--color-border)' },
-        colorInput: { width: '44px', height: '44px', border: 'none', borderRadius: '10px', cursor: 'pointer', padding: 0, overflow: 'hidden' },
-        codeBlock: { background: '#0f172a', padding: '20px', borderRadius: '16px', color: '#e2e8f0', fontFamily: 'monospace', overflowX: 'auto', whiteSpace: 'pre-wrap', direction: 'ltr', textAlign: 'left', border: '1px solid #1e293b' }
-    };
-
     return (
-        <div className="widget-customizer" style={{ display: 'grid', gridTemplateColumns: '450px 1fr', gap: '32px', alignItems: 'start' }}>
+        <div className="dash-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', alignItems: 'start' }}>
             <div className="customizer-controls">
-                <div style={styles.tabsHeader}>
-                    <button style={styles.tabBtn(activeTab === 'settings')} onClick={() => setActiveTab('settings')}>
-                        <i className="fas fa-sliders-h"></i> {isArabic ? 'الإعدادات والمظهر' : 'Settings & Appearance'}
+                <div style={{ display: 'flex', gap: '8px', background: 'var(--dash-card)', padding: '6px', borderRadius: '14px', border: '1px solid var(--dash-border)', marginBottom: '24px' }}>
+                    <button 
+                        className={`dash-btn ${activeTab === 'settings' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setActiveTab('settings')}
+                        style={{ flex: 1, padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
+                    >
+                        <i className="fas fa-sliders-h"></i> {isArabic ? 'المظهر' : 'Appearance'}
                     </button>
-                    <button style={styles.tabBtn(activeTab === 'embed')} onClick={() => setActiveTab('embed')}>
-                        <i className="fas fa-code"></i> {isArabic ? 'كود التضمين' : 'Embed Code'}
+                    <button 
+                        className={`dash-btn ${activeTab === 'embed' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setActiveTab('embed')}
+                        style={{ flex: 1, padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
+                    >
+                        <i className="fas fa-code"></i> {isArabic ? 'كود الربط' : 'Embed Code'}
                     </button>
                 </div>
 
-                <div style={styles.contentArea}>
+                <div className="dash-card">
                     <AnimatePresence mode="wait">
                         {activeTab === 'settings' && (
                             <motion.div key="settings" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>{isArabic ? 'رسالة الترحيب' : 'Welcome Message'}</label>
+                                <div className="dash-input-group">
+                                    <label className="dash-label">{isArabic ? 'رسالة الترحيب' : 'Welcome Message'}</label>
                                     <textarea 
+                                        className="dash-textarea"
                                         rows={3}
                                         value={config.welcomeMessage || ''} 
                                         onChange={e => setConfig({...config, welcomeMessage: e.target.value})}
-                                        style={{...styles.input, resize: 'none'}}
+                                        style={{ resize: 'none' }}
                                         placeholder={isArabic ? 'مرحباً! كيف أساعدك؟' : 'Hello! How can I help?'}
                                     />
                                 </div>
 
-                                <div style={{display: 'flex', gap: '20px', marginBottom: '20px'}}>
-                                    <div style={{flex: 1}}>
-                                        <label style={styles.label}>{isArabic ? 'اللون الأساسي للودجت' : 'Widget Primary Color'}</label>
-                                        <div style={styles.colorPickerWrap}>
+                                <div style={{display: 'flex', gap: '20px', marginBottom: '24px', flexWrap: 'wrap'}}>
+                                    <div style={{flex: 1, minWidth: '180px'}}>
+                                        <label className="dash-label">{isArabic ? 'اللون الأساسي' : 'Primary Color'}</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(var(--color-text-rgb), 0.03)', padding: '6px', borderRadius: '12px', border: '1px solid var(--dash-border)' }}>
                                             <input 
                                                 type="color" 
                                                 value={config.primaryColor || '#6C63FF'} 
                                                 onChange={e => setConfig({...config, primaryColor: e.target.value})}
-                                                style={styles.colorInput}
+                                                style={{ width: '40px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none', padding: 0 }}
                                             />
                                             <input 
                                                 type="text" 
+                                                className="dash-input"
                                                 value={config.primaryColor || '#6C63FF'} 
                                                 onChange={e => setConfig({...config, primaryColor: e.target.value})}
-                                                style={{...styles.input}}
+                                                style={{ border: 'none', background: 'none', padding: '4px', fontSize: '0.85rem' }}
                                             />
                                         </div>
-                                        <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '8px'}}>
-                                            {isArabic ? 'يستخدم في الشات والرسائل.' : 'Used in chat header & messages.'}
-                                        </p>
                                     </div>
 
-                                    <div style={{flex: 1}}>
-                                        <label style={styles.label}>{isArabic ? 'لون الزر الخارجي (اللوجو)' : 'Launcher Button Color'}</label>
-                                        <div style={styles.colorPickerWrap}>
+                                    <div style={{flex: 1, minWidth: '180px'}}>
+                                        <label className="dash-label">{isArabic ? 'لون الزر' : 'Launcher Color'}</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(var(--color-text-rgb), 0.03)', padding: '6px', borderRadius: '12px', border: '1px solid var(--dash-border)' }}>
                                             <input 
                                                 type="color" 
                                                 value={config.launcherColor || '#1e293b'} 
                                                 onChange={e => setConfig({...config, launcherColor: e.target.value})}
-                                                style={styles.colorInput}
+                                                style={{ width: '40px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none', padding: 0 }}
                                             />
                                             <input 
                                                 type="text" 
+                                                className="dash-input"
                                                 value={config.launcherColor || '#1e293b'} 
                                                 onChange={e => setConfig({...config, launcherColor: e.target.value})}
-                                                style={{...styles.input}}
+                                                style={{ border: 'none', background: 'none', padding: '4px', fontSize: '0.85rem' }}
                                             />
                                         </div>
-                                        <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '8px'}}>
-                                            {isArabic ? 'لون الزر العائم في الموقع.' : 'Color of the floating button.'}
-                                        </p>
                                     </div>
                                 </div>
 
                                 <button 
+                                    className="dash-btn dash-btn-primary"
                                     onClick={handleSaveSettings} 
                                     disabled={isSaving}
-                                    style={{...styles.tabBtn(true), width: '100%', justifyContent: 'center', padding: '15px'}}
+                                    style={{ width: '100%' }}
                                 >
                                     {isSaving ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-save"></i> {isArabic ? 'حفظ الإعدادات' : 'Save Settings'}</>}
                                 </button>
@@ -249,19 +239,18 @@ const WidgetCustomizer = () => {
 
                         {activeTab === 'embed' && (
                             <motion.div key="embed" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
-                                <h3 style={{marginBottom: '15px', color: 'var(--color-text)'}}>
-                                    {isArabic ? 'ضع هذا الكود في موقعك' : 'Put this code in your website'}
-                                </h3>
-                                <p style={{color: 'var(--color-text-secondary)', marginBottom: '20px'}}>
+                                <h3 style={{marginBottom: '15px', fontSize: '1.1rem'}}>{isArabic ? 'ضع هذا الكود في موقعك' : 'Put this code in your website'}</h3>
+                                <p style={{color: 'var(--dash-text-sec)', marginBottom: '20px', fontSize: '0.9rem'}}>
                                     {isArabic ? 'انسخ الكود التالي وضعه قبل إغلاق وسم </body> في صفحات موقعك.' : 'Copy the code below and paste it before the closing </body> tag in your website.'}
                                 </p>
-                                <div style={{position: 'relative'}}>
-                                    <pre style={styles.codeBlock}>
+                                <div style={{position: 'relative', background: '#000', borderRadius: '16px', border: '1px solid #222', overflow: 'hidden'}}>
+                                    <pre style={{ padding: '20px', margin: 0, overflowX: 'auto', color: '#50c8b4', fontSize: '0.9rem', direction: 'ltr', textAlign: 'left' }}>
                                         <code>{embedCode}</code>
                                     </pre>
                                     <button 
+                                        className="dash-btn dash-btn-outline"
                                         onClick={copyEmbedCode}
-                                        style={{position: 'absolute', top: '15px', right: '15px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer'}}
+                                        style={{position: 'absolute', top: '10px', right: '10px', height: '36px', width: '36px', padding: 0, borderColor: '#333'}}
                                     >
                                         <i className="fas fa-copy"></i>
                                     </button>
@@ -272,17 +261,16 @@ const WidgetCustomizer = () => {
                 </div>
             </div>
 
-            <div className="customizer-preview" style={{ background: 'var(--color-card-bg)', borderRadius: '12px', padding: '20px', border: '1px solid var(--color-border)', position: 'sticky', top: '20px' }}>
+            <div className="dash-card" style={{ position: 'sticky', top: '20px' }}>
                 <div className="preview-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <span style={{fontWeight: 'bold', fontSize: '1.2rem'}}>{isArabic ? 'معاينة حية' : 'Live Preview'}</span>
-                    <div className="preview-status" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                        <span className="live-dot" style={{width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite'}}></span>
-                        Live
+                    <span style={{fontWeight: '800', fontSize: '1.1rem'}}>{isArabic ? 'معاينة حية' : 'Live Preview'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                        <span style={{width: '6px', height: '6px', background: '#10b981', borderRadius: '50%'}}></span>
+                        LIVE
                     </div>
                 </div>
                 
-                {/* True Widget Preview Window */}
-                <div className="preview-window" style={{ position: 'relative', width: '100%', height: '700px', background: '#e2e8f0', borderRadius: '24px', overflow: 'hidden', border: '4px solid #cbd5e1' }}>
+                <div className="preview-window" style={{ position: 'relative', width: '100%', height: '600px', background: 'var(--dash-bg)', borderRadius: '20px', overflow: 'hidden', border: '1px solid var(--dash-border)' }}>
                     {apiKey ? (
                         <iframe 
                             key={JSON.stringify(config)} 
@@ -291,19 +279,12 @@ const WidgetCustomizer = () => {
                             style={{width: '100%', height: '100%', border: 'none'}}
                         />
                     ) : (
-                        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8'}}>
+                        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--dash-text-sec)'}}>
                             Loading preview...
                         </div>
                     )}
                 </div>
             </div>
-            <style>{`
-                @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
-                @media (max-width: 1024px) { .widget-customizer { grid-template-columns: 1fr !important; } }
-                .widget-customizer input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-                .widget-customizer input[type="color"]::-webkit-color-swatch { border: none; border-radius: 10px; }
-                .widget-customizer input[type="color"]::-moz-color-swatch { border: none; border-radius: 10px; }
-            `}</style>
         </div>
     );
 };

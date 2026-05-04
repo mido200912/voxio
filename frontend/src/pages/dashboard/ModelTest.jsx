@@ -6,6 +6,7 @@ import { secureStorage } from '../../utils/secureStorage';
 import { motion } from 'framer-motion';
 import { useToast } from '../../components/Toast';
 import './ModelTest.css';
+import './DashboardShared.css';
 
 const ModelTest = () => {
     const { token } = useAuth();
@@ -98,28 +99,14 @@ const ModelTest = () => {
 
     return (
         <div className="model-test-container animate-fade-in">
-            <motion.h1
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="page-title"
-            >
-                {t.dashboard.modelTestPage.title}
-            </motion.h1>
-            <motion.p
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                className="page-subtitle"
-            >
-                {t.dashboard.modelTestPage.subtitle}
-            </motion.p>
+            <div className="dash-page-header">
+                <div>
+                    <h1 className="dash-page-title">{t.dashboard.modelTestPage.title}</h1>
+                    <p className="dash-page-subtitle">{t.dashboard.modelTestPage.subtitle}</p>
+                </div>
+            </div>
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="chat-interface card"
-            >
+            <div className="dash-card chat-interface animate-slide-in">
                 <div className="chat-messages">
                     {messages.map((msg) => (
                         <motion.div
@@ -147,17 +134,18 @@ const ModelTest = () => {
 
                 <form className="chat-input-form" onSubmit={sendMessage}>
                     <input
+                        className="dash-input"
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder={t.dashboard.modelTestPage.placeholder}
                         disabled={loading}
                     />
-                    <button type="submit" className="btn btn-primary" disabled={loading || !input.trim()}>
+                    <button type="submit" className="dash-btn dash-btn-primary" disabled={loading || !input.trim()}>
                         <i className="fas fa-paper-plane"></i>
                     </button>
                 </form>
-            </motion.div>
+            </div>
         </div>
     );
 };

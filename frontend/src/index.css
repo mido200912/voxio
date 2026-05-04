@@ -16,6 +16,22 @@
   --color-accent: #666666;
   --glass-bg: rgba(255, 255, 255, 0.8);
   --glass-border: rgba(0, 0, 0, 0.1);
+
+  /* Dashboard Specific */
+  --dash-bg: #f8f9fa;
+  --dash-sidebar: #ffffff;
+  --dash-rail: #f1f3f5;
+  --dash-card: #ffffff;
+  --dash-card-hover: #ffffff;
+  --dash-border: rgba(0, 0, 0, 0.08);
+  --dash-text: #000000;
+  --dash-text-rgb: 0, 0, 0;
+  --dash-text-sec: #666666;
+  --dash-icon: rgba(0, 0, 0, 0.4);
+  --dash-accent: #50c8b4;
+  --dash-accent-rgb: 80, 200, 180;
+  --dash-primary: #6C63FF;
+  --dash-primary-rgb: 108, 99, 255;
 }
 
 :root[data-theme="dark"] {
@@ -33,6 +49,22 @@
   --color-accent: #999999;
   --glass-bg: rgba(26, 26, 26, 0.8);
   --glass-border: rgba(255, 255, 255, 0.1);
+
+  /* Dashboard Specific */
+  --dash-bg: #060606;
+  --dash-sidebar: #0d0d0d;
+  --dash-rail: #0a0a0a;
+  --dash-card: #111111;
+  --dash-card-hover: #161616;
+  --dash-border: rgba(255, 255, 255, 0.06);
+  --dash-text: #ffffff;
+  --dash-text-rgb: 255, 255, 255;
+  --dash-text-sec: rgba(255, 255, 255, 0.4);
+  --dash-icon: rgba(255, 255, 255, 0.35);
+  --dash-accent: #50c8b4;
+  --dash-accent-rgb: 80, 200, 180;
+  --dash-primary: #6C63FF;
+  --dash-primary-rgb: 108, 99, 255;
 }
 
 :root {

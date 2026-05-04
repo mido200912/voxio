@@ -1,45 +1,4 @@
-/* --- Variables (Light Mode Default) --- */
-:root {
-    /* ألوان الخلفية والنصوص */
-    --bg-color: #ffffff;
-    --card-bg: #ffffff;
-    --text-primary: #000000;
-    --text-secondary: #666666;
-    --border-color: #eaeaea;
-    
-    /* الألوان الأساسية (أبيض وأسود) */
-    --accent-color: #000000;
-    --accent-hover: #333333;
-    --accent-light: rgba(0, 0, 0, 0.04);
-    --accent-text: #ffffff; /* لون النص داخل العناصر السوداء */
-    
-    /* ألوان الحالة (Semantic Colors) */
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    
-    /* صندوق الكود */
-    --code-bg: #111111;
-    --code-header: #000000;
-    --code-text: #e2e8f0;
-}
-
-/* --- Dark Mode Variables --- */
-/* قم بتغيير [data-theme="dark"] حسب الطريقة التي تستخدمونها (مثلاً .dark أو غيره) */
-[data-theme="dark"], .dark-mode {
-    --bg-color: #000000;
-    --card-bg: #0a0a0a;
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --border-color: #222222;
-    
-    --accent-color: #ffffff;
-    --accent-hover: #cccccc;
-    --accent-light: rgba(255, 255, 255, 0.08);
-    --accent-text: #000000;
-    
-    --code-bg: #050505;
-    --code-header: #000000;
-}
+/* WidgetTab.css - Unified under DashboardShared design system */
 
 /* --- Global & Animations --- */
 @keyframes fadeInUp {
@@ -51,8 +10,8 @@
     padding: 2rem;
     max-width: 1200px;
     margin: 0 auto;
-    color: var(--text-primary);
-    background-color: var(--bg-color);
+    color: var(--dash-text);
+    background-color: var(--dash-bg);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     animation: fadeInUp 0.5s ease-out forwards;
     transition: background-color 0.3s ease, color 0.3s ease; /* انتقال ناعم عند تغيير المود */
@@ -69,7 +28,7 @@
 
 .tab-switcher {
     display: flex;
-    background: var(--accent-light);
+    background: rgba(var(--dash-primary-rgb, 108, 99, 255), 0.1);
     padding: 0.5rem;
     border-radius: 1rem;
     gap: 0.5rem;
@@ -82,7 +41,7 @@
     border-radius: 0.75rem;
     cursor: pointer;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: var(--dash-text-sec);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -94,8 +53,8 @@
 }
 
 .tab-switcher button.active {
-    background: var(--accent-color);
-    color: var(--accent-text);
+    background: var(--dash-primary);
+    color: #ffffff;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
@@ -108,12 +67,12 @@
     font-weight: 800;
     margin-bottom: 0.5rem;
     letter-spacing: -0.02em;
-    color: var(--text-primary);
+    color: var(--dash-text);
 }
 
 .header-content p {
     font-size: 1.1rem;
-    color: var(--text-secondary);
+    color: var(--dash-text-sec);
     max-width: 500px;
     line-height: 1.6;
 }
@@ -160,8 +119,8 @@
 
 .section-title i {
     font-size: 1.25rem;
-    color: var(--accent-color);
-    background: var(--accent-light);
+    color: var(--dash-primary);
+    background: rgba(var(--dash-primary-rgb, 108, 99, 255), 0.1);
     padding: 0.5rem;
     border-radius: 0.5rem;
 }
@@ -169,7 +128,7 @@
 .section-title h2 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--dash-text);
 }
 
 /* --- Steps Section --- */
@@ -184,10 +143,10 @@
 }
 
 .step-card {
-    background: var(--card-bg);
+    background: var(--dash-card);
     padding: 2rem;
     border-radius: 1.25rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--dash-border);
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -196,7 +155,7 @@
 
 .step-card:hover {
     transform: translateY(-5px);
-    border-color: var(--accent-color);
+    border-color: var(--dash-primary);
     box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
 }
 
@@ -207,12 +166,12 @@
 .step-icon {
     width: 50px;
     height: 50px;
-    background: var(--accent-color);
+    background: var(--dash-primary);
     border-radius: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent-text);
+    color: #ffffff;
     font-size: 1.4rem;
 }
 
@@ -220,25 +179,25 @@
     font-size: 1.15rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
-    color: var(--text-primary);
+    color: var(--dash-text);
 }
 
 .step-content p {
     font-size: 0.95rem;
-    color: var(--text-secondary);
+    color: var(--dash-text-sec);
     line-height: 1.6;
 }
 
 /* --- Code Section --- */
 .code-container {
-    background: var(--code-bg);
+    background: #111111;
     border-radius: 1rem;
     overflow: hidden;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--dash-border);
 }
 
 .code-header {
-    background: var(--code-header);
+    background: #000000;
     padding: 0.75rem 1.25rem;
     display: flex;
     justify-content: space-between;
@@ -327,10 +286,10 @@
 }
 
 .info-card {
-    background: var(--card-bg);
+    background: var(--dash-card);
     padding: 2rem;
     border-radius: 1.25rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--dash-border);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -338,30 +297,30 @@
 }
 
 .info-card:hover {
-    border-color: var(--text-secondary);
+    border-color: var(--dash-text-sec);
 }
 
 .card-icon {
     width: 45px;
     height: 45px;
     border-radius: 0.75rem;
-    background: var(--accent-light);
+    background: rgba(var(--dash-primary-rgb, 108, 99, 255), 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent-color);
+    color: var(--dash-primary);
     font-size: 1.2rem;
 }
 
 .info-card h3 {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--dash-text);
 }
 
 .info-card p {
     font-size: 0.95rem;
-    color: var(--text-secondary);
+    color: var(--dash-text-sec);
     line-height: 1.6;
 }
 
@@ -371,7 +330,7 @@
     gap: 0.5rem;
     background: none;
     border: none;
-    color: var(--accent-color);
+    color: var(--dash-primary);
     font-weight: 600;
     cursor: pointer;
     font-size: 0.95rem;
@@ -386,21 +345,21 @@
 
 /* Support Card (Inverted colors for emphasis) */
 .support-card {
-    background: var(--accent-color);
+    background: var(--dash-primary);
     padding: 2.5rem 2rem;
     border-radius: 1.25rem;
-    color: var(--accent-text);
+    color: #ffffff;
     text-align: center;
 }
 
 .support-card h3 {
     margin-bottom: 0.75rem;
     font-size: 1.3rem;
-    color: var(--accent-text);
+    color: #ffffff;
 }
 
 .support-card p {
-    color: var(--accent-text);
+    color: #ffffff;
     opacity: 0.8;
     font-size: 0.95rem;
     margin-bottom: 2rem;
@@ -414,8 +373,8 @@
     gap: 0.75rem;
     width: 100%;
     padding: 1rem;
-    background: var(--accent-text);
-    color: var(--accent-color);
+    background: #ffffff;
+    color: var(--dash-primary);
     text-decoration: none;
     border-radius: 0.75rem;
     font-weight: 700;

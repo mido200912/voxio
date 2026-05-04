@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 import './Docs.css';
 
@@ -17,6 +18,7 @@ const sections = [
 
 const Docs = () => {
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const isAr = language === 'ar';
   const [active, setActive] = useState('overview');
 
@@ -47,7 +49,7 @@ const Docs = () => {
       {/* ─── TOP NAV BAR ─── */}
       <nav className="docs-topbar">
         <Link to="/" className="docs-logo">
-          <img src="/logo.png" alt="VOXIO" />
+          <img src={theme === 'dark' ? '/logodark.png' : '/logo.png'} alt="VOXIO" />
           <span>VOXIO</span>
         </Link>
         <div className="docs-topbar-right">

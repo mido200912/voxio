@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../components/Toast';
 import { Link } from 'react-router-dom';
 import './Integrations.css';
+import './DashboardShared.css';
 
 const Integrations = () => {
     const { t, language } = useLanguage();
@@ -498,54 +499,32 @@ const Integrations = () => {
     return (
         <div className="integrations-page animate-fade-in">
             {/* Toast Notification */}
-            <motion.h1
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="page-title"
-            >
-                {t.dashboard.integrationsPage.title}
-            </motion.h1>
-            <motion.p
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                className="page-subtitle"
-            >
-                {t.dashboard.integrationsPage.subtitle}
-            </motion.p>
+            <div className="dash-page-header">
+                <div>
+                    <h1 className="dash-page-title">{t.dashboard.integrationsPage.title}</h1>
+                    <p className="dash-page-subtitle">{t.dashboard.integrationsPage.subtitle}</p>
+                </div>
+            </div>
 
             {/* NEW: Web Widget Section (Not locked) */}
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="widget-integration-section"
-            >
-                <div className="integration-item connected" style={{ marginBottom: '20px', cursor: 'default' }}>
-                    <div className="integration-icon" style={{ backgroundColor: '#6C63FF15', color: '#6C63FF' }}>
+            {/* NEW: Web Widget Section */}
+            <div className="dash-card animate-slide-in" style={{ marginBottom: '32px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                    <div className="integration-icon" style={{ backgroundColor: '#6C63FF15', color: '#6C63FF', width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
                         <i className="fas fa-code"></i>
                     </div>
-                    <div className="integration-info">
-                        <h3>{t.language === 'ar' ? 'ودجت الموقع (Web Widget)' : 'Web Widget'}</h3>
-                        <p>{t.language === 'ar' ? 'أضف شات بوت VOXIO لموقعك الإلكتروني بضغطة واحدة.' : 'Add VOXIO chatbot to your website with a single script.'}</p>
+                    <div className="integration-info" style={{ flex: 1 }}>
+                        <h3 style={{ margin: 0, fontSize: '1.15rem' }}>{t.language === 'ar' ? 'ودجت الموقع (Web Widget)' : 'Web Widget'}</h3>
+                        <p style={{ margin: '4px 0 0', color: 'var(--dash-text-sec)' }}>{t.language === 'ar' ? 'أضف شات بوت VOXIO لموقعك الإلكتروني بضغطة واحدة.' : 'Add VOXIO chatbot to your website with a single script.'}</p>
                     </div>
                     <div className="integration-action">
-                        <Link to="/dashboard/widget" className="btn btn-primary">
-                            <i className="fas fa-cog" style={{ marginInlineEnd: '8px' }}></i>
+                        <Link to="/dashboard/widget" className="dash-btn dash-btn-primary">
+                            <i className="fas fa-cog"></i>
                             {language === 'ar' ? 'إعداد الودجت' : 'Configure Widget'}
                         </Link>
                     </div>
                 </div>
-                
-                <div className="integration-footer" style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <i className="fas fa-info-circle" style={{ color: 'var(--primary-color)' }}></i>
-                        {language === 'ar' 
-                            ? 'أفضل طريقة لزيادة مبيعاتك هي إضافة الودجت لموقعك. اضغط على "إعداد الودجت" لمعرفة التفاصيل.' 
-                            : 'The best way to increase sales is by adding the widget to your site. Click "Configure Widget" for details.'}
-                    </p>
-                </div>
-            </motion.div>
+            </div>
 
             <div className="section-divider" style={{ margin: '40px 0', borderTop: '1px dashed var(--border-color)', opacity: 0.5 }}></div>
 
@@ -553,32 +532,34 @@ const Integrations = () => {
                 <p style={{ textAlign: 'center', padding: '40px' }}>{t.dashboard.integrationsPage.loading}</p>
             ) : (
                 <div style={{ position: 'relative' }}>
-                    <motion.div
-                        className="integrations-list"
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                    >
+                    <div className="dash-grid">
                     {availableIntegrations.map(integration => {
                         const status = getIntegrationStatus(integration.id);
 
                         return (
-                            <motion.div variants={itemVariants} key={integration.id} className={`integration-item ${status}`}>
-                                <div className="integration-icon" style={{ backgroundColor: `${integration.color}15`, color: integration.color }}>
-                                    <i className={`fab fa-${integration.icon}`}></i>
-                                </div>
-                                <div className="integration-info">
-                                    <h3>{integration.name}</h3>
-                                    <p>{t.integrations[integration.descKey]}</p>
+                            <div key={integration.id} className={`dash-card animate-slide-in`}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '20px' }}>
+                                    <div className="integration-icon" style={{ backgroundColor: `${integration.color}15`, color: integration.color, width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                                        <i className={`fab fa-${integration.icon}`}></i>
+                                    </div>
+                                    <div className="integration-info" style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{integration.name}</h3>
+                                            {status === 'connected' && <span className="dash-badge dash-badge-success">{t.language === 'ar' ? 'متصل' : 'Connected'}</span>}
+                                            {status === 'paused' && <span className="dash-badge">{t.language === 'ar' ? 'موقف' : 'Paused'}</span>}
+                                        </div>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--dash-text-sec)' }}>{t.integrations[integration.descKey]}</p>
+                                    </div>
                                 </div>
                                 <div className="integration-action">
                                     {!integration.available ? (
-                                        <span className="badge badge-gray">{t.integrations.soon}</span>
+                                        <button className="dash-btn dash-btn-outline" disabled style={{ width: '100%' }}>{t.integrations.soon}</button>
                                     ) : (status === 'connected' || status === 'paused') ? (
                                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                             <button
-                                                className={`btn ${status === 'paused' ? 'btn-success' : 'btn-outline'}`}
+                                                className={`dash-btn ${status === 'paused' ? 'dash-btn-primary' : 'dash-btn-outline'}`}
                                                 onClick={() => handleToggle(integration.id)}
+                                                style={{ flex: 1 }}
                                             >
                                                 {status === 'paused' ? 
                                                     (t.language === 'ar' ? 'تفعيل' : 'Resume') : 
@@ -586,34 +567,34 @@ const Integrations = () => {
                                                 }
                                             </button>
                                             <button
-                                                className="btn btn-primary"
+                                                className="dash-btn dash-btn-outline"
                                                 onClick={() => handleEdit(integration.id)}
+                                                style={{ width: '42px', padding: 0 }}
                                             >
-                                                <i className="fas fa-edit" style={{ marginInlineEnd: '4px' }}></i>
-                                                {t.language === 'ar' ? 'تعديل' : 'Edit'}
+                                                <i className="fas fa-edit"></i>
                                             </button>
                                             <button
-                                                className="btn btn-danger"
+                                                className="dash-btn dash-btn-outline"
                                                 onClick={() => handleDisconnect(integration.id)}
+                                                style={{ color: '#ef4444' }}
                                             >
-                                                {t.dashboard.integrationsPage.disconnect}
+                                                <i className="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     ) : (
                                         <button
-                                            className="btn btn-primary"
+                                            className="dash-btn dash-btn-primary"
                                             onClick={() => handleConnect(integration)}
+                                            style={{ width: '100%' }}
                                         >
                                             {t.dashboard.integrationsPage.connect}
                                         </button>
                                     )}
                                 </div>
-                                {status === 'connected' && <div className="status-dot"></div>}
-                                {status === 'paused' && <div className="status-dot paused"></div>}
-                            </motion.div>
+                            </div>
                         );
                     })}
-                    </motion.div>
+                    </div>
                 </div>
             )}
 

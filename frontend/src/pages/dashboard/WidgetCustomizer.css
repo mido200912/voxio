@@ -1,7 +1,7 @@
 .widget-customizer {
-    background: var(--card-bg);
+    background: var(--dash-card);
     border-radius: 1.5rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--dash-border);
     overflow: hidden;
     height: 700px;
     display: flex;
@@ -16,7 +16,7 @@
 
 /* Controls */
 .customizer-controls {
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid var(--dash-border);
     display: flex;
     flex-direction: column;
     background: rgba(0,0,0,0.02);
@@ -24,8 +24,8 @@
 
 .control-tabs {
     display: flex;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--card-bg);
+    border-bottom: 1px solid var(--dash-border);
+    background: var(--dash-card);
 }
 
 .control-tabs button {
@@ -36,7 +36,7 @@
     border-bottom: 2px solid transparent;
     cursor: pointer;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--dash-text-sec);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -45,9 +45,9 @@
 }
 
 .control-tabs button.active {
-    color: var(--accent-color);
-    border-bottom-color: var(--accent-color);
-    background: var(--accent-light);
+    color: var(--dash-primary);
+    border-bottom-color: var(--dash-primary);
+    background: rgba(var(--dash-primary-rgb, 108, 99, 255), 0.1);
 }
 
 .tab-content {
@@ -80,15 +80,15 @@
 }
 
 .chat-bubble.ai {
-    background: var(--accent-light);
-    color: var(--text-primary);
+    background: rgba(var(--dash-primary-rgb, 108, 99, 255), 0.1);
+    color: var(--dash-text);
     border-bottom-left-radius: 4px;
     align-self: flex-start;
 }
 
 .chat-bubble.user {
-    background: var(--accent-color);
-    color: var(--accent-text);
+    background: var(--dash-primary);
+    color: #ffffff;
     border-bottom-right-radius: 4px;
     align-self: flex-end;
 }
@@ -96,10 +96,10 @@
 .chat-input {
     display: flex;
     gap: 8px;
-    background: var(--card-bg);
+    background: var(--dash-card);
     padding: 8px;
     border-radius: 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--dash-border);
 }
 
 .chat-input input {
@@ -108,15 +108,15 @@
     outline: none;
     background: none;
     padding: 8px;
-    color: var(--text-primary);
+    color: var(--dash-text);
 }
 
 .chat-input button {
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    background: var(--accent-color);
-    color: var(--accent-text);
+    background: var(--dash-primary);
+    color: #ffffff;
     border: none;
     cursor: pointer;
 }
@@ -131,27 +131,27 @@
 .template-item {
     cursor: pointer;
     border-radius: 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--dash-border);
     overflow: hidden;
-    background: var(--card-bg);
+    background: var(--dash-card);
     transition: all 0.2s;
     text-align: center;
     padding-bottom: 8px;
 }
 
 .template-item:hover {
-    border-color: var(--accent-color);
+    border-color: var(--dash-primary);
     transform: translateY(-2px);
 }
 
 .template-thumb {
     height: 100px;
-    background: var(--accent-light);
+    background: rgba(var(--dash-primary-rgb, 108, 99, 255), 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2rem;
-    color: var(--accent-color);
+    color: var(--dash-primary);
     margin-bottom: 8px;
 }
 
@@ -211,7 +211,7 @@
 .ai-working-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(255,255,255,0.8);
+    background: rgba(var(--dash-bg-rgb, 255, 255, 255), 0.8);
     backdrop-filter: blur(4px);
     display: flex;
     flex-direction: column;
@@ -223,8 +223,8 @@
 .magic-loader {
     width: 50px;
     height: 50px;
-    border: 3px solid var(--accent-light);
-    border-top-color: var(--accent-color);
+    border: 3px solid rgba(var(--dash-primary-rgb, 108, 99, 255), 0.1);
+    border-top-color: var(--dash-primary);
     border-radius: 50%;
     animation: spin 1s infinite linear;
     margin-bottom: 1rem;
@@ -235,8 +235,8 @@
 .save-all-btn {
     margin: 1.5rem;
     padding: 1.25rem;
-    background: var(--accent-color);
-    color: var(--accent-text);
+    background: var(--dash-primary);
+    color: #ffffff;
     border: none;
     border-radius: 12px;
     font-weight: 700;
@@ -269,9 +269,9 @@
 .config-summary {
     margin-top: 1rem;
     padding: 1rem;
-    background: var(--card-bg);
+    background: var(--dash-card);
     border-radius: 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--dash-border);
 }
 
 .summary-item {
@@ -279,7 +279,7 @@
     align-items: center;
     gap: 10px;
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--dash-text-sec);
 }
 
 .color-preview {
@@ -299,5 +299,5 @@
 @media (max-width: 1024px) {
     .customizer-layout { grid-template-columns: 1fr; }
     .widget-customizer { height: auto; }
-    .customizer-controls { border-right: none; border-bottom: 1px solid var(--border-color); }
+    .customizer-controls { border-right: none; border-bottom: 1px solid var(--dash-border); }
 }

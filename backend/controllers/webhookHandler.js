@@ -149,9 +149,9 @@ export const handleWhatsAppMessage = async (body) => {
 
                             console.log(`[WhatsApp Webhook] Fetching AI response...`);
                             
-                            // ✅ [PRO TIP] Mark message as read (Meta Standard)
+                            // ✅ Mark message as read (Meta Standard)
                             await axios.post(
-                                `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`,
+                                `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
                                 { messaging_product: "whatsapp", status: "read", message_id: messageId },
                                 { headers: { Authorization: `Bearer ${accessToken}` } }
                             ).catch(e => console.warn("Read Status Err:", e.message));
@@ -166,7 +166,7 @@ export const handleWhatsAppMessage = async (body) => {
 
                             // Send AI Reply
                             await axios.post(
-                                `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`,
+                                `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
                                 { messaging_product: "whatsapp", to: from, type: "text", text: { body: reply } },
                                 { headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" } }
                             );
@@ -182,7 +182,7 @@ export const handleWhatsAppMessage = async (body) => {
                             if (integration?.credentials?.accessToken) {
                                 try {
                                     await axios.post(
-                                        `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`,
+                                        `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
                                         { messaging_product: "whatsapp", to: from, type: "text", text: { body: errorMsg } },
                                         { headers: { Authorization: `Bearer ${integration.credentials.accessToken}`, "Content-Type": "application/json" } }
                                     );

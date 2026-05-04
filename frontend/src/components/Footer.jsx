@@ -1,9 +1,11 @@
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 import './Footer.css';
 
 const Footer = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
 
     return (
         <footer className="footer">
@@ -11,7 +13,7 @@ const Footer = () => {
                 <div className="footer-content">
                     <div className="footer-section">
                         <div className="footer-logo">
-                            <img src="/logo.png" alt="VOXIO Logo" />
+                            <img src={theme === 'dark' ? '/logodark.png' : '/logo.png'} alt="VOXIO Logo" />
                             <span>VOXIO</span>
                         </div>
                         <p>{t.footer.description}</p>

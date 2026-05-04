@@ -15,11 +15,13 @@ import './ChatbotEditor.css';
 import { secureStorage } from '../../utils/secureStorage';
 import WebCommandsModal from './WebCommandsModal';
 import { useToast } from '../../components/Toast';
+import './DashboardShared.css';
 
 const ChatbotEditor = () => {
     const { user } = useAuth();
     const { language } = useLanguage();
     const { toast } = useToast();
+    const isArabic = language === 'ar';
     
     // States
     const [messages, setMessages] = useState([]);
@@ -195,87 +197,49 @@ const ChatbotEditor = () => {
     };
 
     return (
-        <div className={`chatbot-editor mode-${viewMode} mobile-tab-${mobileTab} ${isFullscreen ? 'fullscreen' : ''}`} dir="ltr">
+        <div className={`chatbot-editor-container ${isFullscreen ? 'fullscreen' : ''}`} style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
             {/* ─── Premium Header ─── */}
-            <header className="editor-header">
-                <div className="header-left">
-                    <div className="company-badge">
-                        <span className="pulse-dot"></span>
-                        {companyName || 'VOXIO AI'}
+            <div className="dash-page-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--dash-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', boxShadow: '0 8px 16px rgba(var(--dash-primary-rgb, 108, 99, 255), 0.2)' }}>
+                        <i className="fas fa-magic" />
+                    </div>
+                    <div>
+                        <h1 className="dash-page-title">{language === 'ar' ? 'مصمم الشات بوت' : 'Chatbot Designer'}</h1>
+                        <p className="dash-page-subtitle">{companyName || 'VOXIO AI'}</p>
                     </div>
                 </div>
 
-                {/* Desktop View Toggles */}
-                <div className="view-toggles desktop-only">
-                    <button className={viewMode === 'code-only' ? 'active' : ''} onClick={() => setViewMode('code-only')} title="Code Only">
-                        <i className="fas fa-code"></i>
-                    </button>
-                    <button className={viewMode === 'split' ? 'active' : ''} onClick={() => setViewMode('split')} title="Split View">
-                        <i className="fas fa-columns"></i>
-                    </button>
-                    <button className={viewMode === 'preview-only' ? 'active' : ''} onClick={() => setViewMode('preview-only')} title="Preview Only">
-                        <i className="fas fa-mobile-screen"></i>
-                    </button>
-                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    {/* View Toggles */}
+                    <div style={{ display: 'flex', gap: '4px', background: 'var(--dash-card)', padding: '4px', borderRadius: '10px', border: '1px solid var(--dash-border)' }} className="desktop-only">
+                        <button className={`dash-btn ${viewMode === 'code-only' ? 'dash-btn-primary' : 'dash-btn-outline'}`} onClick={() => setViewMode('code-only')} style={{ padding: '6px 12px', height: 'auto' }}>
+                            <i className="fas fa-code"></i>
+                        </button>
+                        <button className={`dash-btn ${viewMode === 'split' ? 'dash-btn-primary' : 'dash-btn-outline'}`} onClick={() => setViewMode('split')} style={{ padding: '6px 12px', height: 'auto' }}>
+                            <i className="fas fa-columns"></i>
+                        </button>
+                        <button className={`dash-btn ${viewMode === 'preview-only' ? 'dash-btn-primary' : 'dash-btn-outline'}`} onClick={() => setViewMode('preview-only')} style={{ padding: '6px 12px', height: 'auto' }}>
+                            <i className="fas fa-mobile-screen"></i>
+                        </button>
+                    </div>
 
-                {/* Mobile Tab Selector */}
-                <div className="mobile-tab-selector mobile-only">
-                    <button className="mobile-dropdown-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                        <span>{getMobileTabName()}</span>
-                        <i className={`fas fa-chevron-${mobileMenuOpen ? 'up' : 'down'}`}></i>
-                    </button>
-                    <AnimatePresence>
-                        {mobileMenuOpen && (
-                            <motion.div 
-                                initial={{ opacity: 0, y: -10 }} 
-                                animate={{ opacity: 1, y: 0 }} 
-                                exit={{ opacity: 0, y: -10 }} 
-                                className="mobile-dropdown-menu"
-                            >
-                                <button onClick={() => { setMobileTab('ai'); setActiveSidebarTab('ai'); setMobileMenuOpen(false); }}>
-                                    <i className="fas fa-robot"></i> {language === 'ar' ? 'المساعد الذكي' : 'AI Assistant'}
-                                </button>
-                                <button onClick={() => { setMobileTab('theme'); setActiveSidebarTab('theme'); setMobileMenuOpen(false); }}>
-                                    <i className="fas fa-layer-group"></i> {language === 'ar' ? 'القوالب' : 'Templates'}
-                                </button>
-                                <button onClick={() => { setMobileTab('code'); setMobileMenuOpen(false); }}>
-                                    <i className="fas fa-code"></i> {language === 'ar' ? 'محرر الأكواد' : 'Code Editor'}
-                                </button>
-                                <button onClick={() => { setMobileTab('preview'); setMobileMenuOpen(false); }}>
-                                    <i className="fas fa-play"></i> {language === 'ar' ? 'المعاينة' : 'Live Preview'}
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                    <div className="divider desktop-only" style={{ width: '1px', background: 'var(--dash-border)', margin: '0 8px' }}></div>
 
-                <div className="header-actions">
-                    <button 
-                        className={`action-btn ai-toggle desktop-only ${isSidebarOpen ? 'active' : ''}`} 
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        title="AI Assistant"
-                    >
-                        <i className="fas fa-sparkles"></i>
-                        <span>AI</span>
-                    </button>
-                    
-                    <div className="divider desktop-only"></div>
-
-                    <button className="action-btn icon-only" onClick={() => setCodeHistory(prev => prev.slice(0, -1))} disabled={codeHistory.length === 0} title="Undo">
+                    <button className="dash-btn dash-btn-outline" onClick={() => setCodeHistory(prev => prev.slice(0, -1))} disabled={codeHistory.length === 0} style={{ width: '42px', padding: 0 }}>
                         <i className="fas fa-rotate-left"></i>
                     </button>
-                    <button className={`action-btn icon-only desktop-only ${isFullscreen ? 'active' : ''}`} onClick={() => setIsFullscreen(!isFullscreen)} title="Fullscreen">
-                        <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
-                    </button>
-                    <button className="action-btn save-btn" onClick={handleManualSave}>
-                        <i className={`fas ${isSaving ? 'fa-spinner fa-spin' : 'fa-check'}`}></i>
-                        <span className="desktop-only">{language === 'ar' ? 'حفظ' : 'Save'}</span>
+                    
+                    <button className="dash-btn dash-btn-primary" onClick={handleManualSave} disabled={isSaving}>
+                        <i className={`fas ${isSaving ? 'fa-spinner fa-spin' : 'fa-save'}`}></i>
+                        <span>{language === 'ar' ? 'حفظ' : 'Save'}</span>
                     </button>
                 </div>
-            </header>
+            </div>
 
             {/* ─── Main Workspace ─── */}
-            <div className="editor-workspace">
+            <div className={`chatbot-editor mode-${viewMode} mobile-tab-${mobileTab}`}>
+                <div className="editor-workspace">
                 
                 {/* ─── AI Assistant Sidebar ─── */}
                 <aside className={`ai-sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
@@ -290,7 +254,7 @@ const ChatbotEditor = () => {
 
                     <div className="sidebar-body">
                         {activeSidebarTab === 'ai' && (
-                            <div className="chat-interface" dir="rtl">
+                            <div className="chat-interface" dir={isArabic ? 'rtl' : 'ltr'}>
                                 <div className="messages-container">
                                     <AnimatePresence>
                                         {messages.map((msg) => (
@@ -442,6 +406,7 @@ const ChatbotEditor = () => {
                     </div>
                 </main>
             </div>
+        </div>
 
             <AnimatePresence>
                 {showCopied && (

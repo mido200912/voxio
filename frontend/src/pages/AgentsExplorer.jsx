@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useTheme } from '../context/ThemeContext';
 import './AgentsExplorer.css';
 
 const API = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
@@ -32,6 +33,7 @@ const AgentsExplorer = () => {
   const [search, setSearch]       = useState('');
   const [industry, setIndustry]   = useState('all');
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   useEffect(() => {
     axios.get(`${API}/public/companies`)
@@ -55,7 +57,7 @@ const AgentsExplorer = () => {
       {/* ── TOP BAR ── */}
       <nav className="ae-topbar">
         <Link to="/" className="ae-topbar-logo">
-          <img src="/logo.png" alt="VOXIO" />
+          <img src={theme === 'dark' ? '/logodark.png' : '/logo.png'} alt="VOXIO" />
           <span>VOXIO</span>
         </Link>
         <div className="ae-topbar-center">
@@ -193,7 +195,7 @@ const AgentsExplorer = () => {
       {/* ── FOOTER ── */}
       <div className="ae-footer">
         <span>Powered by</span>
-        <Link to="/"><img src="/logo.png" alt="VOXIO" /> VOXIO</Link>
+        <Link to="/"><img src={theme === 'dark' ? '/logodark.png' : '/logo.png'} alt="VOXIO" /> VOXIO</Link>
         <span className="ae-footer-sep">·</span>
         <Link to="/register">
           <i className="fas fa-plus" />

@@ -2,6 +2,7 @@ import express from "express";
 import axios from "axios";
 import crypto from "crypto";
 import Company from "../models/company.js";
+import CompanyChat from "../models/CompanyChat.js";
 import { requireAuth } from "../middleware/auth.js";
 import { verifyApiKey } from "../middleware/verifyApiKey.js";
 import { extractCorexReply, fetchAiResponse, fetchDesignerAiResponse } from "../utils/corexHelper.js";
@@ -644,8 +645,8 @@ router.post("/whatsapp-setup", requireAuth, async (req, res) => {
     } else {
       integration.credentials = { phoneNumberId, accessToken };
       integration.isActive = true;
-      await integration.save();
     }
+    await integration.save();
 
     res.json({
       success: true,
@@ -666,36 +667,95 @@ router.get("/analytics", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const requests = company.requests || [];
-    const totalConversations = requests.length;
+    // --- Advanced Granular Analytics ---
+    const allChats = await CompanyChat.Model.find({ company: company._id });
+    const userMessages = allChats.filter(c => c.sender === 'user');
 
-    // Active Now: Number of unique requests in the last hour (Approximation)
+    const totalConversations = userMessages.length;
+
+    // Active Now: Unique users in the last hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const activeRequests = requests.filter(r => new Date(r.date) > oneHourAgo).length;
+    const activeUsersCount = new Set(
+        userMessages
+            .filter(c => new Date(c.createdAt) > oneHourAgo)
+            .map(c => c.sessionId || c.senderId)
+    ).size;
 
-    // AI Resolution: Hardcoded logic for now, or based on presence of aiReply
-    // Assuming if aiReply exists, it's AI resolved.
-    const aiResolvedCount = requests.filter(r => r.aiReply).length;
+    // AI Resolution: Chats where bot replied
+    const aiRepliesCount = allChats.filter(c => c.sender === 'ai').length;
     const aiResolutionRate = totalConversations > 0
-      ? Math.round((aiResolvedCount / totalConversations) * 100)
-      : 100;
+      ? Math.round((aiRepliesCount / totalConversations) * 100)
+      : 0;
 
-    // Recent Activity: Last 5 requests
-    const recentActivity = [...requests]
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 5)
-      .map(r => ({
-        id: r._id,
-        action: `محادثة مع ${r.customerName || 'عميل'}`,
-        time: r.date,
-        details: r.message.substring(0, 50) + '...'
+    // Recent Activity: Last 10 chats
+    const recentActivity = [...allChats]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .reverse()
+      .slice(0, 10)
+      .map(c => ({
+        id: c._id,
+        action: c.sender === 'user' ? `رسالة من عميل (${c.platform || 'web'})` : `رد من الذكاء الاصطناعي`,
+        time: c.createdAt,
+        details: c.text?.substring(0, 50) + (c.text?.length > 50 ? '...' : '')
       }));
+
+    // 1. Line Chart Data (Last 7 days)
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+        last7Days.push({
+            date: d,
+            label: d.toLocaleDateString('ar-EG', { weekday: 'short' }),
+            count: 0
+        });
+    }
+
+    userMessages.forEach(chat => {
+        const chatDate = new Date(chat.createdAt);
+        const dayMatch = last7Days.find(d => 
+            d.date.getDate() === chatDate.getDate() && 
+            d.date.getMonth() === chatDate.getMonth()
+        );
+        if (dayMatch) dayMatch.count++;
+    });
+
+    const lineChartData = last7Days.map(d => ({ label: d.label, value: d.count }));
+
+    // 2. Donut Chart Data (Platform distribution)
+    const platformCounts = {};
+    userMessages.forEach(chat => {
+        const p = chat.platform || 'web';
+        platformCounts[p] = (platformCounts[p] || 0) + 1;
+    });
+    const donutChartData = Object.entries(platformCounts).map(([label, value]) => ({ label, value }));
+
+    // 3. Heatmap Data (Hourly peak)
+    const hourlyCounts = Array(24).fill(0);
+    userMessages.forEach(chat => {
+        const hour = new Date(chat.createdAt).getHours();
+        hourlyCounts[hour]++;
+    });
+    const heatmapData = hourlyCounts.map((value, hour) => ({ hour, value }));
+
+    // 4. AI Insight
+    let aiInsight = "ابدأ بجمع البيانات لتحصل على تحليلات دقيقة.";
+    if (totalConversations > 0) {
+        if (aiResolutionRate > 80) aiInsight = "أداء ممتاز! البوت يعالج معظم المحادثات بنجاح.";
+        else if (aiResolutionRate > 50) aiInsight = "أداء جيد، جرب إضافة المزيد من الأسئلة المتكررة لتحسين الدقة.";
+        else aiInsight = "البوت يحتاج لمزيد من التدريب لفهم طلبات العملاء بشكل أفضل.";
+    }
 
     res.json({
       totalConversations,
-      activeNow: activeRequests,
+      activeNow: activeUsersCount,
       aiResolutionRate,
-      recentActivity
+      recentActivity,
+      lineChartData,
+      donutChartData,
+      heatmapData,
+      aiInsight
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

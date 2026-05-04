@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import PageLoader from '../../components/PageLoader';
 import { useToast } from '../../components/Toast';
 import './Settings.css';
+import './DashboardShared.css';
 
 const Settings = () => {
     const { user, changePassword } = useAuth();
@@ -203,22 +204,15 @@ const Settings = () => {
 
     return (
         <div className="settings-page animate-fade-in">
-            <motion.h1
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="page-title"
-            >
-                {t.dashboard.settingsPage.title}
-            </motion.h1>
+            <div className="dash-page-header">
+                <div>
+                    <h1 className="dash-page-title">{t.dashboard.settingsPage.title}</h1>
+                </div>
+            </div>
 
-            <motion.div
-                className="settings-grid"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-            >
+            <div className="dash-grid">
                 {/* General Settings */}
-                <motion.div variants={itemVariants} className="card full-width">
+                <div className="dash-card animate-slide-in" style={{ gridColumn: '1 / -1' }}>
                     <div className="card-header">
                         <i className="fas fa-building"></i>
                         <h3>{t.dashboard.settingsPage.orgData}</h3>
@@ -265,7 +259,7 @@ const Settings = () => {
                                     name="name"
                                     value={companyData.name}
                                     onChange={handleInputChange}
-                                    className="settings-input"
+                                    className="dash-input"
                                     placeholder={t.dashboard.settingsPage.companyNameHint}
                                 />
                             </div>
@@ -276,7 +270,7 @@ const Settings = () => {
                                     name="industry"
                                     value={companyData.industry}
                                     onChange={handleInputChange}
-                                    className="settings-input"
+                                    className="dash-input"
                                     placeholder={t.dashboard.settingsPage.industryHint}
                                 />
                             </div>
@@ -288,7 +282,7 @@ const Settings = () => {
                                 name="description"
                                 value={companyData.description}
                                 onChange={handleInputChange}
-                                className="settings-input"
+                                className="dash-textarea"
                                 rows="3"
                                 placeholder={t.dashboard.settingsPage.descriptionHint}
                             />
@@ -301,7 +295,7 @@ const Settings = () => {
                                     name="vision"
                                     value={companyData.vision}
                                     onChange={handleInputChange}
-                                    className="settings-input"
+                                    className="dash-textarea"
                                     rows="2"
                                     placeholder={t.dashboard.settingsPage.visionHint}
                                 />
@@ -312,7 +306,7 @@ const Settings = () => {
                                     name="mission"
                                     value={companyData.mission}
                                     onChange={handleInputChange}
-                                    className="settings-input"
+                                    className="dash-textarea"
                                     rows="2"
                                     placeholder={t.dashboard.settingsPage.missionHint}
                                 />
@@ -326,7 +320,7 @@ const Settings = () => {
                                 name="values"
                                 value={companyData.values}
                                 onChange={handleInputChange}
-                                className="settings-input"
+                                className="dash-input"
                                 placeholder={t.dashboard.settingsPage.valuesHint}
                             />
                         </div>
@@ -339,7 +333,7 @@ const Settings = () => {
                                     name="websiteUrl"
                                     value={companyData.websiteUrl}
                                     onChange={handleInputChange}
-                                    className="settings-input"
+                                    className="dash-input"
                                     placeholder="https://example.com"
                                 />
                             </div>
@@ -350,7 +344,7 @@ const Settings = () => {
                                     name="allowedDomains"
                                     value={companyData.allowedDomains}
                                     onChange={handleInputChange}
-                                    className="settings-input"
+                                    className="dash-input"
                                     placeholder="example.com, shop.example.com"
                                 />
                             </div>
@@ -362,17 +356,18 @@ const Settings = () => {
                         </p>
 
                         <button
-                            className="btn btn-primary"
+                            className="dash-btn dash-btn-primary"
                             onClick={handleSave}
                             disabled={saving}
+                            style={{ marginTop: '20px' }}
                         >
                             {saving ? t.dashboard.settingsPage.saving : t.dashboard.settingsPage.saveChanges}
                         </button>
                     </div>
-                </motion.div>
+                </div>
 
                 {/* API Key Section */}
-                <motion.div variants={itemVariants} className="card full-width">
+                <div className="dash-card animate-slide-in">
                     <div className="card-header">
                         <i className="fas fa-key"></i>
                         <h3>{t.dashboard.settingsPage.apiKeyTitle}</h3>
@@ -421,10 +416,10 @@ const Settings = () => {
                             </p>
                         </div>
                     </div>
-                </motion.div>
+                </div>
 
                 {/* Change Password Section */}
-                <motion.div variants={itemVariants} className="card full-width">
+                <div className="dash-card animate-slide-in">
                     <div className="card-header">
                         <i className="fas fa-lock"></i>
                         <h3>Change Password</h3>
@@ -439,7 +434,7 @@ const Settings = () => {
                                 name="oldPassword"
                                 value={pwdData.oldPassword}
                                 onChange={handlePwdChange}
-                                className="settings-input"
+                                className="dash-input"
                                 placeholder="Enter your current password"
                             />
                         </div>
@@ -451,7 +446,7 @@ const Settings = () => {
                                     name="newPassword"
                                     value={pwdData.newPassword}
                                     onChange={handlePwdChange}
-                                    className="settings-input"
+                                    className="dash-input"
                                     placeholder="Enter new password"
                                 />
                             </div>
@@ -462,22 +457,23 @@ const Settings = () => {
                                     name="confirmPassword"
                                     value={pwdData.confirmPassword}
                                     onChange={handlePwdChange}
-                                    className="settings-input"
+                                    className="dash-input"
                                     placeholder="Confirm new password"
                                 />
                             </div>
                         </div>
 
                         <button
-                            className="btn btn-primary"
+                            className="dash-btn dash-btn-primary"
                             onClick={handleSavePassword}
                             disabled={pwdSaving}
+                            style={{ marginTop: '20px' }}
                         >
                             {pwdSaving ? 'Updating...' : 'Update Password'}
                         </button>
                     </div>
-                </motion.div>
-            </motion.div>
+                </div>
+            </div>
         </div>
     );
 };

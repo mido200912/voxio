@@ -8,7 +8,7 @@
 }
 
 .page-subtitle {
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
     margin-bottom: 2rem;
 }
 
@@ -19,26 +19,26 @@
 }
 
 .card {
-    background: var(--color-card-bg);
-    border: 1px solid var(--color-border);
+    background: var(--dash-card);
+    border: 1px solid var(--dash-border);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px var(--color-shadow);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
 }
 
 .card-header {
-    background: rgba(var(--color-text-rgb), 0.02);
+    background: rgba(var(--dash-text-rgb), 0.02);
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--dash-border);
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
 .card-header i {
-    color: var(--color-text);
+    color: var(--dash-text);
     font-size: 1.25rem;
 }
 
@@ -65,23 +65,23 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    border: 2px dashed var(--color-border);
+    border: 2px dashed var(--dash-border);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 0.2s;
-    background: var(--color-bg);
+    background: var(--dash-bg);
     min-height: 150px;
 }
 
 .upload-label:hover {
-    border-color: var(--color-text);
-    background: rgba(var(--color-text-rgb), 0.02);
+    border-color: var(--dash-text);
+    background: rgba(var(--dash-text-rgb), 0.02);
 }
 
 .upload-label i {
     font-size: 2.5rem;
     margin-bottom: 1rem;
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
 }
 
 .upload-label.disabled {
@@ -93,7 +93,7 @@
     font-size: 1rem;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--dash-border);
 }
 
 .files-list ul {
@@ -109,13 +109,13 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--dash-border);
     font-size: 0.9rem;
     transition: background 0.2s;
 }
 
 .file-item:hover {
-    background: rgba(var(--color-text-rgb), 0.02);
+    background: rgba(var(--dash-text-rgb), 0.02);
 }
 
 .file-item:last-child {
@@ -131,11 +131,11 @@
 }
 
 .file-info i {
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
 }
 
 .file-info a {
-    color: var(--color-text);
+    color: var(--dash-text);
     text-decoration: none;
     white-space: nowrap;
     overflow: hidden;
@@ -154,7 +154,7 @@
 
 .file-date {
     font-size: 0.75rem;
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
 }
 
 .delete-btn {
@@ -174,7 +174,7 @@
 
 .no-files {
     text-align: center;
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
     font-style: italic;
     margin-top: 1rem;
 }
@@ -182,17 +182,17 @@
 /* Instructions Style */
 .instruction-tip {
     font-size: 0.9rem;
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
     margin-bottom: 1rem;
 }
 
 .instruction-input {
     width: 100%;
     padding: 1rem;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--dash-border);
     border-radius: var(--radius-md);
-    background: var(--color-bg);
-    color: var(--color-text);
+    background: var(--dash-bg);
+    color: var(--dash-text);
     font-family: inherit;
     resize: vertical;
     margin-bottom: 1.5rem;
@@ -203,8 +203,8 @@
 
 .instruction-input:focus {
     outline: none;
-    border-color: var(--color-text);
-    box-shadow: 0 0 0 2px var(--color-shadow);
+    border-color: var(--dash-text);
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
 }
 
 .instruction-actions {
@@ -213,7 +213,7 @@
 
 .spinner {
     border: 3px solid rgba(0, 0, 0, 0.1);
-    border-left-color: var(--color-text);
+    border-left-color: var(--dash-text);
     border-radius: 50%;
     width: 24px;
     height: 24px;
@@ -238,7 +238,7 @@
 /* Empty state */
 .empty-state {
     text-align: center;
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
     padding: 2rem;
     font-style: italic;
 }
@@ -263,10 +263,10 @@
 .instructions-textarea {
     width: 100%;
     padding: 1rem;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--dash-border);
     border-radius: var(--radius-md);
-    background: var(--color-bg);
-    color: var(--color-text);
+    background: var(--dash-bg);
+    color: var(--dash-text);
     font-family: inherit;
     resize: vertical;
     margin-bottom: 1rem;
@@ -276,13 +276,13 @@
 
 .instructions-textarea:focus {
     outline: none;
-    border-color: var(--color-text);
+    border-color: var(--dash-text);
 }
 
 /* Card description */
 .card-description {
     font-size: 0.9rem;
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
     margin-bottom: 1.5rem;
     line-height: 1.5;
 }
@@ -292,13 +292,13 @@
     display: block;
     margin-top: 0.5rem;
     font-size: 0.85rem;
-    color: var(--color-text-secondary);
+    color: var(--dash-text-sec);
 }
 
 .upload-label.uploading {
     opacity: 0.7;
     cursor: not-allowed;
-    border-color: var(--color-primary, #667eea);
+    border-color: var(--dash-primary);
 }
 
 @media (max-width: 768px) {
