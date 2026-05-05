@@ -5,8 +5,8 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
-import xss from 'xss-clean';
+
+
 import morgan from 'morgan';
 
 const app = express();
@@ -19,8 +19,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '50mb' }));
-app.use(mongoSanitize());
-app.use(xss());
+// Custom XSS Middleware
+const sanitizeObj = (obj) => {
+  if (!obj || typeof obj !== 'object') return;
+  for (let key in obj) {
+    if (typeof obj[key] === 'string') {
+      obj[key] = obj[key].replace(/<[^>]*>?/gm, ''); // simple strip tags
+    } else if (typeof obj[key] === 'object') {
+      sanitizeObj(obj[key]);
+    }
+  }
+};
+app.use((req, res, next) => {
+  if (req.body) sanitizeObj(req.body);
+  if (req.query) sanitizeObj(req.query);
+  if (req.params) sanitizeObj(req.params);
+  next();
+});
 app.use(morgan('combined'));
 
 // 🚦 Rate Limiting
@@ -84,11 +99,11 @@ const supportMessageSchema = new mongoose.Schema({
   status: { type: String, default: 'unread' },
 }, { timestamps: true });
 
-const User = mongoose.model('User', userSchema);
-const Company = mongoose.model('Company', companySchema);
-const Integration = mongoose.model('Integration', integrationSchema);
-const Chat = mongoose.model('company_chats', chatSchema);
-const SupportMessage = mongoose.model('support_messages', supportMessageSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+const Company = mongoose.models.Company || mongoose.model('Company', companySchema);
+const Integration = mongoose.models.Integration || mongoose.model('Integration', integrationSchema);
+const Chat = mongoose.models.company_chats || mongoose.model('company_chats', chatSchema);
+const SupportMessage = mongoose.models.support_messages || mongoose.model('support_messages', supportMessageSchema);
 
 // Admin Credentials
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'midovoxio@gmail.com';
@@ -145,7 +160,8 @@ app.get('/api/admin/users', adminAuth, async (req, res) => {
     });
     res.json(formattedUsers);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch users' });
+    console.error('Error fetching users:', e);
+    res.status(500).json({ error: 'Failed to fetch users', details: e.message });
   }
 });
 
@@ -163,7 +179,8 @@ app.get('/api/admin/companies/:id', adminAuth, async (req, res) => {
       integrations
     });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch company details' });
+    console.error('Error fetching company:', e);
+    res.status(500).json({ error: 'Failed to fetch company details', details: e.message });
   }
 });
 
@@ -272,7 +289,8 @@ app.get('/api/admin/agents', adminAuth, async (req, res) => {
     });
     res.json(agents);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch agents' });
+    console.error('Error fetching agents:', e);
+    res.status(500).json({ error: 'Failed to fetch agents', details: e.message });
   }
 });
 
@@ -290,7 +308,8 @@ app.get('/api/admin/support-messages', adminAuth, async (req, res) => {
     const messages = await SupportMessage.find().sort({ createdAt: -1 }).lean();
     res.json(messages);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch messages' });
+    console.error('Error fetching support messages:', e);
+    res.status(500).json({ error: 'Failed to fetch messages', details: e.message });
   }
 });
 
@@ -320,7 +339,8 @@ app.get('/api/admin/analytics', adminAuth, async (req, res) => {
     
     res.json({ usersCount, integrationsCount, totalAIMessages: aiMessagesCount });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch analytics' });
+    console.error('Error fetching analytics:', e);
+    res.status(500).json({ error: 'Failed to fetch analytics', details: e.message });
   }
 });
 
@@ -328,3 +348,5 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🛡️ Secure Admin Backend running on port ${PORT}`);
 });
+
+export default app;

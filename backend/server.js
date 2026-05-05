@@ -6,8 +6,8 @@ import path from "path";
 import helmet from "helmet";
 import hpp from "hpp";
 import rateLimit from "express-rate-limit";
-import mongoSanitize from "express-mongo-sanitize";
-import xss from "xss-clean";
+
+
 import morgan from "morgan";
 import chatRoutes from "./routes/chatRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -61,8 +61,23 @@ app.use('/api/integrations/meta/data-deletion', express.raw({ type: '*/*' }));
 // ✅ إعداد JSON Body
 app.use(express.json({ limit: '2mb' }));
 app.use(hpp());
-app.use(xss());
-app.use(mongoSanitize());
+// Custom XSS Middleware (Prevents Node 20+ getter error)
+const sanitizeObj = (obj) => {
+  if (!obj || typeof obj !== 'object') return;
+  for (let key in obj) {
+    if (typeof obj[key] === 'string') {
+      obj[key] = obj[key].replace(/<[^>]*>?/gm, ''); // simple strip tags
+    } else if (typeof obj[key] === 'object') {
+      sanitizeObj(obj[key]);
+    }
+  }
+};
+app.use((req, res, next) => {
+  if (req.body) sanitizeObj(req.body);
+  if (req.query) sanitizeObj(req.query);
+  if (req.params) sanitizeObj(req.params);
+  next();
+});
 
 // ✅ إعداد حماية أكبر للموقع (Security Middlewares)
 app.use(helmet({
