@@ -1,12 +1,30 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
+import { useSEO } from '../hooks/useSEO';
 import './LegalPages.css';
 
 const AboutUs = () => {
   const { language } = useLanguage();
   const isAr = language === 'ar';
   const t = (en, ar) => (isAr ? ar : en);
+
+  useSEO({
+    title: t('About VOXIO - The Future of AI Customer Service', 'عن VOXIO - مستقبل خدمة العملاء بالذكاء الاصطناعي'),
+    description: t('Learn about VOXIO, our mission, vision, and the team building the most advanced AI customer service platform for businesses.', 'تعرف على VOXIO، رسالتنا، رؤيتنا، والفريق الذي يبني المنصة الأكثر تطوراً لخدمة العملاء بالذكاء الاصطناعي.'),
+    keywords: 'About VOXIO, AI Startup, Customer Service Automation Company, فريق فكسيو, عن الشركة',
+    schema: {
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      "name": "About VOXIO",
+      "description": "Information about the VOXIO AI customer service platform, its vision, and its team.",
+      "mainEntity": {
+        "@type": "Organization",
+        "name": "VOXIO",
+        "url": "https://voxio.com/"
+      }
+    }
+  });
 
   return (
     <div className="lp-page" dir={isAr ? 'rtl' : 'ltr'}>

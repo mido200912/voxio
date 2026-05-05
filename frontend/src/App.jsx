@@ -25,7 +25,12 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import AboutUs from './pages/AboutUs';
 import Blog from './pages/Blog';
-import Docs from './pages/Docs';
+import DocsLayout from './pages/docs/DocsLayout';
+import DocsOverview from './pages/docs/DocsOverview';
+import ShopifyIntegration from './pages/docs/ShopifyIntegration';
+import MetaIntegration from './pages/docs/MetaIntegration';
+import TelegramIntegration from './pages/docs/TelegramIntegration';
+import WidgetIntegration from './pages/docs/WidgetIntegration';
 import Support from './pages/Support';
 import AgentsExplorer, { AgentChat } from './pages/AgentsExplorer';
 import ChatWidget from './pages/ChatWidget';
@@ -52,7 +57,13 @@ function App() {
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/about" element={<AboutUs />} />
                   <Route path="/blog" element={<Blog />} />
-                  <Route path="/docs" element={<Docs />} />
+                  <Route path="/docs" element={<DocsLayout />}>
+                    <Route index element={<DocsOverview />} />
+                    <Route path="shopify" element={<ShopifyIntegration />} />
+                    <Route path="meta" element={<MetaIntegration />} />
+                    <Route path="telegram" element={<TelegramIntegration />} />
+                    <Route path="widget" element={<WidgetIntegration />} />
+                  </Route>
                   <Route path="/support" element={<Support />} />
                 </Route>
 

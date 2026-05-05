@@ -103,19 +103,19 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0.6rem 0.8rem;
+  gap: 12px;
+  padding: 0.8rem 1rem;
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 600;
   border-radius: 10px;
   cursor: pointer;
   width: 100%;
   text-align: start;
   transition: all 0.2s;
-  font-family: inherit;
+  text-decoration: none;
 }
 
 .docs-sidebar-item:hover {
@@ -126,22 +126,22 @@
 .docs-sidebar-item.active {
   background: var(--color-card-bg);
   color: var(--color-text);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .docs-sidebar-icon {
-  font-size: 0.9rem;
-  width: 18px;
+  font-size: 1.1rem;
+  width: 22px;
   text-align: center;
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .docs-sidebar-indicator {
   position: absolute;
-  inset-inline-end: 8px;
-  width: 6px;
-  height: 6px;
+  inset-inline-end: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--color-text);
 }
@@ -285,11 +285,15 @@
   background: var(--color-card-bg);
   border: 1px solid var(--color-border);
   transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none !important;
+  color: inherit;
+  display: block;
 }
 
 .docs-feature-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px var(--color-shadow);
+  color: inherit;
 }
 
 .docs-feature-icon {
@@ -428,6 +432,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text-secondary);
+  direction: ltr;
 }
 
 .docs-code-block pre {
@@ -440,6 +445,65 @@
   overflow-x: auto;
   margin: 0;
   white-space: pre;
+  direction: ltr;
+  text-align: left;
+}
+
+/* ─── TEXT CONTENT FIXES ─── */
+.docs-text-content {
+  text-align: start;
+}
+
+.docs-text-content h3 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 2.5rem 0 1rem 0;
+}
+
+.docs-text-content h4 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.8rem 0;
+}
+
+.docs-text-content p {
+  line-height: 1.8;
+  font-size: 1.05rem;
+  margin-bottom: 1.2rem;
+}
+
+.docs-text-content a {
+  color: #6C63FF;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.docs-text-content a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.docs-text-content ul, .docs-text-content ol {
+  padding-inline-start: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.docs-text-content li {
+  line-height: 1.8;
+  font-size: 1.05rem;
+  margin-bottom: 0.8rem;
+}
+
+.docs-image {
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+  border-radius: 12px;
+  margin: 1.5rem 0 2.5rem 0;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  border: 1px solid var(--color-border);
+  display: block;
 }
 
 /* ─── ENDPOINT ROW ─── */
