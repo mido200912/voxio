@@ -5,6 +5,9 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
+import morgan from 'morgan';
 
 const app = express();
 
@@ -16,6 +19,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '50mb' }));
+app.use(mongoSanitize());
+app.use(xss());
+app.use(morgan('combined'));
 
 // 🚦 Rate Limiting
 const loginLimiter = rateLimit({
@@ -85,8 +91,8 @@ const Chat = mongoose.model('company_chats', chatSchema);
 const SupportMessage = mongoose.model('support_messages', supportMessageSchema);
 
 // Admin Credentials
-const ADMIN_EMAIL = 'midovoxio@gmail.com';
-const ADMIN_PASS = 'mido927010';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'midovoxio@gmail.com';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'mido927010';
 
 // Auth Middleware
 const adminAuth = (req, res, next) => {

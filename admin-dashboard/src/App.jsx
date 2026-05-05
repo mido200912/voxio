@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Users, Bot, LogOut, Trash2, ShieldAlert, Ban, Settings2, Megaphone, 
@@ -702,17 +702,12 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
-        {isAuthenticated ? (
-          <>
-            <Route path="/" element={<MainLayout setAuth={setIsAuthenticated}><UsersPage /></MainLayout>} />
-            <Route path="/agents" element={<MainLayout setAuth={setIsAuthenticated}><AgentsPage /></MainLayout>} />
-            <Route path="/support" element={<MainLayout setAuth={setIsAuthenticated}><SupportPage /></MainLayout>} />
-            <Route path="/broadcast" element={<MainLayout setAuth={setIsAuthenticated}><BroadcastPage /></MainLayout>} />
-          </>
-        ) : (
-          <Route path="*" element={<Login setAuth={setIsAuthenticated} />} />
-        )}
+        <Route path="/login" element={!isAuthenticated ? <Login setAuth={setIsAuthenticated} /> : <Navigate to="/" />} />
+        <Route path="/" element={isAuthenticated ? <MainLayout setAuth={setIsAuthenticated}><UsersPage /></MainLayout> : <Navigate to="/login" />} />
+        <Route path="/agents" element={isAuthenticated ? <MainLayout setAuth={setIsAuthenticated}><AgentsPage /></MainLayout> : <Navigate to="/login" />} />
+        <Route path="/support" element={isAuthenticated ? <MainLayout setAuth={setIsAuthenticated}><SupportPage /></MainLayout> : <Navigate to="/login" />} />
+        <Route path="/broadcast" element={isAuthenticated ? <MainLayout setAuth={setIsAuthenticated}><BroadcastPage /></MainLayout> : <Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );
