@@ -6,6 +6,9 @@ import path from "path";
 import helmet from "helmet";
 import hpp from "hpp";
 import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
+import xss from "xss-clean";
+import morgan from "morgan";
 import chatRoutes from "./routes/chatRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
@@ -23,37 +26,10 @@ import broadcastRoutes from "./routes/broadcastRoutes.js";
 
 const app = express();
 
-// 🛑 XSS Clean Middleware
-const sanitize = (value) => {
-    if (typeof value === 'string') {
-        return value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-    if (Array.isArray(value)) {
-        return value.map(item => sanitize(item));
-    }
-    if (value && typeof value === 'object') {
-        const cleaned = {};
-        for (const key of Object.keys(value)) {
-            cleaned[key] = sanitize(value[key]);
-        }
-        return cleaned;
-    }
-    return value;
-};
-
-const xssClean = (req, res, next) => {
-    if (req.body) {
-        for (const k of Object.keys(req.body)) {
-            req.body[k] = sanitize(req.body[k]);
-        }
-    }
-    if (req.query) {
-        for (const k of Object.keys(req.query)) {
-            req.query[k] = sanitize(req.query[k]);
-        }
-    }
-    next();
-};
+// Logging
+if (process.env.NODE_ENV !== "test") {
+    app.use(morgan("combined"));
+}
 
 // ✅ إعداد CORS
 const allowedOrigins = [
@@ -78,14 +54,15 @@ app.use(cors({
 }));
 
 // 🛑 إعداد Raw Body للـ Webhooks
-app.use('/api/webhooks/shopify', express.raw({ type: '*/*' }));
-app.use('/api/webhooks/meta', express.raw({ type: '*/*' }));
+app.use('/api/integrations/webhooks/shopify', express.raw({ type: '*/*' }));
+app.use('/api/integrations/webhooks/meta', express.raw({ type: '*/*' }));
 app.use('/api/integrations/meta/data-deletion', express.raw({ type: '*/*' }));
 
 // ✅ إعداد JSON Body
 app.use(express.json({ limit: '2mb' }));
 app.use(hpp());
-app.use(xssClean);
+app.use(xss());
+app.use(mongoSanitize());
 
 // ✅ إعداد حماية أكبر للموقع (Security Middlewares)
 app.use(helmet({

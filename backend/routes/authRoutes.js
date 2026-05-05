@@ -14,10 +14,10 @@ router.use(cookieParser());
 // توليد التوكنات
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: "15d",
+    expiresIn: "15m",
   });
   const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
-    expiresIn: "365d",
+    expiresIn: "7d",
   });
   return { accessToken, refreshToken };
 };

@@ -49,6 +49,30 @@ const verifyShopifyWebhook = (req) => {
   }
 };
 
+/**
+ * يتحقق من توقيع Meta Webhook باستخدام SHA256.
+ */
+const verifyMetaWebhook = (req) => {
+  const signatureHeader = req.headers['x-hub-signature-256'];
+  if (!signatureHeader) return false;
+
+  const signature = signatureHeader.split('sha256=')[1];
+  if (!signature) return false;
+
+  const body = req.body.toString('utf8');
+
+  const expectedSignature = crypto
+    .createHmac('sha256', process.env.META_APP_SECRET)
+    .update(body, 'utf8')
+    .digest('hex');
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature));
+  } catch (e) {
+    return false;
+  }
+};
+
 // ----------------------------------------------------------------------
 // 🌐 Meta Integrations (Facebook/Instagram/WhatsApp)
 // ----------------------------------------------------------------------
@@ -172,13 +196,20 @@ const metaWebhook = async (req, res) => {
     return res.sendStatus(403);
   }
 
-  // 2. Handle incoming messages
-  try {
-    const body = req.body; // Already parsed by express.json()
-
-    console.log(`Received Meta webhook [${body.object}]:`, JSON.stringify(body, null, 2));
+  // 2. Handle incoming messages (POST)
+  if (req.method === 'POST') {
+    // الحل الأمني: التحقق من التوقيع X-Hub-Signature-256
+    if (!verifyMetaWebhook(req)) {
+      console.warn('Meta Webhook verification failed (Signature mismatch).');
+      return res.sendStatus(403);
+    }
 
     try {
+      const body = JSON.parse(req.body.toString('utf8')); // Parsing raw Buffer
+  
+      console.log(`Received Meta webhook [${body.object}]:`, JSON.stringify(body, null, 2));
+  
+      try {
         // Must await BEFORE sending response on Vercel to prevent Lambda freeze!
         // Handle WhatsApp messages
         await handleWhatsAppMessage(body);
@@ -192,8 +223,10 @@ const metaWebhook = async (req, res) => {
         res.sendStatus(200); // Still send 200 to Meta so it doesn't retry
     }
 
-  } catch (error) {
-    console.error(error);
+    } catch (error) {
+      console.error(error);
+      res.sendStatus(500);
+    }
   }
 };
 
