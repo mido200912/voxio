@@ -81,20 +81,20 @@ app.use((req, res, next) => {
 
 // ✅ إعداد حماية أكبر للموقع (Security Middlewares)
 app.use(helmet({
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    frameguard: false, // Allow iframes
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*.fontawesome.com", "*.vercel.app", "https://accounts.google.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "https://connect.facebook.net", "https://*.facebook.com", "*.fontawesome.com"],
+            frameSrc: ["'self'", "https://accounts.google.com", "https://*.facebook.com", "https://*.facebook.net"],
             styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdnjs.cloudflare.com", "*.fontawesome.com"],
             fontSrc: ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com", "*.fontawesome.com"],
-            imgSrc: ["'self'", "data:", "blob:", "*.vercel.app", "https://lh3.googleusercontent.com"],
-            connectSrc: ["'self'", "*.vercel.app", "http://localhost:5000", "https://aithor1.vercel.app", "https://accounts.google.com"],
-            frameAncestors: ["'self'", "http://localhost:5173", "https://voxio-v1.vercel.app", "https://aithor1.vercel.app", "*.vercel.app"],
+            imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://*.facebook.com", "*.vercel.app"],
+            connectSrc: ["'self'", "https://accounts.google.com", "https://graph.facebook.com", "https://*.facebook.com", "*.vercel.app", "http://localhost:5000"],
+            frameAncestors: ["'self'", "http://localhost:5173", "*.vercel.app"],
         },
-    }
+    },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 app.set('trust proxy', 1);
@@ -108,11 +108,12 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 const authLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    max: 20,
-    message: "Too many login attempts, please try again in an hour."
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Increase to 100 attempts
+    message: "Too many attempts, please try again later."
 });
 app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/google-login", authLimiter); // Also apply to Google login
 
 // ✅ Routes 
 app.use("/api/chat", chatRoutes);
@@ -272,6 +273,12 @@ app.get('/api/health', (req, res) => {
 
 // ✅ التعامل مع الأخطاء
 app.use((err, req, res, next) => {
+    const errorLog = `[${new Date().toISOString()}] ${req.method} ${req.url}\n${err.stack || err.message}\n\n`;
+    try {
+        fs.appendFileSync(path.join(process.cwd(), 'error.log'), errorLog);
+    } catch (fsErr) {
+        console.error("Failed to write to error.log", fsErr);
+    }
     console.error("❌ Global Error Handler:", err.stack || err.message);
     res.status(500).json({ 
         success: false, 

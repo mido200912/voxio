@@ -1,4 +1,6 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import axios from 'axios';
 import { requireAuth } from '../middleware/auth.js';
 import Integration from '../models/Integration.js';
@@ -177,42 +179,176 @@ router.patch('/:id/toggle', requireAuth, async (req, res) => {
 });
 
 // @route   POST /api/integration-manager/whatsapp
-// @desc    Manually configure WhatsApp
+// @desc    Manual WhatsApp Business setup with user-provided credentials
 // @access  Private
 router.post('/whatsapp', requireAuth, async (req, res) => {
     try {
-        const { phoneNumberId, accessToken } = req.body;
-        
+        const { phoneNumberId, accessToken, wabaId } = req.body;
+
+        if (!phoneNumberId || !accessToken || !wabaId) {
+            return res.status(400).json({ error: 'Phone Number ID, Access Token, and WABA ID are all required.' });
+        }
+
         const company = await Company.findOne({ owner: req.user._id });
         if (!company) {
             return res.status(404).json({ error: 'Company not found' });
         }
 
+        // Save to User model
+        const user = await User.findById(req.user._id);
+        if (user) {
+            user.wabaId = wabaId;
+            user.phoneNumberId = phoneNumberId;
+            user.whatsappAccessToken = accessToken;
+            await user.save();
+        }
+
+        // Save to Integration
         let integration = await Integration.findOne({ company: company._id, platform: 'whatsapp' });
 
         if (!integration) {
-            if (!phoneNumberId || !accessToken) {
-                return res.status(400).json({ error: 'Phone Number ID and Access Token are required for new integration' });
-            }
             integration = await Integration.create({
                 company: company._id,
                 platform: 'whatsapp',
-                credentials: { phoneNumberId, accessToken },
+                credentials: { phoneNumberId, accessToken, wabaId },
+                isActive: true
+            });
+        } else {
+            integration.credentials = { phoneNumberId, accessToken, wabaId };
+            integration.isActive = true;
+            await integration.save();
+        }
+
+        console.log(`[WhatsApp Manual] Connected for company ${company._id}: WABA=${wabaId}, Phone=${phoneNumberId}`);
+        res.json({ message: 'WhatsApp connected successfully', integration });
+    } catch (error) {
+        console.error('Error in manual WhatsApp setup:', error);
+        res.status(500).json({ error: 'Server error during WhatsApp configuration' });
+    }
+});
+
+// @route   POST /api/integration-manager/whatsapp/exchange
+// @desc    Exchange short-lived token for long-lived and auto-discover WhatsApp IDs
+// @access  Private
+router.post('/whatsapp/exchange', requireAuth, async (req, res, next) => {
+    try {
+        const { shortLivedToken, wabaId: providedWabaId, phoneNumberId: providedPhoneNumberId } = req.body;
+        
+        if (!shortLivedToken) {
+            return res.status(400).json({ error: 'Short-lived token is required' });
+        }
+
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        const appId = process.env.META_APP_ID;
+        const appSecret = process.env.META_APP_SECRET;
+
+        console.log(`[DEBUG] Using App ID: ${appId ? appId.substring(0, 4) + '***' : 'MISSING'}`);
+        console.log(`[DEBUG] Provided WABA ID: ${providedWabaId || 'NONE'}`);
+        console.log(`[DEBUG] Provided Phone ID: ${providedPhoneNumberId || 'NONE'}`);
+
+        if (!appId || !appSecret) {
+            return res.status(500).json({ error: 'Meta App credentials are not configured in backend .env' });
+        }
+
+        // 1. Exchange for long-lived token
+        const exchangeUrl = `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`;
+        const exchangeRes = await axios.get(exchangeUrl);
+        const longLivedToken = exchangeRes.data.access_token;
+
+        if (!longLivedToken) {
+            return res.status(400).json({ error: 'Failed to generate long-lived token' });
+        }
+
+        // 2. Use provided IDs from Embedded Signup, or fall back to auto-discovery
+        let wabaId = providedWabaId || null;
+        let phoneNumberId = providedPhoneNumberId || null;
+
+        if (!wabaId) {
+            console.log('[DEBUG] No WABA ID from Embedded Signup, trying auto-discovery...');
+            try {
+                const wabaUrl = `https://graph.facebook.com/v20.0/me?fields=whatsapp_business_accounts&access_token=${longLivedToken}`;
+                const wabaRes = await axios.get(wabaUrl);
+                const wabaAccounts = wabaRes.data.whatsapp_business_accounts?.data;
+                
+                if (wabaAccounts && wabaAccounts.length > 0) {
+                    wabaId = wabaAccounts[0].id;
+                    console.log(`[DEBUG] Found WABA via auto-discovery: ${wabaId}`);
+                }
+            } catch (err) {
+                console.error('[DEBUG] Auto-discovery failed:', err.response?.data?.error?.message || err.message);
+            }
+        }
+
+        if (!phoneNumberId && wabaId) {
+            try {
+                const phonesUrl = `https://graph.facebook.com/v20.0/${wabaId}/phone_numbers?access_token=${longLivedToken}`;
+                const phonesRes = await axios.get(phonesUrl);
+                if (phonesRes.data?.data?.length > 0) {
+                    phoneNumberId = phonesRes.data.data[0].id;
+                    console.log(`[DEBUG] Found Phone ID via auto-discovery: ${phoneNumberId}`);
+                }
+            } catch (err) {
+                console.error('[DEBUG] Phone discovery failed:', err.response?.data?.error?.message || err.message);
+            }
+        }
+
+        if (!wabaId) {
+            return res.status(400).json({ error: 'No WhatsApp Business Account found. Please complete the signup process fully.' });
+        }
+
+        console.log(`[DEBUG] Final WABA ID: ${wabaId}, Phone ID: ${phoneNumberId || 'pending'}`);
+
+
+        // Save these IDs and the long-lived token to the user document/integration
+        
+        // As per instructions, save to User's document
+        const user = await User.findById(req.user._id);
+        if (user) {
+            user.wabaId = wabaId;
+            user.phoneNumberId = phoneNumberId;
+            user.whatsappAccessToken = longLivedToken;
+            await user.save();
+        }
+
+        // Save to Integration for consistency with the rest of the codebase
+        let integration = await Integration.findOne({ company: company._id, platform: 'whatsapp' });
+
+        if (!integration) {
+            integration = await Integration.create({
+                company: company._id,
+                platform: 'whatsapp',
+                credentials: { phoneNumberId, accessToken: longLivedToken, wabaId },
                 isActive: true
             });
         } else {
             integration.credentials = { 
-                phoneNumberId: phoneNumberId || integration.credentials?.phoneNumberId, 
-                accessToken: accessToken || integration.credentials?.accessToken 
+                phoneNumberId: phoneNumberId, 
+                accessToken: longLivedToken,
+                wabaId: wabaId
             };
             integration.isActive = true;
             await integration.save();
         }
 
-        res.json({ message: 'WhatsApp integrated successfully', integration });
+        res.json({ message: 'WhatsApp integrated successfully via Facebook Embedded Signup', integration });
     } catch (error) {
-        console.error('WhatsApp integration error:', error);
-        res.status(500).json({ error: 'Server error' });
+        const detailedError = error.response?.data || error.message;
+        console.error('WhatsApp exchange error:', detailedError);
+        
+        // Write to a dedicated debug file
+        try {
+            fs.appendFileSync(path.join(process.cwd(), 'meta_debug.log'), `[${new Date().toISOString()}]\n${JSON.stringify(detailedError, null, 2)}\n---\n`);
+        } catch (fsErr) {
+            console.error("Failed to write to meta_debug.log", fsErr);
+        }
+
+        const metaError = error.response?.data?.error?.message || error.response?.data?.error || error.message;
+        const fullMetaError = JSON.stringify(error.response?.data || error.message);
+        res.status(400).json({ error: `Meta API Error: ${metaError}`, details: fullMetaError });
     }
 });
 

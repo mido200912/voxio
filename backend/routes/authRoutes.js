@@ -104,6 +104,10 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
+    if (!user.password) {
+      return res.status(400).json({ error: "This account uses Google Login. Please use Google to sign in." });
+    }
+
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: "Invalid credentials" });
 
@@ -361,8 +365,12 @@ router.post("/google-login", async (req, res) => {
     }
 
   } catch (err) {
-    console.error("Unexpected Google login error:", err.message);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    console.error("Unexpected Google login error:", err);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+    });
   }
 });
 

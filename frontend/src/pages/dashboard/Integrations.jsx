@@ -23,7 +23,7 @@ const Integrations = () => {
         else toast.info(fullMsg);
     };
     const [showWhatsappModal, setShowWhatsappModal] = useState(false);
-    const [whatsappData, setWhatsappData] = useState({ phoneNumberId: '', accessToken: '' });
+    const [whatsappData, setWhatsappData] = useState({ phoneNumberId: '', accessToken: '', wabaId: '' });
 
     // Instagram State
     const [showInstagramModal, setShowInstagramModal] = useState(false);
@@ -138,6 +138,28 @@ const Integrations = () => {
             setLoading(false);
         }
     };
+
+    // Load Facebook SDK
+    useEffect(() => {
+        if (!window.FB) {
+            window.fbAsyncInit = function() {
+                window.FB.init({
+                    appId      : import.meta.env.VITE_META_APP_ID || '1395422949270070',
+                    cookie     : true,
+                    xfbml      : true,
+                    version    : 'v20.0'
+                });
+            };
+
+            (function(d, s, id) {
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) return;
+                js = d.createElement(s); js.id = id;
+                js.src = "https://connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+        }
+    }, []);
 
     const getIntegrationStatus = (platformId) => {
         const integration = integrations.find(int => int.platform === platformId);
@@ -325,7 +347,7 @@ const Integrations = () => {
             });
             showToast('success', t.language === 'ar' ? 'تم الربط!' : 'Connected!', t.dashboard.integrationsPage.whatsappConfigSuccess || 'WhatsApp configured successfully');
             setShowWhatsappModal(false);
-            setWhatsappData({ phoneNumberId: '', accessToken: '' });
+            setWhatsappData({ phoneNumberId: '', accessToken: '', wabaId: '' });
             fetchIntegrations();
         } catch (error) {
             console.error('Error configuring WhatsApp:', error);
@@ -373,7 +395,9 @@ const Integrations = () => {
                 phoneNumberId: integration.credentials?.phoneNumberId || '',
                 accessToken: '' // Hide by default
             });
-            setShowWhatsappModal(true);
+            // We shouldn't show the manual modal for WhatsApp anymore, it's automated.
+            // Let's just trigger a toast saying it's connected automatically via FB.
+            showToast('info', t.language === 'ar' ? 'حالة الربط' : 'Connection Status', t.language === 'ar' ? 'واتساب متصل بالكامل.' : 'WhatsApp is fully automated.');
         } else if (platformId === 'instagram') {
             setIsInstagramEditing(true);
             setIsInstagramTokenRevealed(false);
@@ -598,81 +622,70 @@ const Integrations = () => {
                 </div>
             )}
 
-            {/* WhatsApp Modal */}
+            {/* WhatsApp Manual Setup Modal */}
             {showWhatsappModal && (
                 <div className="modal-overlay" onClick={() => setShowWhatsappModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h2>{t.dashboard.integrationsPage.whatsappModalTitle || 'WhatsApp Integration'}</h2>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '550px' }}>
+                        <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <i className="fab fa-whatsapp" style={{ color: '#25d366' }} />
+                            {t.language === 'ar' ? 'إعداد واتساب للأعمال' : 'WhatsApp Business Setup'}
+                        </h2>
+                        
+                        <div style={{ 
+                            background: 'rgba(37, 211, 102, 0.08)', 
+                            border: '1px solid rgba(37, 211, 102, 0.2)', 
+                            borderRadius: '12px', 
+                            padding: '14px', 
+                            marginBottom: '20px',
+                            fontSize: '13px',
+                            lineHeight: '1.6'
+                        }}>
+                            <strong>{t.language === 'ar' ? '📋 كيف تحصل على هذه البيانات:' : '📋 How to get these credentials:'}</strong>
+                            <ol style={{ margin: '8px 0 0 0', paddingLeft: '18px' }}>
+                                <li>{t.language === 'ar' ? 'اذهب إلى' : 'Go to'} <a href="https://business.facebook.com/settings/whatsapp-business-accounts" target="_blank" rel="noreferrer" style={{ color: '#25d366' }}>Meta Business Suite</a></li>
+                                <li>{t.language === 'ar' ? 'اختر حساب واتساب للأعمال الخاص بك' : 'Select your WhatsApp Business Account'}</li>
+                                <li>{t.language === 'ar' ? 'انسخ الـ WABA ID و Phone Number ID من الإعدادات' : 'Copy WABA ID & Phone Number ID from settings'}</li>
+                                <li>{t.language === 'ar' ? 'للحصول على Access Token، اذهب إلى' : 'For Access Token, go to'} <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noreferrer" style={{ color: '#25d366' }}>Graph API Explorer</a></li>
+                            </ol>
+                        </div>
+
                         <form onSubmit={handleWhatsappSubmit} className="whatsapp-form">
                             <div className="form-group">
-                                <label>{t.dashboard.integrationsPage.whatsappPhoneNumberId || 'Phone Number ID'}</label>
-                                {isWhatsappEditing && !isWhatsappTokenRevealed ? (
-                                    <div style={{ padding: '10px 14px', background: '#f8f9fa', borderRadius: '10px', border: '1px solid #ddd', color: '#888', fontStyle: 'italic', fontSize: '0.9rem' }}>
-                                        {t.language === 'ar' ? 'مخفي - يتطلب OTP للكشف' : 'Hidden - Requires OTP to reveal'}
-                                    </div>
-                                ) : (
-                                    <input
-                                        type="text"
-                                        required
-                                        value={whatsappData.phoneNumberId}
-                                        onChange={(e) => setWhatsappData({ ...whatsappData, phoneNumberId: e.target.value })}
-                                    />
-                                )}
+                                <label>{t.language === 'ar' ? 'معرف حساب واتساب للأعمال (WABA ID)' : 'WhatsApp Business Account ID (WABA ID)'}</label>
+                                <input
+                                    type="text"
+                                    value={whatsappData.wabaId}
+                                    onChange={e => setWhatsappData({ ...whatsappData, wabaId: e.target.value })}
+                                    placeholder={t.language === 'ar' ? 'مثال: 123456789012345' : 'e.g. 123456789012345'}
+                                    required
+                                />
                             </div>
                             <div className="form-group">
-                                <label>{t.dashboard.integrationsPage.whatsappAccessToken || 'Access Token'}</label>
-                                {isWhatsappEditing && !isWhatsappTokenRevealed ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        {!revealOtpVisible ? (
-                                            <button 
-                                                type="button" 
-                                                className="btn btn-outline"
-                                                onClick={() => requestRevealOtp('whatsapp')}
-                                                disabled={isRequestingOtp}
-                                                style={{ width: '100%', height: '45px', borderStyle: 'dashed' }}
-                                            >
-                                                {isRequestingOtp ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-eye" style={{ marginInlineEnd: '8px' }} />}
-                                                {t.language === 'ar' ? 'كشف الـ Token (يتطلب OTP)' : 'Reveal Token (Requires OTP)'}
-                                            </button>
-                                        ) : (
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <input
-                                                    type="text"
-                                                    placeholder={t.language === 'ar' ? 'أدخل الكود (6 أرقام)' : 'Enter Code (6 digits)'}
-                                                    value={revealOtpCode}
-                                                    onChange={(e) => setRevealOtpCode(e.target.value)}
-                                                    style={{ flex: 1, borderRadius: '10px', padding: '10px 14px', border: '1px solid #25d366' }}
-                                                />
-                                                <button 
-                                                    type="button" 
-                                                    className="btn btn-primary"
-                                                    onClick={verifyRevealOtp}
-                                                    disabled={isVerifyingRevealOtp}
-                                                    style={{ background: '#25d366', padding: '0 20px' }}
-                                                >
-                                                    {isVerifyingRevealOtp ? <i className="fas fa-spinner fa-spin" /> : (t.language === 'ar' ? 'تأكيد' : 'Verify')}
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <textarea
-                                        required
-                                        rows="3"
-                                        value={whatsappData.accessToken}
-                                        onChange={(e) => setWhatsappData({ ...whatsappData, accessToken: e.target.value })}
-                                    ></textarea>
-                                )}
+                                <label>{t.language === 'ar' ? 'معرف رقم الهاتف (Phone Number ID)' : 'Phone Number ID'}</label>
+                                <input
+                                    type="text"
+                                    value={whatsappData.phoneNumberId}
+                                    onChange={e => setWhatsappData({ ...whatsappData, phoneNumberId: e.target.value })}
+                                    placeholder={t.language === 'ar' ? 'مثال: 987654321098765' : 'e.g. 987654321098765'}
+                                    required
+                                />
                             </div>
-                            <p className="help-text" style={{ fontSize: '0.9rem', color: '#666', marginBottom: '20px' }}>
-                                {t.dashboard.integrationsPage.whatsappHelp || 'Get these details from the Meta Developer Dashboard.'}
-                            </p>
-                            <div className="modal-actions">
-                                <button type="button" className="btn btn-outline" onClick={() => setShowWhatsappModal(false)}>
-                                    {t.dashboard.integrationsPage.whatsappCancel || 'Cancel'}
+                            <div className="form-group">
+                                <label>{t.language === 'ar' ? 'رمز الوصول (Access Token)' : 'Access Token'}</label>
+                                <input
+                                    type="password"
+                                    value={whatsappData.accessToken}
+                                    onChange={e => setWhatsappData({ ...whatsappData, accessToken: e.target.value })}
+                                    placeholder={t.language === 'ar' ? 'الصق رمز الوصول هنا' : 'Paste your access token here'}
+                                    required
+                                />
+                            </div>
+                            <div className="modal-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+                                <button type="button" onClick={() => setShowWhatsappModal(false)} className="btn-secondary">
+                                    {t.language === 'ar' ? 'إلغاء' : 'Cancel'}
                                 </button>
-                                <button type="submit" className="btn btn-primary">
-                                    {t.dashboard.integrationsPage.whatsappSave || 'Save & Connect'}
+                                <button type="submit" className="btn-primary" style={{ background: '#25d366' }}>
+                                    {t.language === 'ar' ? 'حفظ وربط' : 'Save & Connect'}
                                 </button>
                             </div>
                         </form>

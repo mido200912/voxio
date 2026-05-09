@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             return { step: 'done' };
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.response?.data?.error || err.response?.data?.message || err.message);
             return { step: 'error' };
         } finally {
             setLoading(false);
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             return true;
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.response?.data?.error || err.response?.data?.message || err.message);
             return false;
         } finally {
             setLoading(false);
@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             return { step: 'done' };
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.response?.data?.error || err.response?.data?.message || err.message);
             return { step: 'error' };
         } finally {
             setLoading(false);
