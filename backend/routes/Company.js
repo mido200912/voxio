@@ -509,7 +509,7 @@ router.post("/", requireAuth, async (req, res) => {
   try {
     const {
       name, industry, size, companySize, description,
-      vision, mission, values, websiteUrl, allowedDomains, logo
+      vision, mission, values, websiteUrl, allowedDomains, logo, aiSettings
     } = req.body;
 
     const safeData = {
@@ -518,6 +518,7 @@ router.post("/", requireAuth, async (req, res) => {
       websiteUrl: websiteUrl || "",
       values: Array.isArray(values) ? values : [],
       allowedDomains: Array.isArray(allowedDomains) ? allowedDomains : [],
+      ...(aiSettings && { aiSettings }) // Only add if it exists
     };
 
     const existing = await Company.findOne({ owner: req.user._id });
