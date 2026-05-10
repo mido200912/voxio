@@ -62,9 +62,12 @@ app.use('/api/integrations/meta/data-deletion', express.raw({ type: '*/*' }));
 app.use(express.json({ limit: '2mb' }));
 app.use(hpp());
 // Custom XSS Middleware (Prevents Node 20+ getter error)
+const skipKeys = ['password', 'htmlContent', 'customHtml', 'customCss', 'code', 'userRequest', 'prompt'];
+
 const sanitizeObj = (obj) => {
   if (!obj || typeof obj !== 'object') return;
   for (let key in obj) {
+    if (skipKeys.includes(key)) continue; // Skip sanitization for code fields
     if (typeof obj[key] === 'string') {
       obj[key] = obj[key].replace(/<[^>]*>?/gm, ''); // simple strip tags
     } else if (typeof obj[key] === 'object') {
@@ -73,6 +76,11 @@ const sanitizeObj = (obj) => {
   }
 };
 app.use((req, res, next) => {
+  // Completely skip sanitization for chatbot editor routes that rely on HTML
+  if (req.originalUrl && req.originalUrl.includes('/chatbot-editor')) {
+      return next();
+  }
+
   if (req.body) sanitizeObj(req.body);
   if (req.query) sanitizeObj(req.query);
   if (req.params) sanitizeObj(req.params);
