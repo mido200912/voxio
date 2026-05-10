@@ -84,24 +84,24 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "https://connect.facebook.net", "https://*.facebook.com", "*.fontawesome.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "https://connect.facebook.net", "https://*.facebook.com", "*.fontawesome.com", "https://cdnjs.cloudflare.com"],
             frameSrc: ["'self'", "https://accounts.google.com", "https://*.facebook.com", "https://*.facebook.net"],
             styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdnjs.cloudflare.com", "*.fontawesome.com"],
             fontSrc: ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com", "*.fontawesome.com"],
-            imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://*.facebook.com", "*.vercel.app"],
-            connectSrc: ["'self'", "https://accounts.google.com", "https://graph.facebook.com", "https://*.facebook.com", "*.vercel.app", "http://localhost:5000"],
+            imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://*.facebook.com", "*.vercel.app", "https://res.cloudinary.com"],
+            connectSrc: ["'self'", "https://accounts.google.com", "https://graph.facebook.com", "https://*.facebook.com", "*.vercel.app", "http://localhost:5000", "https://openrouter.ai", "https://dev-c7z.pantheonsite.io"],
             frameAncestors: ["'self'", "http://localhost:5173", "*.vercel.app"],
         },
     },
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginOpenerPolicy: { policy: "unsafe-none" }, // ضروري جداً لعمل Google/Facebook Login
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 app.set('trust proxy', 1);
 const limiter = rateLimit({
-    max: 2000, // Increased for development and dashboard stability
+    max: 5000, // رفع الحد لضمان عدم حظر الطلبات في الـ Dashboard
     windowMs: 15 * 60 * 1000,
-    message: "Too many requests, please try again in 15 minutes.",
+    message: "Too many requests from this IP, please try again in 15 minutes.",
     standardHeaders: true,
     legacyHeaders: false,
 });
