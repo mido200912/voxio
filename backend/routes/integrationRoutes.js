@@ -44,6 +44,17 @@ router.post('/webhooks/meta', metaWebhook);
 // @route GET /api/integrations/webhooks/meta (تحقق Meta)
 router.get('/webhooks/meta', metaWebhook);
 
+// 🧪 Webhook diagnostic test endpoint
+router.get('/webhooks/meta/test', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        message: 'Meta webhook endpoint is alive and reachable!',
+        verifyToken: process.env.META_VERIFY_TOKEN ? 'SET' : 'MISSING',
+        metaAppSecret: process.env.META_APP_SECRET ? 'SET' : 'MISSING',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // @route POST /api/integrations/webhooks/shopify
 router.post('/webhooks/shopify', shopifyWebhook);
 
