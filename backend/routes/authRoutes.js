@@ -8,7 +8,10 @@ import { generateOtpEmail } from "../utils/emailTemplate.js";
 import { requireAuth } from "../middleware/auth.js";
 import { cacheDelete } from "../utils/cache.js";
 
+import { OAuth2Client } from 'google-auth-library';
+
 const router = express.Router();
+
 router.use(cookieParser());
 
 // توليد التوكنات
@@ -312,7 +315,7 @@ router.post("/google-login", async (req, res) => {
       console.log("DEBUG Google Login: ID Token exists? ", !!idToken);
       console.log("DEBUG Google Login: Client ID exists? ", !!process.env.GOOGLE_CLIENT_ID);
       
-      const { OAuth2Client } = await import('google-auth-library');
+      // Static import used
       const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
       const ticket = await client.verifyIdToken({
         idToken,
@@ -342,7 +345,7 @@ router.post("/google-login", async (req, res) => {
       if (user) {
         if (!user.googleId) {
           user.googleId = googleId;
-          cacheDelete(`user:${user._id}`);
+          cacheDelete(`users:id:${user._id}`);
           await user.save();
         }
       } else {
@@ -361,7 +364,7 @@ router.post("/google-login", async (req, res) => {
 
     } catch (dbErr) {
       console.error("Database error during Google login:", dbErr.message);
-      return res.status(500).json({ error: "Database error", details: dbErr.message });
+      return res.status(500).json({ error: "Database error", details: dbErr.message, stack: dbErr.stack });
     }
 
   } catch (err) {
