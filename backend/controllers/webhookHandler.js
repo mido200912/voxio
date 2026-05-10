@@ -180,21 +180,26 @@ export const handleWhatsAppMessage = async (body) => {
                             await CompanyChat.create({ company: company._id, user: from, text: reply, sender: 'ai', platform: 'whatsapp' });
 
                         } catch (msgError) {
-                            console.error(`❌ WhatsApp Message Error:`, msgError.message);
+                            console.error(`❌ WhatsApp Message Error:`, msgError.response?.data || msgError.message);
                             
-                            // Construct error message for the user
-                            const errorMsg = `⚠️ *WhatsApp Bot Error*\n\n*Error:* ${msgError.message}\n${msgError.response?.data ? `*Details:* ${JSON.stringify(msgError.response.data)}` : ''}\n\n_Fix this to restore AI responses._`;
+                            // تفاصيل الخطأ من فيسبوك
+                            const metaError = msgError.response?.data?.error;
+                            const detailedError = metaError 
+                                ? `❌ Meta Error: ${metaError.message}\nCode: ${metaError.code}\nSubcode: ${metaError.error_subcode}\nType: ${metaError.type}`
+                                : `❌ Error: ${msgError.message}`;
 
-                            // Try to send error back to user
+                            const errorReport = `⚠️ *WhatsApp System Alert*\n\n${detailedError}\n\n_Please check your Access Token permissions in Meta Dashboard._`;
+
+                            // محاولة إرسال تقرير الخطأ للمستخدم
                             if (integration?.credentials?.accessToken) {
                                 try {
                                     await axios.post(
                                         `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
-                                        { messaging_product: "whatsapp", to: from, type: "text", text: { body: errorMsg } },
+                                        { messaging_product: "whatsapp", to: from, type: "text", text: { body: errorReport } },
                                         { headers: { Authorization: `Bearer ${integration.credentials.accessToken}`, "Content-Type": "application/json" } }
                                     );
                                 } catch (reportErr) {
-                                    console.error("Failed to send error report to WA:", reportErr.response?.data || reportErr.message);
+                                    console.error("Final fallback failed:", reportErr.response?.data || reportErr.message);
                                 }
                             }
 
