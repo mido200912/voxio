@@ -1,7 +1,7 @@
 // routes/publicCompanyChat.js
 import express from "express";
 import axios from "axios";
-import Company from "../models/company.js";
+import Company from "../models/Company.js";
 import { extractCorexReply, fetchAiResponse } from "../utils/corexHelper.js";
 import { getChatHistory, formatHistoryForPrompt } from "../utils/chatHistoryHelper.js";
 import { getCompanyAIContext } from "../utils/promptHelper.js";

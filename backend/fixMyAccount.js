@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Company from './models/company.js';
+import Company from './models/Company.js';
 import User from './models/User.js';
 
 dotenv.config();

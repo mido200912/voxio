@@ -41,34 +41,45 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
 
     // 🚀 1. If user specifically chose a model (Llama/Gemma), prioritize OpenRouter FIRST
     if (preferredModel && openRouterApiKey) {
-        try {
-            let targetModel = preferredModel;
-            // Force free tier for Meta/Google models if not already specified to avoid 402 Payment Required
-            if ((targetModel.includes("meta-llama") || targetModel.includes("google")) && !targetModel.includes(":free")) {
-                targetModel += ":free";
+        let modelsToTry = [preferredModel];
+        if (preferredModel.includes(":free")) {
+            modelsToTry.push("openrouter/free"); // Fallback for free models if rate-limited
+        }
+
+        for (let targetModel of modelsToTry) {
+            try {
+                // Force free tier for Meta/Google models if not already specified to avoid 402 Payment Required
+                if ((targetModel.includes("meta-llama") || targetModel.includes("google")) && !targetModel.includes(":free")) {
+                    targetModel += ":free";
+                }
+                
+                console.log(`🤖 AI: Requesting OpenRouter (${targetModel})...`);
+                const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+                    model: targetModel, 
+                    messages: [{ role: "user", content: truncatedQuestion }],
+                    max_tokens: 2000
+                }, {
+                    headers: {
+                        "Authorization": `Bearer ${openRouterApiKey}`,
+                        "Content-Type": "application/json"
+                    },
+                    timeout: 45000
+                });
+                
+                if (fallbackResponse.data?.choices?.length > 0) {
+                    const content = fallbackResponse.data.choices[0].message.content;
+                    if (content) {
+                        reply = content;
+                        console.log(`✅ AI: Response from OpenRouter successful (${targetModel}).`);
+                        return reply; // Return immediately, skip CoreSys
+                    } else {
+                        console.warn(`⚠️ OpenRouter returned empty content for ${targetModel}, trying next...`);
+                    }
+                }
+            } catch (fallbackError) {
+                console.error(`❌ OpenRouter failed for ${targetModel}:`, fallbackError.response?.data?.error?.message || fallbackError.message);
+                // Will gracefully fall through to the next model in the array, or eventually to CoreSys
             }
-            
-            console.log(`🤖 AI: Requesting OpenRouter (${targetModel})...`);
-            const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-                model: targetModel, 
-                messages: [{ role: "user", content: truncatedQuestion }],
-                max_tokens: 2000
-            }, {
-                headers: {
-                    "Authorization": `Bearer ${openRouterApiKey}`,
-                    "Content-Type": "application/json"
-                },
-                timeout: 45000
-            });
-            
-            if (fallbackResponse.data?.choices?.length > 0) {
-                reply = fallbackResponse.data.choices[0].message.content;
-                console.log(`✅ AI: Response from OpenRouter successful.`);
-                return reply; // Return immediately, skip CoreSys
-            }
-        } catch (fallbackError) {
-            console.error('❌ OpenRouter failed:', fallbackError.response?.data || fallbackError.message);
-            // Will gracefully fall through to CoreSys fallback below
         }
     }
 
@@ -103,33 +114,44 @@ export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallback
     
     // Try OpenRouter FIRST (POST = no URL length limits = full code context)
     if (openRouterApiKey) {
-        try {
-            const targetModel = preferredModel || "google/gemini-2.0-flash-001";
-            console.log(`🎨 Designer AI: Sending to OpenRouter (${targetModel})...`);
-            
-            const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-                model: targetModel,
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userPrompt }
-                ],
-                temperature: 0.7,
-                max_tokens: 8000
-            }, {
-                headers: {
-                    "Authorization": `Bearer ${openRouterApiKey}`,
-                    "Content-Type": "application/json"
-                },
-                timeout: 90000
-            });
-            
-            if (response.data?.choices?.length > 0) {
-                const reply = response.data.choices[0].message.content;
-                console.log("🎨 Designer AI: Got response, length:", reply.length);
-                return reply;
+        let targetModel = preferredModel || "google/gemini-2.0-flash-001";
+        let modelsToTry = [targetModel];
+        if (targetModel.includes(":free")) {
+            modelsToTry.push("openrouter/free");
+        }
+        
+        for (let model of modelsToTry) {
+            try {
+                console.log(`🎨 Designer AI: Sending to OpenRouter (${model})...`);
+                
+                const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+                    model: model,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 8000
+                }, {
+                    headers: {
+                        "Authorization": `Bearer ${openRouterApiKey}`,
+                        "Content-Type": "application/json"
+                    },
+                    timeout: 90000
+                });
+                
+                if (response.data?.choices?.length > 0) {
+                    const reply = response.data.choices[0].message.content;
+                    if (reply) {
+                        console.log(`🎨 Designer AI: Got response from ${model}, length:`, reply.length);
+                        return reply;
+                    } else {
+                        console.warn(`⚠️ Designer AI OpenRouter returned empty content for ${model}, trying next...`);
+                    }
+                }
+            } catch (err) {
+                console.error(`🎨 Designer AI OpenRouter failed for ${model}:`, err.response?.data?.error?.message || err.message);
             }
-        } catch (err) {
-            console.error("🎨 Designer AI OpenRouter failed:", err.response?.data || err.message);
         }
     }
     

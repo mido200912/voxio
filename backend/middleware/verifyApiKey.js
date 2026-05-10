@@ -1,4 +1,4 @@
-import Company from "../models/company.js";
+import Company from "../models/Company.js";
 
 // Middleware للتحقق من صحة مفتاح API
 const verifyApiKey = async (req, res, next) => {

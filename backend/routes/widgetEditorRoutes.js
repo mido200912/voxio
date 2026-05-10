@@ -1,5 +1,5 @@
 import express from "express";
-import Company from "../models/company.js";
+import Company from "../models/Company.js";
 import { requireAuth } from "../middleware/auth.js";
 import { fetchDesignerAiResponse } from "../utils/corexHelper.js";
 

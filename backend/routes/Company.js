@@ -1,7 +1,7 @@
 import express from "express";
 import axios from "axios";
 import crypto from "crypto";
-import Company from "../models/company.js";
+import Company from "../models/Company.js";
 import CompanyChat from "../models/CompanyChat.js";
 import { requireAuth } from "../middleware/auth.js";
 import { verifyApiKey } from "../middleware/verifyApiKey.js";
