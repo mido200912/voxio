@@ -385,7 +385,7 @@ const ChatbotEditor = () => {
                                 ))}
                             </div>
                         </div>
-                        <div className="code-container">
+                        <div className="code-container" dir="ltr" style={{ textAlign: 'left', direction: 'ltr' }}>
                             <Editor
                                 value={segments[activeFile]}
                                 onValueChange={code => handleSegmentChange(code, activeFile)}
@@ -395,6 +395,7 @@ const ChatbotEditor = () => {
                                     activeFile)}
                                 padding={20}
                                 className="prism-editor"
+                                style={{ fontFamily: '"Fira Code", "Consolas", monospace', fontSize: '14px', direction: 'ltr' }}
                             />
                         </div>
                     </div>
