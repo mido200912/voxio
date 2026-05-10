@@ -643,49 +643,99 @@ const Integrations = () => {
                             <strong>{t.language === 'ar' ? '📋 كيف تحصل على هذه البيانات:' : '📋 How to get these credentials:'}</strong>
                             <ol style={{ margin: '8px 0 0 0', paddingLeft: '18px' }}>
                                 <li>{t.language === 'ar' ? 'اذهب إلى' : 'Go to'} <a href="https://business.facebook.com/settings/whatsapp-business-accounts" target="_blank" rel="noreferrer" style={{ color: '#25d366' }}>Meta Business Suite</a></li>
-                                <li>{t.language === 'ar' ? 'اختر حساب واتساب للأعمال الخاص بك' : 'Select your WhatsApp Business Account'}</li>
-                                <li>{t.language === 'ar' ? 'انسخ الـ WABA ID و Phone Number ID من الإعدادات' : 'Copy WABA ID & Phone Number ID from settings'}</li>
-                                <li>{t.language === 'ar' ? 'للحصول على Access Token، اذهب إلى' : 'For Access Token, go to'} <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noreferrer" style={{ color: '#25d366' }}>Graph API Explorer</a></li>
+                                <li>{t.language === 'ar' ? 'انسخ الـ WABA ID و Phone Number ID' : 'Copy WABA ID & Phone Number ID'}</li>
+                                <li>{t.language === 'ar' ? 'للحصول على توكن دائم، استخدم System User' : 'For Permanent Token, use System User'}</li>
                             </ol>
                         </div>
 
                         <form onSubmit={handleWhatsappSubmit} className="whatsapp-form">
-                            <div className="form-group">
-                                <label>{t.language === 'ar' ? 'معرف حساب واتساب للأعمال (WABA ID)' : 'WhatsApp Business Account ID (WABA ID)'}</label>
+                            <div className="input-group">
+                                <label>WhatsApp Business Account ID (WABA ID)</label>
                                 <input
                                     type="text"
                                     value={whatsappData.wabaId}
                                     onChange={e => setWhatsappData({ ...whatsappData, wabaId: e.target.value })}
-                                    placeholder={t.language === 'ar' ? 'مثال: 123456789012345' : 'e.g. 123456789012345'}
+                                    placeholder="e.g. 1701810874327239"
                                     required
                                 />
                             </div>
-                            <div className="form-group">
-                                <label>{t.language === 'ar' ? 'معرف رقم الهاتف (Phone Number ID)' : 'Phone Number ID'}</label>
+                            <div className="input-group">
+                                <label>Phone Number ID</label>
                                 <input
                                     type="text"
                                     value={whatsappData.phoneNumberId}
                                     onChange={e => setWhatsappData({ ...whatsappData, phoneNumberId: e.target.value })}
-                                    placeholder={t.language === 'ar' ? 'مثال: 987654321098765' : 'e.g. 987654321098765'}
+                                    placeholder="e.g. 1058951123969777"
                                     required
                                 />
                             </div>
-                            <div className="form-group">
-                                <label>{t.language === 'ar' ? 'رمز الوصول (Access Token)' : 'Access Token'}</label>
-                                <input
-                                    type="password"
+                            <div className="input-group">
+                                <label>Access Token</label>
+                                <textarea
                                     value={whatsappData.accessToken}
                                     onChange={e => setWhatsappData({ ...whatsappData, accessToken: e.target.value })}
-                                    placeholder={t.language === 'ar' ? 'الصق رمز الوصول هنا' : 'Paste your access token here'}
+                                    placeholder="EAAG..."
                                     required
+                                    style={{ minHeight: '80px', padding: '10px' }}
                                 />
                             </div>
-                            <div className="modal-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                                <button type="button" onClick={() => setShowWhatsappModal(false)} className="btn-secondary">
+
+                            <hr className="modal-divider" />
+                            <h4 className="modal-subtitle">{t.language === 'ar' ? '🤖 إعدادات الذكاء الاصطناعي' : '🤖 AI Settings'}</h4>
+
+                            <div className="input-row">
+                                <div className="input-group">
+                                    <label>{t.language === 'ar' ? 'وضع الرد' : 'AI Mode'}</label>
+                                    <select 
+                                        value={whatsappData.aiMode || 'restricted'}
+                                        onChange={(e) => setWhatsappData({...whatsappData, aiMode: e.target.value})}
+                                    >
+                                        <option value="restricted">{t.language === 'ar' ? 'مقيد (الشركة فقط)' : 'Restricted (Company)'}</option>
+                                        <option value="general">{t.language === 'ar' ? 'عام (رد على كل شيء)' : 'General (Answer All)'}</option>
+                                    </select>
+                                </div>
+
+                                <div className="input-group">
+                                    <label>{t.language === 'ar' ? 'موديل AI' : 'AI Model'}</label>
+                                    <select 
+                                        value={whatsappData.aiModel || 'meta-llama/llama-3.1-8b-instruct'}
+                                        onChange={(e) => setWhatsappData({...whatsappData, aiModel: e.target.value})}
+                                    >
+                                        <option value="meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B</option>
+                                        <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
+                                        <option value="google/gemma-2-9b-it">Gemma 2 9B</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="input-group" style={{ marginTop: '10px' }}>
+                                <label>{t.language === 'ar' ? 'اللغات' : 'Languages'}</label>
+                                <div className="language-tags">
+                                    {['Arabic', 'English', 'French', 'Spanish'].map(lang => (
+                                        <label key={lang} className="lang-tag">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={(whatsappData.languages || ['Arabic', 'English']).includes(lang)}
+                                                onChange={(e) => {
+                                                    const currentLangs = whatsappData.languages || ['Arabic', 'English'];
+                                                    const newLangs = e.target.checked 
+                                                        ? [...currentLangs, lang]
+                                                        : currentLangs.filter(l => l !== lang);
+                                                    setWhatsappData({...whatsappData, languages: newLangs});
+                                                }}
+                                            />
+                                            <span>{lang}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="modal-actions" style={{ marginTop: '20px' }}>
+                                <button type="button" className="btn-secondary" onClick={() => setShowWhatsappModal(false)}>
                                     {t.language === 'ar' ? 'إلغاء' : 'Cancel'}
                                 </button>
                                 <button type="submit" className="btn-primary" style={{ background: '#25d366' }}>
-                                    {t.language === 'ar' ? 'حفظ وربط' : 'Save & Connect'}
+                                    {t.language === 'ar' ? 'حفظ وربط 🚀' : 'Save & Connect 🚀'}
                                 </button>
                             </div>
                         </form>

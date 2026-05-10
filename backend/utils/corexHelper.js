@@ -34,17 +34,18 @@ export function extractCorexReply(data, fallback = "لم أتمكن من الر�
  * Unified AI Request Handler
  * Tries CoreSys first, falls back to OpenRouter if API limits are hit or server fails.
  */
-export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.") {
+export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.", preferredModel = null) {
     let reply = null;
 
     const truncatedQuestion = fullQuestion.length > 12000 ? fullQuestion.substring(0, 12000) + "..." : fullQuestion;
 
+    // 1. Try CoreSys FIRST (Standard internal AI)
     try {
         const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
         const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
 
         const payload = { key: aiApiKey, act: 'chat', a: truncatedQuestion };
-        console.log(`🤖 AI: Requesting CoreSys (Key: ${aiApiKey.substring(0, 5)}...) with act: 'chat'...`);
+        console.log(`🤖 AI: Requesting CoreSys (Key: ${aiApiKey.substring(0, 5)}...)`);
         
         const aiResponse = await axios.post(apiUrl, 
             new URLSearchParams(payload).toString(),
@@ -54,50 +55,39 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
             }
         );
         
-        console.log(`📡 CoreSys Raw Response:`, JSON.stringify(aiResponse.data).substring(0, 200));
         reply = extractCorexReply(aiResponse.data, null);
-
-        if (reply) {
-            console.log("✅ AI: Response from CoreSys successful.");
-        } else {
-             console.warn("⚠️ CoreSys returned success but no text content found.");
-        }
     } catch (error) {
-        console.error(`❌ CoreSys Primary failed:`, error.response?.data || error.message);
+        console.error(`❌ CoreSys failed:`, error.message);
         reply = null;
     }
 
-    // 🔄 OpenRouter Fallback if CoreX fails
-    if (!reply) {
-        const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-        if (openRouterApiKey) {
-            try {
-                console.log(`🤖 AI: Requesting OpenRouter Fallback...`);
-                const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-                    model: "google/gemini-2.0-flash-001", 
-                    messages: [{ role: "user", content: truncatedQuestion }],
-                    max_tokens: 2000
-                }, {
-                    headers: {
-                        "Authorization": `Bearer ${openRouterApiKey}`,
-                        "Content-Type": "application/json"
-                    },
-                    timeout: 45000
-                });
-                
-                if (fallbackResponse.data?.choices?.length > 0) {
-                    reply = fallbackResponse.data.choices[0].message.content;
-                    console.log("✅ AI: Response from OpenRouter successful.");
-                }
-            } catch (fallbackError) {
-                // Silent fallback failure to avoid confusing the user if they know credits are low
-                const errData = fallbackError.response?.data;
-                if (errData?.error?.code === 402) {
-                    console.warn('ℹ️ OpenRouter Fallback skipped: Insufficient Credits.');
-                } else {
-                    console.error('❌ OpenRouter Fallback failed:', errData || fallbackError.message);
-                }
+    // 🔄 2. OpenRouter Fallback / Specific Model Request
+    // If we have a preferred model (Gemma, Llama) or CoreX failed, use OpenRouter
+    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+    if (openRouterApiKey && (!reply || preferredModel)) {
+        try {
+            // If user chose a specific model, we use it. Otherwise fallback to Gemini Flash.
+            const targetModel = preferredModel || "google/gemini-2.0-flash-001";
+            
+            console.log(`🤖 AI: Requesting OpenRouter (${targetModel})...`);
+            const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+                model: targetModel, 
+                messages: [{ role: "user", content: truncatedQuestion }],
+                max_tokens: 2000
+            }, {
+                headers: {
+                    "Authorization": `Bearer ${openRouterApiKey}`,
+                    "Content-Type": "application/json"
+                },
+                timeout: 45000
+            });
+            
+            if (fallbackResponse.data?.choices?.length > 0) {
+                reply = fallbackResponse.data.choices[0].message.content;
+                console.log(`✅ AI: Response from ${targetModel} successful.`);
             }
+        } catch (fallbackError) {
+            console.error('❌ OpenRouter failed:', fallbackError.response?.data || fallbackError.message);
         }
     }
 

@@ -147,14 +147,29 @@ export const handleWhatsAppMessage = async (body) => {
                             }
                             const accessToken = integration.credentials.accessToken;
 
+                            const settings = integration.settings || {};
+                            const aiModel = settings.aiModel || "meta-llama/llama-3.1-8b-instruct";
+                            const aiMode = settings.aiMode || "restricted";
+                            const languages = (settings.languages || ['Arabic', 'English']).join(', ');
+
                             const context = await getCompanyAIContext(company, integration);
                             const history = await getChatHistory(company._id, from, 'whatsapp', 5);
                             const historyContext = formatHistoryForPrompt(history);
 
+                            // 🧠 Build Powerful System Prompt based on Mode
+                            let systemPrompt = context;
+                            if (aiMode === 'restricted') {
+                                systemPrompt += `\n⚠️ STRICT MODE: You are a professional assistant for this company ONLY. Do NOT answer questions about politics, other companies, general trivia, or anything unrelated to the company info above. If the question is unrelated, politely say that you can only help with company matters.`;
+                            } else {
+                                systemPrompt += `\n🌍 GENERAL MODE: You are a helpful assistant for this company. Answer company questions using the info above, but you are also free to help the user with any other general questions they might have.`;
+                            }
+
+                            systemPrompt += `\n🌐 LANGUAGE: You MUST respond only in one of these languages: [${languages}]. Default to Arabic if the user speaks Arabic.`;
+
                             // Save user message to DB
                             await CompanyChat.create({ company: company._id, user: from, text: messageText, sender: 'user', platform: 'whatsapp' }).catch(e => console.error("DB Save Err:", e.message));
 
-                            console.log(`[WhatsApp Webhook] Fetching AI response...`);
+                            console.log(`[WhatsApp Webhook] Fetching AI response using Model: ${aiModel}...`);
                             
                             // ✅ Mark message as read (Meta Standard)
                             await axios.post(
@@ -163,10 +178,10 @@ export const handleWhatsAppMessage = async (body) => {
                                 { headers: { Authorization: `Bearer ${accessToken}` } }
                             ).catch(e => console.warn("Read Status Err:", e.message));
 
-                            const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${messageText}`, "AI_ERROR_RETRY_LATER");
+                            const reply = await fetchAiResponse(`${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`, "AI_ERROR_RETRY_LATER", aiModel);
                             
                             if (reply === "AI_ERROR_RETRY_LATER") {
-                                throw new Error("AI Assistant failed to generate a response (Both CoreX and OpenRouter failed). Please check API keys.");
+                                throw new Error("AI Assistant failed to generate a response. Please check API keys.");
                             }
 
                             console.log(`[WhatsApp Webhook] AI generated response: ${reply.substring(0, 30)}...`);
