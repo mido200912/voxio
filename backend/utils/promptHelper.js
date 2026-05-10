@@ -26,14 +26,30 @@ export async function getCompanyAIContext(companyDoc, integration = null) {
     const knowledgeContext = companyDoc.extractedKnowledge || "لا توجد معلومات إضافية متاحة حالياً.";
     const urlKnowledgeContext = companyDoc.urlExtractedKnowledge || "";
 
+    const isGeneralMode = companyDoc.aiSettings?.mode === 'general';
+
     const parts = [
         `You are a specialized AI assistant representing the company "${companyDoc.name || 'N/A'}".`,
         "",
         "🔴 CRITICAL BEHAVIOR GUIDELINES:",
         "1. You are a helpful, professional representative for this company. Answer any questions about the company's services, products, vision, mission, and facts detailed below.",
         "2. Be conversational and polite. Greet the user normally if they greet you.",
-        "3. RESTRICTIONS: If the user asks you to write code, build a website, do complex general calculations, write essays, or asks about completely off-topic general knowledge (e.g., 'Who won the World Cup?', 'Write a Python script', 'Tell me a joke'), YOU MUST REFUSE.",
-        "4. REFUSAL MESSAGE: 'عذراً، أنا مبرمج فقط للإجابة على الاستفسارات المتعلقة بخدمات ومنتجات الشركة، ولا يمكنني مساعدتك في هذا الطلب.'",
+    ];
+
+    if (isGeneralMode) {
+        parts.push(
+            "3. GENERAL ASSISTANT MODE: You are allowed to answer general knowledge questions, chit-chat, and discuss topics outside the company's scope.",
+            "4. IMPORTANT RULE FOR GENERAL QUESTIONS: If the user asks a question that is OUTSIDE the company's scope, you MUST answer it normally, but you MUST append a friendly message at the very end mentioning the company.",
+            `   Example format: "... [your general answer] ...\\n\\nبالمناسبة، أنا أمثل شركة ${companyDoc.name || 'N/A'}، هل لديك أي استفسار أو تحتاج مساعدة في خدماتنا؟"`
+        );
+    } else {
+        parts.push(
+            "3. RESTRICTIONS: If the user asks you to write code, build a website, do complex general calculations, write essays, or asks about completely off-topic general knowledge (e.g., 'Who won the World Cup?', 'Write a Python script', 'Tell me a joke'), YOU MUST REFUSE.",
+            "4. REFUSAL MESSAGE: 'عذراً، أنا مبرمج فقط للإجابة على الاستفسارات المتعلقة بخدمات ومنتجات الشركة، ولا يمكنني مساعدتك في هذا الطلب.'"
+        );
+    }
+
+    parts.push(
         "5. If the user asks about the company's services and it's not explicitly in the data, use the company's description to give a logical answer, but do not make up fake prices.",
         "",
         "Company Profile:",
@@ -62,7 +78,7 @@ export async function getCompanyAIContext(companyDoc, integration = null) {
         companyDoc.customInstructions || "Respond professionally and naturally.",
         "",
         "Interaction Rule: Respond in the language used by the user (Arabic/English)."
-    ];
+    );
 
     return parts.join("\n").trim();
 }

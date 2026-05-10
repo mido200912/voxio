@@ -280,9 +280,7 @@ const ChatbotEditor = () => {
                                         style={{ width: '100%', fontSize: '0.85rem', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }}
                                     >
                                         <optgroup label="Coding Specialists">
-                                            <option value="qwen/qwen-2.5-coder-32b-instruct">Qwen 2.5 Coder 32B (Best Code)</option>
-                                            <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Great Logic)</option>
-                                            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Fast)</option>
+                                            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Fast & Stable)</option>
                                         </optgroup>
                                     </select>
                                 </div>
