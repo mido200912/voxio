@@ -80,21 +80,23 @@ async function saveChatMsg(companyId, userId, text, sender, platform = 'telegram
  */
 export const handleWhatsAppMessage = async (body) => {
     try {
-        // [DEBUG] Log all incoming payloads that hit this function to the database immediately
-        try {
-            const ints = await Integration.find({ platform: 'whatsapp' });
-            if (ints.length > 0) {
-                 await CompanyChat.create({ company: ints[0].company, user: 'WEBHOOK_DIAGNOSTICS', text: `Webhook Recv. Object: ${body.object}`, sender: 'ai', platform: 'whatsapp' });
-            }
-        } catch (e) {}
+        console.log(`[WhatsApp Debug] Full Webhook Body:`, JSON.stringify(body));
 
-        if (body.object !== 'whatsapp_business_account') return;
+        if (body.object !== 'whatsapp_business_account') {
+            console.log(`[WhatsApp Debug] Object is not whatsapp_business_account, it is: ${body.object}`);
+            return;
+        }
 
         for (const entry of body.entry) {
+            console.log(`[WhatsApp Debug] Processing Entry ID: ${entry.id}`);
             for (const change of entry.changes) {
+                console.log(`[WhatsApp Debug] Change Field: ${change.field}`);
                 if (change.field === 'messages') {
                     const value = change.value;
-                    if (value.statuses) continue;
+                    if (value.statuses) {
+                        console.log(`[WhatsApp Debug] Received a status update (read/delivered), ignoring.`);
+                        continue;
+                    }
 
                     if (value.messages && value.messages.length > 0) {
                         const message = value.messages[0];
@@ -104,16 +106,20 @@ export const handleWhatsAppMessage = async (body) => {
                         const phoneNumberId = value.metadata.phone_number_id;
                         const displayPhoneNumber = value.metadata.display_phone_number;
                         
-                        console.log(`[WhatsApp Webhook] Received message from ${from} to ${phoneNumberId} (Display: ${displayPhoneNumber}): ${messageText.substring(0, 30)}`);
+                        console.log(`[WhatsApp Webhook] Message from ${from} to ${phoneNumberId}. Text: ${messageText}`);
 
-                        if (processedMessages.has(messageId)) continue;
+                        if (processedMessages.has(messageId)) {
+                            console.log(`[WhatsApp Debug] Message ${messageId} already processed, skipping.`);
+                            continue;
+                        }
                         processedMessages.add(messageId);
-                        if (processedMessages.size > 1000) processedMessages.delete(processedMessages.values().next().value);
 
                         const allWaIntegrations = await Integration.find({
                             platform: 'whatsapp',
                             isActive: true
                         });
+
+                        console.log(`[WhatsApp Debug] Looking for integration with Phone ID: ${phoneNumberId} or Display: ${displayPhoneNumber}`);
 
                         let integration = allWaIntegrations.find(int => 
                             int.credentials?.phoneNumberId === phoneNumberId || 
@@ -121,14 +127,15 @@ export const handleWhatsAppMessage = async (body) => {
                             (displayPhoneNumber && int.credentials?.phoneNumberId === displayPhoneNumber.replace(/[^0-9]/g, ''))
                         );
 
-                        // Fallback: Just grab the first active WhatsApp integration if there's only one in the whole system.
                         if (!integration && allWaIntegrations.length > 0) {
+                            console.log(`[WhatsApp Debug] No direct match found. Active integrations count: ${allWaIntegrations.length}`);
+                            console.log(`[WhatsApp Debug] First integration in DB has Phone ID: ${allWaIntegrations[0].credentials?.phoneNumberId}`);
                             integration = allWaIntegrations[0];
-                            await CompanyChat.create({ company: integration.company, user: 'SYSTEM_LOG', text: `Fallback triggered. Phone ID: ${phoneNumberId}, Integrations found: ${allWaIntegrations.length}`, sender: 'ai', platform: 'whatsapp' });
+                            console.log(`[WhatsApp Debug] Falling back to the first available integration for Company: ${integration.company}`);
                         }
 
                         if (!integration || !integration.company) {
-                            // Can't log to company if we don't know the company
+                            console.log(`[WhatsApp Debug] CRITICAL: No active integration found for this message. Stopping.`);
                             continue;
                         }
 
