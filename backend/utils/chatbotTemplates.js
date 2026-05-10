@@ -553,10 +553,12 @@ function getTemplateScript(apiUrl, apiKey) {
                     appendButtons(data.buttons, loadingRow);
                 }
             } else {
-                bubble.innerHTML = data.error || "عذراً، حدث خطأ ما.";
+                console.error("🔥 Chat Error Details:", data);
+                bubble.innerHTML = "❌ حدث خطأ: " + (data.details || data.error || "خطأ غير معروف في السيرفر");
             }
         } catch (e) {
-            bubble.innerHTML = "⚠ خطأ في الاتصال.";
+            console.error("🔥 Network/Fetch Error:", e);
+            bubble.innerHTML = "⚠ خطأ في الاتصال: " + e.message;
         } finally {
             isProcessing = false;
             input.disabled = false;

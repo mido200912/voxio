@@ -140,7 +140,7 @@ const ChatbotEditor = () => {
     };
 
     // Web Editor Specialized AI Model
-    const [codingModel, setCodingModel] = useState('qwen/qwen-2.5-coder-32b-instruct:free');
+    const [codingModel, setCodingModel] = useState('qwen/qwen-2.5-coder-32b-instruct');
 
     const sendMessage = async (e) => {
         e.preventDefault();
@@ -167,7 +167,11 @@ const ChatbotEditor = () => {
                 parseAndSetSegments(res.data.code);
             }
             setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: res.data.message || 'Updated! ✅' }]);
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            const errorMsg = err.response?.data?.details || err.response?.data?.error || err.message;
+            console.error("🔥 AI Editor Error:", err.response?.data || err.message);
+            setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: `❌ حدث خطأ: ${errorMsg}` }]);
+        }
         finally { setLoading(false); setAiProcessing(false); }
     };
 
@@ -276,9 +280,9 @@ const ChatbotEditor = () => {
                                         style={{ width: '100%', fontSize: '0.85rem', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }}
                                     >
                                         <optgroup label="Coding Specialists">
-                                            <option value="qwen/qwen-2.5-coder-32b-instruct:free">Qwen 2.5 Coder 32B (Best Code)</option>
-                                            <option value="mistralai/pixtral-12b:free">Pixtral 12B (Laguna Alternative)</option>
-                                            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Fast & Smart)</option>
+                                            <option value="qwen/qwen-2.5-coder-32b-instruct">Qwen 2.5 Coder 32B (Best Code)</option>
+                                            <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Great Logic)</option>
+                                            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Fast)</option>
                                         </optgroup>
                                     </select>
                                 </div>

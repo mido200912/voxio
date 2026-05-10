@@ -250,19 +250,19 @@ const Settings = () => {
                                 <select className="settings-select" value={companyData.aiSettings?.model}
                                     onChange={(e) => setCompanyData({...companyData, aiSettings: {...companyData.aiSettings, model: e.target.value}})}>
                                     <optgroup label="1. Reasoning (Deep Thinking)">
-                                        <option value="deepseek/deepseek-r1:free">DeepSeek R1 (King of Math/Logic)</option>
+                                        <option value="deepseek/deepseek-r1">DeepSeek R1 (King of Math/Logic)</option>
                                     </optgroup>
                                     <optgroup label="2. General Purpose (Balanced)">
-                                        <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Instructions)</option>
+                                        <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Instructions)</option>
                                         <option value="google/gemini-2.0-flash-001">Gemma 4 / Gemini Flash 2.0 (Fast/Multimodal)</option>
-                                        <option value="meta-llama/llama-3.1-405b-instruct:free">Llama 3.1 405B (Powerful)</option>
-                                        <option value="meta-llama/llama-3.1-70b-instruct:free">Llama 3.1 70B (Stable)</option>
+                                        <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1 405B (Powerful)</option>
+                                        <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B (Stable)</option>
                                     </optgroup>
                                     <optgroup label="3. High Efficiency (Fast & Smart)">
-                                        <option value="tencent/hunyuan-large:free">Hunyuan Large (High Efficiency)</option>
-                                        <option value="nvidia/llama-3.1-nemotron-70b-instruct:free">Nemotron 3 Super (Large Context)</option>
-                                        <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (Extremely Fast)</option>
-                                        <option value="google/gemma-2-9b-it:free">Gemma 2 9B (Efficient)</option>
+                                        <option value="tencent/hunyuan-large">Hunyuan Large (High Efficiency)</option>
+                                        <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nemotron 3 Super (Large Context)</option>
+                                        <option value="meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B (Extremely Fast)</option>
+                                        <option value="google/gemma-2-9b-it">Gemma 2 9B (Efficient)</option>
                                     </optgroup>
                                 </select>
                             </div>
