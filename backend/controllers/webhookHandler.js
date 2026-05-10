@@ -146,11 +146,12 @@ export const handleWhatsAppMessage = async (body) => {
                                 continue;
                             }
                             const accessToken = integration.credentials.accessToken;
-
-                            const settings = integration.settings || {};
-                            const aiModel = settings.aiModel || "meta-llama/llama-3.1-8b-instruct";
-                            const aiMode = settings.aiMode || "restricted";
-                            const languages = (settings.languages || ['Arabic', 'English']).join(', ');
+                            
+                            // 🌍 Get Global AI Settings from Company
+                            const aiSettings = company.aiSettings || {};
+                            const aiModel = aiSettings.model || "meta-llama/llama-3.1-8b-instruct";
+                            const aiMode = aiSettings.mode || "restricted";
+                            const languages = (aiSettings.languages || ['Arabic', 'English']).join(', ');
 
                             const context = await getCompanyAIContext(company, integration);
                             const history = await getChatHistory(company._id, from, 'whatsapp', 5);

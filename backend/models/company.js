@@ -22,6 +22,11 @@ class CompanyModel extends FirestoreModel {
         layout: "centered",
         font: "Inter"
       },
+      aiSettings: {
+        mode: 'restricted', // 'general' or 'restricted'
+        model: 'meta-llama/llama-3.1-8b-instruct',
+        languages: ['Arabic', 'English']
+      },
       ...data
     };
     return super.create(defaultData);

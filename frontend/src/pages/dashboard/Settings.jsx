@@ -144,13 +144,8 @@ const Settings = () => {
 
             // Convert values string back to array
             const payload = {
-                name: companyData.name,
-                industry: companyData.industry,
-                description: companyData.description,
-                vision: companyData.vision,
-                mission: companyData.mission,
+                ...companyData,
                 values: companyData.values.split(',').map(v => v.trim()).filter(v => v),
-                websiteUrl: companyData.websiteUrl,
                 allowedDomains: companyData.allowedDomains.split(',').map(d => d.trim()).filter(d => d),
                 size: companyData.companySize,
                 logo: logoUrl
@@ -211,7 +206,77 @@ const Settings = () => {
             </div>
 
             <div className="dash-grid">
-                {/* General Settings */}
+                {/* Global AI Configuration */}
+                <div className="dash-card animate-slide-in" style={{ gridColumn: '1 / -1' }}>
+                    <div className="card-header">
+                        <i className="fas fa-robot"></i>
+                        <h3>{language === 'ar' ? 'إعدادات الذكاء الاصطناعي العالمية' : 'Global AI Configuration'}</h3>
+                    </div>
+                    <div className="card-body">
+                        <div className="form-row">
+                            <div className="form-group half">
+                                <label>{language === 'ar' ? 'وضع الرد الذكي' : 'AI Response Mode'}</label>
+                                <select 
+                                    className="dash-input"
+                                    value={companyData.aiSettings?.mode || 'restricted'}
+                                    onChange={(e) => setCompanyData({
+                                        ...companyData, 
+                                        aiSettings: { ...companyData.aiSettings, mode: e.target.value }
+                                    })}
+                                >
+                                    <option value="restricted">{language === 'ar' ? 'وضع مقيد (يرد على بيانات الشركة فقط)' : 'Restricted (Answers company info only)'}</option>
+                                    <option value="general">{language === 'ar' ? 'وضع عام (يساعد في أي شيء)' : 'General (Answers anything)'}</option>
+                                </select>
+                            </div>
+                            <div className="form-group half">
+                                <label>{language === 'ar' ? 'موديل الذكاء الاصطناعي المفصل' : 'Preferred AI Model'}</label>
+                                <select 
+                                    className="dash-input"
+                                    value={companyData.aiSettings?.model || 'meta-llama/llama-3.1-8b-instruct'}
+                                    onChange={(e) => setCompanyData({
+                                        ...companyData, 
+                                        aiSettings: { ...companyData.aiSettings, model: e.target.value }
+                                    })}
+                                >
+                                    <option value="meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B (Fastest)</option>
+                                    <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B (Smartest)</option>
+                                    <option value="google/gemma-2-9b-it">Gemma 2 9B (Google)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label>{language === 'ar' ? 'اللغات المسموح بها' : 'Supported Languages'}</label>
+                            <div className="language-tags" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                                {['Arabic', 'English', 'French', 'Spanish'].map(lang => (
+                                    <label key={lang} className="lang-tag" style={{
+                                        display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px',
+                                        background: 'var(--bg-secondary)', borderRadius: '10px', cursor: 'pointer',
+                                        border: (companyData.aiSettings?.languages || []).includes(lang) ? '2px solid var(--dash-accent)' : '2px solid transparent'
+                                    }}>
+                                        <input 
+                                            type="checkbox"
+                                            style={{ display: 'none' }}
+                                            checked={(companyData.aiSettings?.languages || []).includes(lang)}
+                                            onChange={(e) => {
+                                                const currentLangs = companyData.aiSettings?.languages || ['Arabic', 'English'];
+                                                const newLangs = e.target.checked 
+                                                    ? [...currentLangs, lang]
+                                                    : currentLangs.filter(l => l !== lang);
+                                                setCompanyData({
+                                                    ...companyData,
+                                                    aiSettings: { ...companyData.aiSettings, languages: newLangs }
+                                                });
+                                            }}
+                                        />
+                                        <span style={{ fontSize: '14px', fontWeight: '500' }}>{lang}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="dash-card animate-slide-in" style={{ gridColumn: '1 / -1' }}>
                     <div className="card-header">
                         <i className="fas fa-building"></i>
