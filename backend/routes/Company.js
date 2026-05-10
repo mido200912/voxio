@@ -866,7 +866,7 @@ router.post("/external-request", async (req, res) => {
 
     // إرسال الطلب لنموذج الذكاء الاصطناعي مع نظام Fallback
     const fullQuestion = `${context}\n\nUser Question:\n${message}`;
-    const reply = await fetchAiResponse(fullQuestion, "عذرًا، لم أتمكن من معالجة الطلب الآن.");
+    const reply = await fetchAiResponse(fullQuestion, "عذرًا، لم أتمكن من معالجة الطلب الآن.", company.aiSettings?.model);
 
     // حفظ الطلب والرد في قاعدة البيانات
     company.requests.push({

@@ -179,7 +179,7 @@ export const handleWhatsAppMessage = async (body) => {
                                 { headers: { Authorization: `Bearer ${accessToken}` } }
                             ).catch(e => console.warn("Read Status Err:", e.message));
 
-                            let reply = await fetchAiResponse(`${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`, "AI_ERROR_RETRY_LATER", aiModel);
+                            let reply = await fetchAiResponse(`${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`, "AI_ERROR_RETRY_LATER", company.aiSettings?.model);
                             
                             if (reply === "AI_ERROR_RETRY_LATER") {
                                 throw new Error("AI Assistant failed to generate a response. Please check API keys.");
@@ -306,7 +306,7 @@ export const handleInstagramWebhook = async (body) => {
                             const company = await Company.findById(integration.company);
                             if (company) {
                                 const context = await getCompanyAIContext(company, integration);
-                                replyMsg = await fetchAiResponse(`${context}\n\nClient asking on Instagram: ${messageText}`);
+                                replyMsg = await fetchAiResponse(`${context}\n\nClient asking on Instagram: ${messageText}`, "عذراً لم أتمكن من الرد.", company.aiSettings?.model);
                             }
                         }
 
@@ -608,7 +608,7 @@ export const handleTelegramWebhook = async (req, res) => {
                 const context = await getCompanyAIContext(companyDoc, integration);
                 const history = await getChatHistory(companyId, userId, 'telegram', 5);
                 const historyContext = formatHistoryForPrompt(history);
-                const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${text}`);
+                const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${text}`, "عذراً لم أتمكن من الرد.", company.aiSettings?.model);
                 await tgSend(botToken, chatId, reply);
                 await saveChatMsg(companyId, userId, reply, 'ai');
 
@@ -633,7 +633,7 @@ export const handleTelegramWebhook = async (req, res) => {
         await saveChatMsg(companyId, userId, text, 'user');
         const history = await getChatHistory(companyId, userId, 'telegram', 5);
         const historyContext = formatHistoryForPrompt(history);
-        const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${text}`);
+        const reply = await fetchAiResponse(`${context}\n\n${historyContext}User Question:\n${text}`, "عذراً لم أتمكن من الرد.", companyDoc.aiSettings?.model);
         await tgSend(botToken, chatId, reply);
         await saveChatMsg(companyId, userId, reply, 'ai');
 

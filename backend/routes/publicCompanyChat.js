@@ -186,7 +186,8 @@ router.post("/chat", async (req, res) => {
 
     // AI Response
     const fullQuestion = `${context}\n\n${historyContext}User Question:\n${prompt}`;
-    const reply = await fetchAiResponse(fullQuestion, "لم يتم الحصول على رد من الذكاء الاصطناعي.");
+    const preferredModel = company.aiSettings?.model || null;
+    const reply = await fetchAiResponse(fullQuestion, "لم يتم الحصول على رد من الذكاء الاصطناعي.", preferredModel);
 
     // Save AI Response
     await CompanyChat.create({ ...baseChatData, text: reply, sender: 'ai' });

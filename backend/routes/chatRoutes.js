@@ -37,7 +37,7 @@ router.post("/", requireAuth, async (req, res) => {
     const fullQuestion = `${context}\n\n${historyContext}User Question:\n${prompt}`;
     
     // استخدام الدالة الموحدة المدمج بها Fallback
-    const reply = await fetchAiResponse(fullQuestion, "حدث خطأ أثناء الاتصال بالذكاء الاصطناعي.");
+    const reply = await fetchAiResponse(fullQuestion, "حدث خطأ أثناء الاتصال بالذكاء الاصطناعي.", company.aiSettings?.model);
 
     // Save AI reply to history
     if (company) {
