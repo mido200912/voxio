@@ -179,13 +179,18 @@ export const handleWhatsAppMessage = async (body) => {
                                 { headers: { Authorization: `Bearer ${accessToken}` } }
                             ).catch(e => console.warn("Read Status Err:", e.message));
 
-                            const reply = await fetchAiResponse(`${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`, "AI_ERROR_RETRY_LATER", aiModel);
+                            let reply = await fetchAiResponse(`${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`, "AI_ERROR_RETRY_LATER", aiModel);
                             
                             if (reply === "AI_ERROR_RETRY_LATER") {
                                 throw new Error("AI Assistant failed to generate a response. Please check API keys.");
                             }
 
-                            console.log(`[WhatsApp Webhook] AI generated response: ${reply.substring(0, 30)}...`);
+                            // ✂️ WhatsApp Max Length is 4096. We trim at 4000 to be safe.
+                            if (reply.length > 4000) {
+                                reply = reply.substring(0, 4000) + "\n\n... [تم اقتطاع باقي الرسالة لتجاوزها الحد المسموح به للواتساب]";
+                            }
+
+                            console.log(`[WhatsApp Webhook] AI generated response length: ${reply.length} chars. Sample: ${reply.substring(0, 30)}...`);
 
                             // Send AI Reply
                             await axios.post(
