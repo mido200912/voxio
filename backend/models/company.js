@@ -24,7 +24,7 @@ class CompanyModel extends FirestoreModel {
       },
       aiSettings: {
         mode: 'restricted', // 'general' or 'restricted'
-        model: 'meta-llama/llama-3.1-8b-instruct',
+        model: 'inclusionai/ring-2.6-1t:free',
         languages: ['Arabic', 'English']
       },
       ...data

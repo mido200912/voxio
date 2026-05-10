@@ -8,7 +8,7 @@ class IntegrationModel extends FirestoreModel {
         autoReply: true,
         syncProducts: false,
         aiMode: 'restricted', // 'general' or 'restricted'
-        aiModel: 'meta-llama/llama-3.1-8b-instruct', // Default model
+        aiModel: 'inclusionai/ring-2.6-1t:free', // Default model
         languages: ['Arabic', 'English'],
         commands: []
       },

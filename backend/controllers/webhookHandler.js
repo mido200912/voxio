@@ -149,7 +149,7 @@ export const handleWhatsAppMessage = async (body) => {
                             
                             // 🌍 Get Global AI Settings from Company
                             const aiSettings = company.aiSettings || {};
-                            const aiModel = aiSettings.model || "meta-llama/llama-3.1-8b-instruct";
+                            const aiModel = aiSettings.model || "inclusionai/ring-2.6-1t:free";
                             const aiMode = aiSettings.mode || "restricted";
                             const languages = (aiSettings.languages || ['Arabic', 'English']).join(', ');
 

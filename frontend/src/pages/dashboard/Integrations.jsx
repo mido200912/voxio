@@ -698,12 +698,10 @@ const Integrations = () => {
                                 <div className="input-group">
                                     <label>{t.language === 'ar' ? 'موديل AI' : 'AI Model'}</label>
                                     <select 
-                                        value={whatsappData.aiModel || 'meta-llama/llama-3.1-8b-instruct'}
+                                        value={whatsappData.aiModel || 'inclusionai/ring-2.6-1t:free'}
                                         onChange={(e) => setWhatsappData({...whatsappData, aiModel: e.target.value})}
                                     >
-                                        <option value="meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B</option>
-                                        <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
-                                        <option value="google/gemma-2-9b-it">Gemma 2 9B</option>
+                                        <option value="inclusionai/ring-2.6-1t:free">Ring 2.6 1T</option>
                                     </select>
                                 </div>
                             </div>
