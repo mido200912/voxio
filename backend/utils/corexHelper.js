@@ -36,38 +36,17 @@ export function extractCorexReply(data, fallback = "لم أتمكن من الر�
  */
 export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.", preferredModel = null) {
     let reply = null;
-
     const truncatedQuestion = fullQuestion.length > 12000 ? fullQuestion.substring(0, 12000) + "..." : fullQuestion;
-
-    // 1. Try CoreSys FIRST (Standard internal AI)
-    try {
-        const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-        const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
-
-        const payload = { key: aiApiKey, act: 'chat', a: truncatedQuestion };
-        console.log(`🤖 AI: Requesting CoreSys (Key: ${aiApiKey.substring(0, 5)}...)`);
-        
-        const aiResponse = await axios.post(apiUrl, 
-            new URLSearchParams(payload).toString(),
-            { 
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                timeout: 30000 
-            }
-        );
-        
-        reply = extractCorexReply(aiResponse.data, null);
-    } catch (error) {
-        console.error(`❌ CoreSys failed:`, error.message);
-        reply = null;
-    }
-
-    // 🔄 2. OpenRouter Fallback / Specific Model Request
-    // If we have a preferred model (Gemma, Llama) or CoreX failed, use OpenRouter
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-    if (openRouterApiKey && (!reply || preferredModel)) {
+
+    // 🚀 1. If user specifically chose a model (Llama/Gemma), prioritize OpenRouter FIRST
+    if (preferredModel && openRouterApiKey) {
         try {
-            // If user chose a specific model, we use it. Otherwise fallback to Gemini Flash.
-            const targetModel = preferredModel || "google/gemini-2.0-flash-001";
+            let targetModel = preferredModel;
+            // Force free tier for Meta/Google models if not already specified to avoid 402 Payment Required
+            if ((targetModel.includes("meta-llama") || targetModel.includes("google")) && !targetModel.includes(":free")) {
+                targetModel += ":free";
+            }
             
             console.log(`🤖 AI: Requesting OpenRouter (${targetModel})...`);
             const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
@@ -84,11 +63,31 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
             
             if (fallbackResponse.data?.choices?.length > 0) {
                 reply = fallbackResponse.data.choices[0].message.content;
-                console.log(`✅ AI: Response from ${targetModel} successful.`);
+                console.log(`✅ AI: Response from OpenRouter successful.`);
+                return reply; // Return immediately, skip CoreSys
             }
         } catch (fallbackError) {
             console.error('❌ OpenRouter failed:', fallbackError.response?.data || fallbackError.message);
+            // Will gracefully fall through to CoreSys fallback below
         }
+    }
+
+    // ⚙️ 2. CoreSys Fallback (Or primary if no preferred model chosen)
+    try {
+        const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
+        const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
+
+        const payload = { key: aiApiKey, act: 'chat', a: truncatedQuestion };
+        console.log(`🤖 AI: Requesting CoreSys (Key: ${aiApiKey.substring(0, 5)}...)`);
+        
+        const aiResponse = await axios.post(apiUrl, 
+            new URLSearchParams(payload).toString(),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 30000 }
+        );
+        
+        reply = extractCorexReply(aiResponse.data, null);
+    } catch (error) {
+        console.error(`❌ CoreSys failed:`, error.message);
     }
 
     return reply || fallbackText;

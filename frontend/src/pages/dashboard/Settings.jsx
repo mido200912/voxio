@@ -250,13 +250,13 @@ const Settings = () => {
                                 <select className="settings-select" value={companyData.aiSettings?.model}
                                     onChange={(e) => setCompanyData({...companyData, aiSettings: {...companyData.aiSettings, model: e.target.value}})}>
                                     <optgroup label="Llama Series (By Meta)">
-                                        <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1 405B (Powerful)</option>
-                                        <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B (Stable)</option>
-                                        <option value="meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B (Fast)</option>
+                                        <option value="meta-llama/llama-3.1-405b-instruct:free">Llama 3.1 405B (Powerful)</option>
+                                        <option value="meta-llama/llama-3.1-70b-instruct:free">Llama 3.1 70B (Stable)</option>
+                                        <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (Fast)</option>
                                     </optgroup>
                                     <optgroup label="Gemma Series (By Google)">
-                                        <option value="google/gemma-2-27b-it">Gemma 2 27B (Precise)</option>
-                                        <option value="google/gemma-2-9b-it">Gemma 2 9B (Efficient)</option>
+                                        <option value="google/gemma-2-27b-it:free">Gemma 2 27B (Precise)</option>
+                                        <option value="google/gemma-2-9b-it:free">Gemma 2 9B (Efficient)</option>
                                     </optgroup>
                                 </select>
                             </div>
