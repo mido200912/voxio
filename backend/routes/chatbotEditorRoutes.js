@@ -118,8 +118,14 @@ Remember: Modify the code to fulfill the current request while respecting the co
       return res.status(500).json({ error: "فشل التعديل، حاول تاني" });
     }
 
+    // Clean any markdown formatting inside the generated code
+    let finalCode = parsed.code;
+    if (typeof finalCode === 'string') {
+        finalCode = finalCode.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+    }
+    finalCode = unescapeHTML(finalCode);
+
     // Save updated HTML using the instance method
-    const finalCode = unescapeHTML(parsed.code);
     company.websiteConfig = {
       ...company.websiteConfig,
       htmlContent: finalCode

@@ -99,8 +99,14 @@ const ChatbotEditor = () => {
         finally { setInitialLoading(false); }
     };
 
-    const parseAndSetSegments = (code) => {
-        if (!code) return;
+    const parseAndSetSegments = (rawCode) => {
+        if (!rawCode) return;
+        // Clean markdown blocks if present
+        let code = rawCode;
+        if (typeof code === 'string') {
+            code = code.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+        }
+
         const styleMatch = code.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
         const scriptMatch = code.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
 
