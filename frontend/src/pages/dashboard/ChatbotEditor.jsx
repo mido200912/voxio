@@ -140,7 +140,7 @@ const ChatbotEditor = () => {
     };
 
     // Web Editor Specialized AI Model
-    const [codingModel, setCodingModel] = useState('qwen/qwen-2.5-coder-32b-instruct');
+    const [codingModel, setCodingModel] = useState('google/gemini-2.0-flash-001');
 
     const sendMessage = async (e) => {
         e.preventDefault();

@@ -42,17 +42,13 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
     // 🚀 1. If user specifically chose a model (Llama/Gemma), prioritize OpenRouter FIRST
     if (preferredModel && openRouterApiKey) {
         let modelsToTry = [preferredModel];
-        if (preferredModel.includes(":free")) {
-            modelsToTry.push("openrouter/free"); // Fallback for free models if rate-limited
+        if (!modelsToTry.includes("openrouter/free")) {
+            // Add a chain of reliable free models
+            modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");
         }
 
         for (let targetModel of modelsToTry) {
             try {
-                // Force free tier for Meta/Google models if not already specified to avoid 402 Payment Required
-                if ((targetModel.includes("meta-llama") || targetModel.includes("google")) && !targetModel.includes(":free")) {
-                    targetModel += ":free";
-                }
-                
                 console.log(`🤖 AI: Requesting OpenRouter (${targetModel})...`);
                 const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
                     model: targetModel, 
@@ -67,14 +63,18 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                 });
                 
                 if (fallbackResponse.data?.choices?.length > 0) {
-                    const content = fallbackResponse.data.choices[0].message.content;
+                    const content = fallbackResponse.data.choices[0].message?.content;
                     if (content) {
                         reply = content;
                         console.log(`✅ AI: Response from OpenRouter successful (${targetModel}).`);
                         return reply; // Return immediately, skip CoreSys
                     } else {
                         console.warn(`⚠️ OpenRouter returned empty content for ${targetModel}, trying next...`);
+                        console.warn("Full Response:", JSON.stringify(fallbackResponse.data, null, 2));
                     }
+                } else {
+                    console.warn(`⚠️ OpenRouter choices array empty for ${targetModel}, trying next...`);
+                    console.warn("Full Response:", JSON.stringify(fallbackResponse.data, null, 2));
                 }
             } catch (fallbackError) {
                 console.error(`❌ OpenRouter failed for ${targetModel}:`, fallbackError.response?.data?.error?.message || fallbackError.message);
@@ -116,8 +116,8 @@ export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallback
     if (openRouterApiKey) {
         let targetModel = preferredModel || "google/gemini-2.0-flash-001";
         let modelsToTry = [targetModel];
-        if (targetModel.includes(":free")) {
-            modelsToTry.push("openrouter/free");
+        if (!modelsToTry.includes("openrouter/free")) {
+            modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");
         }
         
         for (let model of modelsToTry) {
@@ -141,13 +141,17 @@ export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallback
                 });
                 
                 if (response.data?.choices?.length > 0) {
-                    const reply = response.data.choices[0].message.content;
-                    if (reply) {
-                        console.log(`🎨 Designer AI: Got response from ${model}, length:`, reply.length);
-                        return reply;
+                    const content = response.data.choices[0].message?.content;
+                    if (content) {
+                        console.log(`✅ Designer AI: Got response from ${model}, length:`, content.length);
+                        return content;
                     } else {
                         console.warn(`⚠️ Designer AI OpenRouter returned empty content for ${model}, trying next...`);
+                        console.warn("Full Response:", JSON.stringify(response.data, null, 2));
                     }
+                } else {
+                    console.warn(`⚠️ Designer AI OpenRouter choices array empty for ${model}, trying next...`);
+                    console.warn("Full Response:", JSON.stringify(response.data, null, 2));
                 }
             } catch (err) {
                 console.error(`🎨 Designer AI OpenRouter failed for ${model}:`, err.response?.data?.error?.message || err.message);
