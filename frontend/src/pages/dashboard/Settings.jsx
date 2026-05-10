@@ -43,7 +43,7 @@ const Settings = () => {
         logo: '',
         aiSettings: {
             mode: 'restricted',
-            model: 'inclusionai/ring-2.6-1t:free',
+            model: 'inclusionai/ring-2.6-1t',
             languages: ['Arabic', 'English']
         }
     });
@@ -73,7 +73,7 @@ const Settings = () => {
                 logo: data.logo || '',
                 aiSettings: data.aiSettings || {
                     mode: 'restricted',
-                    model: 'inclusionai/ring-2.6-1t:free',
+                    model: 'inclusionai/ring-2.6-1t',
                     languages: ['Arabic', 'English']
                 }
             });
