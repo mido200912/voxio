@@ -98,15 +98,17 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
  * Uses OpenRouter POST directly — no URL truncation, sends the FULL code context.
  * Falls back to CoreSys if OpenRouter fails.
  */
-export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallbackText = "Failed to generate design.") {
+export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallbackText = "Failed to generate design.", preferredModel = null) {
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
     
     // Try OpenRouter FIRST (POST = no URL length limits = full code context)
     if (openRouterApiKey) {
         try {
-            console.log("🎨 Designer AI: Sending to OpenRouter (POST)...");
+            const targetModel = preferredModel || "google/gemini-2.0-flash-001";
+            console.log(`🎨 Designer AI: Sending to OpenRouter (${targetModel})...`);
+            
             const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-                model: "google/gemini-2.0-flash-001",
+                model: targetModel,
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userPrompt }

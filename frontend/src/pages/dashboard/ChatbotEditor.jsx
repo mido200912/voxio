@@ -133,6 +133,9 @@ const ChatbotEditor = () => {
         setCurrentCode(merged);
     };
 
+    // Web Editor Specialized AI Model
+    const [codingModel, setCodingModel] = useState('qwen/qwen-2.5-coder-32b-instruct:free');
+
     const sendMessage = async (e) => {
         e.preventDefault();
         if (!input.trim() || loading) return;
@@ -148,7 +151,7 @@ const ChatbotEditor = () => {
             const token = secureStorage.getItem('token');
             const res = await axios.post(
                 `${BACKEND_URL}/chatbot-editor/edit`,
-                { userRequest: request, history: messages },
+                { userRequest: request, history: messages, codingModel },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -255,6 +258,25 @@ const ChatbotEditor = () => {
                     <div className="sidebar-body">
                         {activeSidebarTab === 'ai' && (
                             <div className="chat-interface" dir={isArabic ? 'rtl' : 'ltr'}>
+                                
+                                <div style={{ padding: '10px 15px', borderBottom: '1px solid var(--dash-border)', background: 'rgba(0,0,0,0.02)' }}>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '6px', color: 'var(--dash-text-sec)' }}>
+                                        {isArabic ? 'موديل البرمجة' : 'Coding Model'}
+                                    </label>
+                                    <select 
+                                        value={codingModel} 
+                                        onChange={(e) => setCodingModel(e.target.value)}
+                                        className="settings-select"
+                                        style={{ width: '100%', fontSize: '0.85rem', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }}
+                                    >
+                                        <optgroup label="Coding Specialists">
+                                            <option value="qwen/qwen-2.5-coder-32b-instruct:free">Qwen 2.5 Coder 32B (Best Code)</option>
+                                            <option value="mistralai/pixtral-12b:free">Pixtral 12B (Laguna Alternative)</option>
+                                            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Fast & Smart)</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+
                                 <div className="messages-container">
                                     <AnimatePresence>
                                         {messages.map((msg) => (

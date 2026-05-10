@@ -45,7 +45,7 @@ router.get("/current", requireAuth, async (req, res) => {
 -------------------------------*/
 router.post("/edit", requireAuth, async (req, res) => {
   try {
-    const { userRequest, history } = req.body;
+    const { userRequest, history, codingModel } = req.body;
     if (!userRequest) return res.status(400).json({ error: "Request is required" });
 
     const company = await Company.findOne({ owner: req.user._id });
@@ -93,8 +93,8 @@ Current User Request: ${userRequest}
 
 Remember: Modify the code to fulfill the current request while respecting the context of previous changes.`;
 
-    console.log("🤖 Chatbot Editor: Sending to AI...");
-    const aiResult = await fetchDesignerAiResponse(systemPrompt, userPrompt, "Failed to process request.");
+    console.log(`🤖 Chatbot Editor: Sending to AI... (Model: ${codingModel || 'default'})`);
+    const aiResult = await fetchDesignerAiResponse(systemPrompt, userPrompt, "Failed to process request.", codingModel);
     
     // Parse AI response JSON
     let parsed;
