@@ -1,0 +1,25 @@
+[build]
+  base = "backend"
+  command = "npm install"
+  functions = "netlify/functions"
+
+# Redirect all API requests to the serverless function
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+
+[[redirects]]
+  from = "/widget.js"
+  to = "/.netlify/functions/api"
+  status = 200
+
+[[redirects]]
+  from = "/widget/:key"
+  to = "/.netlify/functions/api"
+  status = 200
+
+[[redirects]]
+  from = "/"
+  to = "/.netlify/functions/api"
+  status = 200
