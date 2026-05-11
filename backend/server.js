@@ -37,12 +37,13 @@ const allowedOrigins = [
     "https://voxio-v1.vercel.app",
     "https://voxio0.vercel.app",
     "https://aithor1.vercel.app",
-    "https://aithor2.vercel.app"
+    "https://aithor2.vercel.app",
+    "https://vox-io.netlify.app"
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("localhost")) {
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.endsWith(".netlify.app") || origin.includes("localhost")) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
@@ -311,26 +312,31 @@ import mongoose from 'mongoose';
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/voxio';
 
-if (mongoose.connection.readyState === 0) {
-    mongoose.connect(MONGO_URI)
-        .then(() => {
-            console.log('🍃 Connected to MongoDB (Main Server)');
-            app.listen(PORT, () => {
-                console.log(`🚀 Server running on port ${PORT}`);
-            });
-        })
-        .catch(err => {
-            console.error('❌ MongoDB Connection Error:', err.message);
-            // Fallback: Start server anyway so webhooks don't die if Mongo is down briefly
-            app.listen(PORT, () => {
-                console.log(`🚀 Server running on port ${PORT} (Warning: MongoDB disconnected)`);
-            });
-        });
-} else {
-    console.log('🍃 MongoDB already connected via Models');
-    app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-    });
-}
-
 export default app;
+
+// Start HTTP server only when run directly (not when imported by Netlify Function)
+// Avoid import.meta.url — it becomes undefined when bundled to CJS by Netlify
+const isMain = process.argv[1] && (process.argv[1].endsWith('/server.js') || process.argv[1].endsWith('\\server.js'));
+
+if (isMain) {
+    if (mongoose.connection.readyState === 0) {
+        mongoose.connect(MONGO_URI)
+            .then(() => {
+                console.log('🍃 Connected to MongoDB (Main Server)');
+                app.listen(PORT, () => {
+                    console.log(`🚀 Server running on port ${PORT}`);
+                });
+            })
+            .catch(err => {
+                console.error('❌ MongoDB Connection Error:', err.message);
+                app.listen(PORT, () => {
+                    console.log(`🚀 Server running on port ${PORT} (Warning: MongoDB disconnected)`);
+                });
+            });
+    } else {
+        console.log('🍃 MongoDB already connected via Models');
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+        });
+    }
+}
