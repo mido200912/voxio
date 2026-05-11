@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import axios from 'axios';
-import Company from '../models/Company.js';
+import Company from '../models/CompanyModel.js';
 import { requireAuth as protect } from '../middleware/auth.js';
 import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
 

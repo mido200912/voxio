@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Integration from '../models/Integration.js';
-import Company from '../models/Company.js';
+import Company from '../models/CompanyModel.js';
 import CompanyChat from '../models/CompanyChat.js';
 import { fetchAiResponse } from '../utils/corexHelper.js';
 import { getChatHistory, formatHistoryForPrompt } from '../utils/chatHistoryHelper.js';

@@ -4,7 +4,7 @@ import path from 'path';
 import axios from 'axios';
 import { requireAuth } from '../middleware/auth.js';
 import Integration from '../models/Integration.js';
-import Company from '../models/Company.js';
+import Company from '../models/CompanyModel.js';
 import User from '../models/User.js';
 import CompanyChat from '../models/CompanyChat.js';
 import sendEmail from '../utils/sendEmail.js';
