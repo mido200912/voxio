@@ -28,10 +28,10 @@
   --dash-text-rgb: 0, 0, 0;
   --dash-text-sec: #666666;
   --dash-icon: rgba(0, 0, 0, 0.4);
-  --dash-accent: #666666;
-  --dash-accent-rgb: 102, 102, 102;
-  --dash-primary: #000000;
-  --dash-primary-rgb: 0, 0, 0;
+  --dash-accent: #50c8b4;
+  --dash-accent-rgb: 80, 200, 180;
+  --dash-primary: #6C63FF;
+  --dash-primary-rgb: 108, 99, 255;
 }
 
 :root[data-theme="dark"] {
@@ -61,10 +61,10 @@
   --dash-text-rgb: 255, 255, 255;
   --dash-text-sec: rgba(255, 255, 255, 0.4);
   --dash-icon: rgba(255, 255, 255, 0.35);
-  --dash-accent: #999999;
-  --dash-accent-rgb: 153, 153, 153;
-  --dash-primary: #ffffff;
-  --dash-primary-rgb: 255, 255, 255;
+  --dash-accent: #50c8b4;
+  --dash-accent-rgb: 80, 200, 180;
+  --dash-primary: #6C63FF;
+  --dash-primary-rgb: 108, 99, 255;
 }
 
 :root {
@@ -419,93 +419,4 @@ p {
     transform: none;
     transition: none;
   }
-}
-
-/* ========================================
-   ⚡ Lazy-load spinner
-======================================== */
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ========================================
-   ⚡ Mobile Performance Optimizations
-   Disable heavy animations on mobile to maintain 60fps
-======================================== */
-@media (max-width: 768px) {
-  /* Disable expensive backdrop-filter on mobile — saves GPU paint */
-  .hero-badge,
-  .hero-stats,
-  .floating-card,
-  .btn-glass {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  /* Disable floating animations — continuous transforms hurt mobile FPS */
-  .animate-float {
-    animation: none !important;
-  }
-
-  /* Disable glow effects — large blur radius = expensive repaint */
-  .hero-glow,
-  .hero-glow-1,
-  .hero-glow-2 {
-    display: none !important;
-  }
-
-  /* Disable background animated paths on mobile */
-  .background-paths {
-    display: none !important;
-  }
-
-  /* Simplify gradient text animation */
-  .gradient-text-premium {
-    animation: none !important;
-    background-size: 100% auto !important;
-  }
-
-  /* Reduce badge shine to static */
-  .badge-pulse,
-  .btn-shine {
-    animation: none !important;
-    display: none !important;
-  }
-}
-
-/* ========================================
-   ⚡ GPU Acceleration Hints
-   Tell the browser to composite these on their own layer
-======================================== */
-.hero-mockup,
-.floating-card,
-.feature-card,
-.btn-primary-premium,
-.btn-glass {
-  will-change: transform;
-}
-
-/* Remove will-change after animation completes to free GPU memory */
-.revealed {
-  will-change: auto;
-}
-
-/* ========================================
-   ⚡ Content Visibility — Skip rendering off-screen sections
-   Huge LCP improvement for long pages
-======================================== */
-.features,
-.how-it-works,
-.integrations-section,
-.pricing,
-.contact-section {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 600px;
-}
-
-/* ========================================
-   ⚡ Font Display — Prevent invisible text flash (FOIT)
-======================================== */
-@font-face {
-  font-display: swap;
 }
