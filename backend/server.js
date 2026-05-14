@@ -109,8 +109,9 @@ app.use(helmet({
             frameAncestors: ["'self'", "http://localhost:5173", "*.vercel.app"],
         },
     },
-    crossOriginOpenerPolicy: { policy: "unsafe-none" }, // ضروري جداً لعمل Google/Facebook Login
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Updated for Google/Facebook Login popup communication
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false // Disabled to allow cross-origin requests (like FontAwesome/Google)
 }));
 
 app.set('trust proxy', 1);
