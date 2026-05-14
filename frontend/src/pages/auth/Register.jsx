@@ -19,6 +19,13 @@ const Register = () => {
 
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+    const handleGoogleResponse = async (response) => {
+        const result = await googleLogin(response.credential);
+        if (result.success) {
+            navigate('/dashboard');
+        }
+    };
+
     // Initialize Google Login
     useEffect(() => {
         if (GOOGLE_CLIENT_ID && !window.googleRegInitStarted) {
@@ -45,18 +52,8 @@ const Register = () => {
                 }
             };
         }
-    }, []);
-
-    const handleGoogleResponse = async (response) => {
-        const result = await googleLogin(response.credential);
-        if (result.success) {
-            if (result.isNew) {
-                navigate('/onboarding/profile');
-            } else {
-                navigate('/dashboard');
-            }
-        }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [GOOGLE_CLIENT_ID, handleGoogleResponse]);
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -121,7 +118,7 @@ const Register = () => {
         if (result?.step === 'otp_required') {
             setStep(2);
         } else if (result?.step === 'done') {
-            navigate('/onboarding/profile'); // Navigate to onboarding after register
+            navigate('/dashboard');
         }
     };
 
@@ -135,7 +132,7 @@ const Register = () => {
 
         const success = await verifyOtp(formData.email, formData.otp);
         if (success) {
-            navigate('/onboarding/profile');
+            navigate('/dashboard');
         }
     };
 

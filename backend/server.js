@@ -6,9 +6,11 @@ import path from "path";
 import helmet from "helmet";
 import hpp from "hpp";
 import rateLimit from "express-rate-limit";
-
-
+import compression from "compression";
+import cookieParser from "cookie-parser";
 import morgan from "morgan";
+import mongoose from "mongoose";
+
 import chatRoutes from "./routes/chatRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
@@ -26,9 +28,15 @@ import broadcastRoutes from "./routes/broadcastRoutes.js";
 
 const app = express();
 
-// Logging
-if (process.env.NODE_ENV !== "test") {
-    app.use(morgan("combined"));
+// ⚡ Compression — reduces response sizes by ~70%, much faster load times
+app.use(compression());
+
+// ⚡ Cookie parser — needed for refresh token cookies
+app.use(cookieParser());
+
+// Logging — lightweight "dev" format, disabled in production
+if (process.env.NODE_ENV !== 'production') {
+    app.use(morgan("dev"));
 }
 
 // ✅ إعداد CORS
@@ -146,6 +154,8 @@ app.get("/", (req, res) => {
 
 // ✅ Serve Widget JS Direct Content (Premium Redesigned Version)
 app.get('/widget.js', (req, res) => {
+    // ⚡ Cache widget JS for 1 hour — it rarely changes
+    res.setHeader('Cache-Control', 'public, max-age=3600');
     res.setHeader('Content-Type', 'application/javascript');
     const baseUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5173';
     const widgetCode = `
@@ -270,13 +280,18 @@ app.get('/api/ping', (req, res) => {
 });
 
 // 🩺 Health check
-app.get('/api/health', (req, res) => {
-    const dbStatus = mongoose.connection.readyState === 1 ? "Connected" : "Disconnected";
-    res.json({ 
-        status: "ok", 
-        database: "MongoDB",
-        connection: dbStatus 
-    });
+app.get('/api/health', async (req, res) => {
+    try {
+        const mongoose = (await import('mongoose')).default;
+        const dbStatus = mongoose.connection.readyState === 1 ? "Connected" : "Disconnected";
+        res.json({ 
+            status: "ok", 
+            database: "MongoDB",
+            connection: dbStatus 
+        });
+    } catch {
+        res.json({ status: "ok", database: "MongoDB", connection: "Unknown" });
+    }
 });
 
 // ✅ التعامل مع الأخطاء
@@ -306,13 +321,22 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('⚠️ CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-import mongoose from 'mongoose';
-
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/voxio';
 
+// ⚡ Mongoose performance optimizations
+mongoose.set('strictQuery', false); // Allow querying by fields not in schema (dynamic)
+
 if (mongoose.connection.readyState === 0) {
-    mongoose.connect(MONGO_URI)
+    mongoose.connect(MONGO_URI, {
+        // ⚡ Connection pool — reuse connections instead of creating new ones
+        maxPoolSize: 5,           // Reduced from default 100 — lighter for shared hosting
+        minPoolSize: 1,           // Keep at least 1 connection alive
+        serverSelectionTimeoutMS: 10000,  // Fail fast if DB is unreachable
+        socketTimeoutMS: 45000,   // Close stale sockets
+        // ⚡ Heartbeat — less frequent pings = less overhead
+        heartbeatFrequencyMS: 30000,
+    })
         .then(() => {
             console.log('🍃 Connected to MongoDB (Main Server)');
             app.listen(PORT, () => {
@@ -332,5 +356,20 @@ if (mongoose.connection.readyState === 0) {
         console.log(`🚀 Server running on port ${PORT}`);
     });
 }
+
+// ⚡ Graceful shutdown — clean up on hosting restarts/deploys
+const gracefulShutdown = async (signal) => {
+    console.log(`\n🛑 ${signal} received. Shutting down gracefully...`);
+    try {
+        await mongoose.connection.close();
+        console.log('🍃 MongoDB connection closed.');
+    } catch (e) {
+        console.error('Error closing MongoDB:', e.message);
+    }
+    process.exit(0);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 export default app;

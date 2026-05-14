@@ -39,9 +39,12 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
     const truncatedQuestion = fullQuestion.length > 12000 ? fullQuestion.substring(0, 12000) + "..." : fullQuestion;
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
 
-    // 🚀 1. If user specifically chose a model (Llama/Gemma), prioritize OpenRouter FIRST
-    if (preferredModel && openRouterApiKey) {
-        let modelsToTry = [preferredModel];
+    // Use a default free model if none is specified so we don't default to the unreliable CoreSys
+    const targetModelSelection = preferredModel || "inclusionai/ring-2.6-1t:free";
+
+    // 🚀 1. Try OpenRouter FIRST
+    if (openRouterApiKey) {
+        let modelsToTry = [targetModelSelection];
         if (!modelsToTry.includes("openrouter/free")) {
             // Add a chain of reliable free models
             modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");

@@ -17,7 +17,7 @@ router.use(cookieParser());
 // توليد التوكنات
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "7d",
   });
   const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
     expiresIn: "7d",
@@ -30,8 +30,9 @@ const sendRefreshCookie = (res, token) => {
   res.cookie("refreshToken", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
   });
 };
 
@@ -40,18 +41,60 @@ router.post("/register", async (req, res) => {
   try {
     let { name, email, password } = req.body;
     email = email?.trim();
-    if (!name || !email || !password)
+    if (!name || !email || !password) {
       return res.status(400).json({ error: "Missing fields" });
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email))
+    if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid email" });
+    }
 
-    if (password.length < 8)
+    if (password.length < 8) {
       return res.status(400).json({ error: "Password must be at least 8 chars" });
+    }
 
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ error: "Email already exists" });
+    let exists = await User.findOne({ email });
+    if (exists) {
+      if (exists.isVerified) {
+        return res.status(400).json({ error: "Email already exists" });
+      } else {
+        // User exists but not verified. Update their info and resend OTP.
+        const hash = await bcrypt.hash(password, 8);
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        exists.name = name;
+        exists.password = hash;
+        exists.otp = otp;
+        exists.otpExpires = Date.now() + 10 * 60 * 1000;
+        await exists.save();
+
+        try {
+          const message = `Your confirmation OTP is: ${otp}\nIt is valid for 10 minutes.`;
+          const html = generateOtpEmail(
+            "Welcome to VOXIO!",
+            "Please use the verification code below to complete your registration.",
+            otp
+          );
+          await sendEmail({
+            email: exists.email,
+            subject: "VOXIO - Confirm Your Account",
+            message,
+            html
+          });
+          console.log(`✅ OTP resent to ${exists.email}`); 
+        } catch (err) {
+          console.error("❌ Email sending failed.", err.message);
+          console.log(`⚠️ (Fallback) The OTP for ${exists.email} is: ${otp}`);
+        }
+
+        return res.json({
+          message: "OTP resent to email",
+          step: "otp_required",
+          email: exists.email
+        });
+      }
+    }
 
     // ⚡ bcrypt rounds 8 = still secure, 4x faster than rounds 10
     const hash = await bcrypt.hash(password, 8);
@@ -298,7 +341,8 @@ router.post("/logout", (req, res) => {
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
   });
   res.json({ message: "Logged out" });
 });

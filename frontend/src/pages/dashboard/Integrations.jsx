@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext'; // eslint-disable-line no-unused-vars
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import { useToast } from '../../components/Toast';
 import { Link } from 'react-router-dom';
 import './Integrations.css';
@@ -28,7 +28,7 @@ const Integrations = () => {
     // Instagram State
     const [showInstagramModal, setShowInstagramModal] = useState(false);
     const [instagramData, setInstagramData] = useState({ pageId: '', igAccountId: '', accessToken: '' });
-    
+
     // Telegram State
     const [showTelegramModal, setShowTelegramModal] = useState(false);
     const [telegramData, setTelegramData] = useState({ botToken: '', commands: [] });
@@ -42,18 +42,18 @@ const Integrations = () => {
     const [isRequestingOtp, setIsRequestingOtp] = useState(false);
     const [isVerifyingRevealOtp, setIsVerifyingRevealOtp] = useState(false);
     const [isTelegramTokenRevealed, setIsTelegramTokenRevealed] = useState(false);
-    const [isWhatsappTokenRevealed, setIsWhatsappTokenRevealed] = useState(false);
-    const [isInstagramTokenRevealed, setIsInstagramTokenRevealed] = useState(false);
+    const [isWhatsappTokenRevealed, setIsWhatsappTokenRevealed] = useState(false); // eslint-disable-line no-unused-vars
+    const [isInstagramTokenRevealed, setIsInstagramTokenRevealed] = useState(false); // eslint-disable-line no-unused-vars
     const [revealPlatform, setRevealPlatform] = useState('telegram');
     const [isTelegramEditing, setIsTelegramEditing] = useState(false);
-    const [isWhatsappEditing, setIsWhatsappEditing] = useState(false);
-    const [isInstagramEditing, setIsInstagramEditing] = useState(false);
+    const [isWhatsappEditing, setIsWhatsappEditing] = useState(false); // eslint-disable-line no-unused-vars
+    const [isInstagramEditing, setIsInstagramEditing] = useState(false); // eslint-disable-line no-unused-vars
 
     // useRef always holds the LATEST value - immune to stale closures
     const newCommandRef = useRef(newCommand);
     useEffect(() => { newCommandRef.current = newCommand; }, [newCommand]);
 
-    const [availableIntegrations, setAvailableIntegrations] = useState([
+    const [availableIntegrations, setAvailableIntegrations] = useState([ // eslint-disable-line no-unused-vars
         {
             id: 'whatsapp',
             name: 'WhatsApp Business',
@@ -123,6 +123,7 @@ const Integrations = () => {
             window.history.replaceState({}, document.title, window.location.pathname);
             fetchIntegrations();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchIntegrations = async () => {
@@ -142,16 +143,16 @@ const Integrations = () => {
     // Load Facebook SDK
     useEffect(() => {
         if (!window.FB) {
-            window.fbAsyncInit = function() {
+            window.fbAsyncInit = function () {
                 window.FB.init({
-                    appId      : import.meta.env.VITE_META_APP_ID || '1395422949270070',
-                    cookie     : true,
-                    xfbml      : true,
-                    version    : 'v20.0'
+                    appId: import.meta.env.VITE_META_APP_ID || '1395422949270070',
+                    cookie: true,
+                    xfbml: true,
+                    version: 'v20.0'
                 });
             };
 
-            (function(d, s, id) {
+            (function (d, s, id) {
                 var js, fjs = d.getElementsByTagName(s)[0];
                 if (d.getElementById(id)) return;
                 js = d.createElement(s); js.id = id;
@@ -172,7 +173,7 @@ const Integrations = () => {
 
         try {
             const userStr = secureStorage.getItem('user');
-            const user = userStr ? userStr : null;
+            const user = userStr ? userStr : null; // eslint-disable-line no-unused-vars
 
             if (integration.id === 'facebook') {
                 const companyRes = await axios.get(`${BACKEND_URL}/company`, {
@@ -220,7 +221,7 @@ const Integrations = () => {
             // Read from REF (always latest) not from state (may be stale)
             const currentCmd = newCommandRef.current;
             let finalCommands = [...telegramData.commands];
-            
+
             // Auto-include the current unsaved command
             if (currentCmd.command && currentCmd.command.trim() !== '') {
                 // Validate: product_menu needs at least 3 products
@@ -289,9 +290,9 @@ const Integrations = () => {
             const formData = new FormData();
             formData.append('image', file);
             const uploadRes = await axios.post(`${BACKEND_URL}/ai/image`, formData, {
-                headers: { 
+                headers: {
                     'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${token}` 
+                    Authorization: `Bearer ${token}`
                 }
             });
             setNewProduct(prev => ({ ...prev, imageUrl: uploadRes.data.imageUrl }));
@@ -364,8 +365,8 @@ const Integrations = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchIntegrations();
-            const action = integration.isActive ? 
-                (t.language === 'ar' ? 'إيقاف مؤقت' : 'Paused') : 
+            const action = integration.isActive ?
+                (t.language === 'ar' ? 'إيقاف مؤقت' : 'Paused') :
                 (t.language === 'ar' ? 'تفعيل' : 'Activated');
             showToast('info', action, `${integration.platform} ${action}`);
         } catch (error) {
@@ -454,27 +455,27 @@ const Integrations = () => {
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
+
             if (revealPlatform === 'telegram') {
                 setTelegramData(prev => ({ ...prev, botToken: res.data.botToken }));
                 setIsTelegramTokenRevealed(true);
             } else if (revealPlatform === 'whatsapp') {
-                setWhatsappData(prev => ({ 
-                    ...prev, 
+                setWhatsappData(prev => ({
+                    ...prev,
                     accessToken: res.data.accessToken,
-                    phoneNumberId: res.data.phoneNumberId 
+                    phoneNumberId: res.data.phoneNumberId
                 }));
                 setIsWhatsappTokenRevealed(true);
             } else if (revealPlatform === 'instagram') {
-                setInstagramData(prev => ({ 
-                    ...prev, 
+                setInstagramData(prev => ({
+                    ...prev,
                     accessToken: res.data.accessToken,
                     pageId: res.data.pageId,
                     igAccountId: res.data.igAccountId
                 }));
                 setIsInstagramTokenRevealed(true);
             }
-            
+
             setRevealOtpVisible(false);
             showToast('success', t.language === 'ar' ? 'تم التحقق!' : 'Verified!', t.language === 'ar' ? 'تم كشف التوكن.' : 'Token revealed successfully.');
         } catch (error) {
@@ -510,12 +511,12 @@ const Integrations = () => {
         setRevealOtpCode('');
     };
 
-    const containerVariants = {
+    const containerVariants = { // eslint-disable-line no-unused-vars
         hidden: { opacity: 0 },
         visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
     };
 
-    const itemVariants = {
+    const itemVariants = { // eslint-disable-line no-unused-vars
         hidden: { opacity: 0, scale: 0.95 },
         visible: { opacity: 1, scale: 1 }
     };
@@ -557,67 +558,67 @@ const Integrations = () => {
             ) : (
                 <div style={{ position: 'relative' }}>
                     <div className="dash-grid">
-                    {availableIntegrations.map(integration => {
-                        const status = getIntegrationStatus(integration.id);
+                        {availableIntegrations.map(integration => {
+                            const status = getIntegrationStatus(integration.id);
 
-                        return (
-                            <div key={integration.id} className={`dash-card animate-slide-in`}>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '20px' }}>
-                                    <div className="integration-icon" style={{ backgroundColor: `${integration.color}15`, color: integration.color, width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                                        <i className={`fab fa-${integration.icon}`}></i>
-                                    </div>
-                                    <div className="integration-info" style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{integration.name}</h3>
-                                            {status === 'connected' && <span className="dash-badge dash-badge-success">{t.language === 'ar' ? 'متصل' : 'Connected'}</span>}
-                                            {status === 'paused' && <span className="dash-badge">{t.language === 'ar' ? 'موقف' : 'Paused'}</span>}
+                            return (
+                                <div key={integration.id} className={`dash-card animate-slide-in`}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '20px' }}>
+                                        <div className="integration-icon" style={{ backgroundColor: `${integration.color}15`, color: integration.color, width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                                            <i className={`fab fa-${integration.icon}`}></i>
                                         </div>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--dash-text-sec)' }}>{t.integrations[integration.descKey]}</p>
+                                        <div className="integration-info" style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{integration.name}</h3>
+                                                {status === 'connected' && <span className="dash-badge dash-badge-success">{t.language === 'ar' ? 'متصل' : 'Connected'}</span>}
+                                                {status === 'paused' && <span className="dash-badge">{t.language === 'ar' ? 'موقف' : 'Paused'}</span>}
+                                            </div>
+                                            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--dash-text-sec)' }}>{t.integrations[integration.descKey]}</p>
+                                        </div>
+                                    </div>
+                                    <div className="integration-action">
+                                        {!integration.available ? (
+                                            <button className="dash-btn dash-btn-outline" disabled style={{ width: '100%' }}>{t.integrations.soon}</button>
+                                        ) : (status === 'connected' || status === 'paused') ? (
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                <button
+                                                    className={`dash-btn ${status === 'paused' ? 'dash-btn-primary' : 'dash-btn-outline'}`}
+                                                    onClick={() => handleToggle(integration.id)}
+                                                    style={{ flex: 1 }}
+                                                >
+                                                    {status === 'paused' ?
+                                                        (t.language === 'ar' ? 'تفعيل' : 'Resume') :
+                                                        (t.dashboard.integrationsPage.pause || 'Pause')
+                                                    }
+                                                </button>
+                                                <button
+                                                    className="dash-btn dash-btn-outline"
+                                                    onClick={() => handleEdit(integration.id)}
+                                                    style={{ width: '42px', padding: 0 }}
+                                                >
+                                                    <i className="fas fa-edit"></i>
+                                                </button>
+                                                <button
+                                                    className="dash-btn dash-btn-outline"
+                                                    onClick={() => handleDisconnect(integration.id)}
+                                                    style={{ color: '#ef4444' }}
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                className="dash-btn dash-btn-primary"
+                                                onClick={() => handleConnect(integration)}
+                                                style={{ width: '100%' }}
+                                            >
+                                                {t.dashboard.integrationsPage.connect}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="integration-action">
-                                    {!integration.available ? (
-                                        <button className="dash-btn dash-btn-outline" disabled style={{ width: '100%' }}>{t.integrations.soon}</button>
-                                    ) : (status === 'connected' || status === 'paused') ? (
-                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            <button
-                                                className={`dash-btn ${status === 'paused' ? 'dash-btn-primary' : 'dash-btn-outline'}`}
-                                                onClick={() => handleToggle(integration.id)}
-                                                style={{ flex: 1 }}
-                                            >
-                                                {status === 'paused' ? 
-                                                    (t.language === 'ar' ? 'تفعيل' : 'Resume') : 
-                                                    (t.dashboard.integrationsPage.pause || 'Pause')
-                                                }
-                                            </button>
-                                            <button
-                                                className="dash-btn dash-btn-outline"
-                                                onClick={() => handleEdit(integration.id)}
-                                                style={{ width: '42px', padding: 0 }}
-                                            >
-                                                <i className="fas fa-edit"></i>
-                                            </button>
-                                            <button
-                                                className="dash-btn dash-btn-outline"
-                                                onClick={() => handleDisconnect(integration.id)}
-                                                style={{ color: '#ef4444' }}
-                                            >
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            className="dash-btn dash-btn-primary"
-                                            onClick={() => handleConnect(integration)}
-                                            style={{ width: '100%' }}
-                                        >
-                                            {t.dashboard.integrationsPage.connect}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -630,12 +631,12 @@ const Integrations = () => {
                             <i className="fab fa-whatsapp" style={{ color: '#25d366' }} />
                             {t.language === 'ar' ? 'إعداد واتساب للأعمال' : 'WhatsApp Business Setup'}
                         </h2>
-                        
-                        <div style={{ 
-                            background: 'rgba(37, 211, 102, 0.08)', 
-                            border: '1px solid rgba(37, 211, 102, 0.2)', 
-                            borderRadius: '12px', 
-                            padding: '14px', 
+
+                        <div style={{
+                            background: 'rgba(37, 211, 102, 0.08)',
+                            border: '1px solid rgba(37, 211, 102, 0.2)',
+                            borderRadius: '12px',
+                            padding: '14px',
                             marginBottom: '20px',
                             fontSize: '13px',
                             lineHeight: '1.6'
@@ -686,9 +687,9 @@ const Integrations = () => {
                             <div className="input-row">
                                 <div className="input-group">
                                     <label>{t.language === 'ar' ? 'وضع الرد' : 'AI Mode'}</label>
-                                    <select 
+                                    <select
                                         value={whatsappData.aiMode || 'restricted'}
-                                        onChange={(e) => setWhatsappData({...whatsappData, aiMode: e.target.value})}
+                                        onChange={(e) => setWhatsappData({ ...whatsappData, aiMode: e.target.value })}
                                     >
                                         <option value="restricted">{t.language === 'ar' ? 'مقيد (الشركة فقط)' : 'Restricted (Company)'}</option>
                                         <option value="general">{t.language === 'ar' ? 'عام (رد على كل شيء)' : 'General (Answer All)'}</option>
@@ -697,9 +698,9 @@ const Integrations = () => {
 
                                 <div className="input-group">
                                     <label>{t.language === 'ar' ? 'موديل AI' : 'AI Model'}</label>
-                                    <select 
+                                    <select
                                         value={whatsappData.aiModel || 'inclusionai/ring-2.6-1t'}
-                                        onChange={(e) => setWhatsappData({...whatsappData, aiModel: e.target.value})}
+                                        onChange={(e) => setWhatsappData({ ...whatsappData, aiModel: e.target.value })}
                                     >
                                         <option value="inclusionai/ring-2.6-1t">Ring 2.6 1T</option>
                                     </select>
@@ -711,15 +712,15 @@ const Integrations = () => {
                                 <div className="language-tags">
                                     {['Arabic', 'English', 'French', 'Spanish'].map(lang => (
                                         <label key={lang} className="lang-tag">
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 checked={(whatsappData.languages || ['Arabic', 'English']).includes(lang)}
                                                 onChange={(e) => {
                                                     const currentLangs = whatsappData.languages || ['Arabic', 'English'];
-                                                    const newLangs = e.target.checked 
+                                                    const newLangs = e.target.checked
                                                         ? [...currentLangs, lang]
                                                         : currentLangs.filter(l => l !== lang);
-                                                    setWhatsappData({...whatsappData, languages: newLangs});
+                                                    setWhatsappData({ ...whatsappData, languages: newLangs });
                                                 }}
                                             />
                                             <span>{lang}</span>
@@ -749,19 +750,19 @@ const Integrations = () => {
                             <i className="fab fa-telegram" style={{ color: '#26A5E4' }} />
                             {t.language === 'ar' ? 'إعداد تليجرام' : 'Telegram Setup'}
                         </h2>
-                        <form onSubmit={handleTelegramSubmit} style={{ 
-                            maxHeight: '75vh', 
-                            overflowY: 'auto', 
+                        <form onSubmit={handleTelegramSubmit} style={{
+                            maxHeight: '75vh',
+                            overflowY: 'auto',
                             paddingRight: '8px'
                         }}>
                             <div className="form-group">
                                 <label>{t.language === 'ar' ? 'Bot Token (من @BotFather)' : 'Bot Token (from @BotFather)'}</label>
-                                
+
                                 {isTelegramEditing && !isTelegramTokenRevealed ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         {!revealOtpVisible ? (
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 className="btn btn-outline"
                                                 onClick={() => requestRevealOtp('telegram')}
                                                 disabled={isRequestingOtp}
@@ -779,8 +780,8 @@ const Integrations = () => {
                                                     onChange={(e) => setRevealOtpCode(e.target.value)}
                                                     style={{ flex: 1, borderRadius: '10px', padding: '10px 14px', border: '1px solid #26A5E4' }}
                                                 />
-                                                <button 
-                                                    type="button" 
+                                                <button
+                                                    type="button"
                                                     className="btn btn-primary"
                                                     onClick={verifyRevealOtp}
                                                     disabled={isVerifyingRevealOtp}
@@ -812,7 +813,7 @@ const Integrations = () => {
                                         {t.language === 'ar' ? 'إعداد الأوامر الذكية' : 'Smart Command Setup'}
                                     </h3>
                                 </div>
-                                
+
                                 <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '20px', lineHeight: '1.5' }}>
                                     {t.language === 'ar' ? 'قم ببناء تجربة تفاعلية لعملائك عبر تليجرام. حدد الأوامر، المنتجات، والردود التلقائية.' : 'Build an interactive experience for your customers via Telegram.'}
                                 </p>
@@ -827,7 +828,7 @@ const Integrations = () => {
                                             </div>
                                             <div style={{ fontSize: '0.8rem', color: '#555', marginBottom: '4px' }}><b>📝 {t.language === 'ar' ? 'التصنيف:' : 'Category:'}</b> {cmd.category}</div>
                                             {cmd.products?.length > 0 && <div style={{ fontSize: '0.8rem', color: '#26A5E4' }}><b>📦 {cmd.products.length} {t.language === 'ar' ? 'منتجات' : 'Products'}</b></div>}
-                                            
+
                                             <button type="button" onClick={() => removeTelegramCommand(idx)} style={{ position: 'absolute', top: '12px', right: '12px', color: '#ff4d4f', background: '#fff', border: '1px solid #ff4d4f30', cursor: 'pointer', width: '24px', height: '24px', borderRadius: '50%', fontSize: '0.7rem' }}>
                                                 <i className="fas fa-trash" />
                                             </button>

@@ -19,6 +19,13 @@ const Login = () => {
 
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+    const handleGoogleResponse = async (response) => {
+        const result = await googleLogin(response.credential);
+        if (result.success) {
+            navigate('/dashboard');
+        }
+    };
+
     // Initialize Google Login
     useEffect(() => {
         if (GOOGLE_CLIENT_ID && !window.googleInitStarted) {
@@ -45,18 +52,8 @@ const Login = () => {
                 }
             };
         }
-    }, []);
-
-    const handleGoogleResponse = async (response) => {
-        const result = await googleLogin(response.credential);
-        if (result.success) {
-            if (result.isNew) {
-                navigate('/onboarding/profile');
-            } else {
-                navigate('/dashboard');
-            }
-        }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [GOOGLE_CLIENT_ID, handleGoogleResponse]);
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({

@@ -4,6 +4,13 @@ import axios from 'axios';
 import Company from '../models/CompanyModel.js';
 import { requireAuth as protect } from '../middleware/auth.js';
 import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+
+puppeteer.use(StealthPlugin());
 
 const router = express.Router();
 
@@ -50,10 +57,28 @@ router.post('/upload', protect, (req, res, next) => {
             return res.status(404).json({ error: 'Company not found' });
         }
 
+        let fileUrl = '';
+        if (supabase) {
+            const fileExt = req.file.originalname.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `documents/${req.user.id}/${fileName}`;
+
+            const { data, error } = await supabase.storage
+                .from('voxio')
+                .upload(filePath, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false
+                });
+
+            if (!error) {
+                fileUrl = `${IMAGEKIT_ENDPOINT}/voxio/${filePath}`;
+            }
+        }
+
         const newResource = {
             id: Date.now().toString(),
             fileName: req.file.originalname,
-            fileUrl: req.file.path,
+            fileUrl: fileUrl,
             fileType: req.file.originalname.split('.').pop(),
         };
 
@@ -63,16 +88,29 @@ router.post('/upload', protect, (req, res, next) => {
         try {
             console.log('📄 Extracting knowledge from file:', req.file.originalname);
 
+            let extractedFileText = '';
+            if (req.file.mimetype === 'application/pdf') {
+                const pdfData = await pdfParse(req.file.buffer);
+                extractedFileText = pdfData.text;
+            } else if (req.file.mimetype === 'text/plain') {
+                extractedFileText = req.file.buffer.toString('utf-8');
+            } else {
+                extractedFileText = "عذراً، هذا النوع من الملفات يتم معالجته لاحقاً.";
+            }
+
             const extractionPrompt = `أنت مساعد ذكي متخصص في تحليل الملفات واستخراج المعلومات المهمة.
             
 تم رفع ملف جديد: ${req.file.originalname}
 نوع الملف: ${newResource.fileType}
 
+المحتوى النصي المستخرج من الملف:
+${extractedFileText.substring(0, 8000)}
+
 المعلومات المستخرجة سابقاً من ملفات أخرى (إن وجدت):
 ${company.extractedKnowledge || 'لا توجد معلومات سابقة.'}
 
 مهمتك:
-1. استخراج جميع المعلومات المهمة من هذا الملف الجديد.
+1. استخراج جميع المعلومات المهمة من هذا الملف الجديد بدقة عالية جداً.
 2. دمج هذه المعلومات بذكاء مع المعلومات المستخرجة سابقاً (بحيث لا يتكرر الكلام، ويتم تحديث المعلومات القديمة إذا كانت هناك معلومات أحدث).
 3. تنظيم كل المعلومات النهائية (القديمة والجديدة) في دليل واحد واضح ومنسق، يسهل على بوت الدردشة قراءته والرد منه.
 4. التركيز على:
@@ -170,20 +208,50 @@ router.post('/scrape-url', protect, async (req, res) => {
 
         // Fetch HTML
         console.log(`🌐 Scraping URL: ${url}`);
-        const response = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
-        const html = response.data;
-        
-        // Strip HTML tags and extra spaces
-        const rawText = typeof html === 'string' 
-            ? html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                  .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                  .replace(/<[^>]*>?/gm, ' ')
-                  .replace(/\s+/g, ' ')
-                  .trim()
-            : JSON.stringify(html);
+        let rawText = '';
+        try {
+            const browser = await puppeteer.launch({ 
+                headless: 'new', 
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
+            });
+            const page = await browser.newPage();
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
+            
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+            
+            // Auto scroll to load dynamic content (like Instagram posts)
+            await page.evaluate(async () => {
+                await new Promise((resolve) => {
+                    let totalHeight = 0;
+                    const distance = 300;
+                    const timer = setInterval(() => {
+                        const scrollHeight = document.body.scrollHeight;
+                        window.scrollBy(0, distance);
+                        totalHeight += distance;
+                        if(totalHeight >= scrollHeight || totalHeight > 6000){
+                            clearInterval(timer);
+                            resolve();
+                        }
+                    }, 100);
+                });
+            });
 
-        // Limit to 6000 chars to avoid token limits
-        const truncatedText = rawText.substring(0, 6000);
+            await new Promise(r => setTimeout(r, 2000));
+            rawText = await page.evaluate(() => document.body.innerText);
+            await browser.close();
+        } catch (scrapeErr) {
+            console.error('Puppeteer scrape error:', scrapeErr.message);
+            const response = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
+            const html = response.data;
+            rawText = typeof html === 'string' 
+                ? html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                      .replace(/<[^>]*>?/gm, ' ')
+                : JSON.stringify(html);
+        }
+        
+        rawText = rawText.replace(/\s+/g, ' ').trim();
+        const truncatedText = rawText.substring(0, 10000);
 
         const extractionPrompt = `أنت مساعد ذكي متخصص في تحليل مواقع الويب وصفحات السوشيال ميديا واستخراج المعلومات المهمة لتدريب بوت الدردشة.
         

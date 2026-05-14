@@ -301,9 +301,9 @@
     background: var(--color-border);
 }
 
-.mockup-dots span:first-child { background: #ff5f57; }
-.mockup-dots span:nth-child(2) { background: #ffbd2e; }
-.mockup-dots span:last-child { background: #28c840; }
+.mockup-dots span:first-child { background: var(--color-border); }
+.mockup-dots span:nth-child(2) { background: var(--color-border); }
+.mockup-dots span:last-child { background: var(--color-text-secondary); }
 
 .mockup-title {
     font-size: 0.75rem;
@@ -447,14 +447,14 @@
 }
 
 .card-status.active {
-    background: #28c840;
-    box-shadow: 0 0 8px rgba(40, 200, 64, 0.5);
+    background: var(--color-text);
+    box-shadow: 0 0 8px rgba(var(--color-text-rgb), 0.5);
     animation: statusPulse 2s ease-in-out infinite;
 }
 
 @keyframes statusPulse {
-    0%, 100% { box-shadow: 0 0 4px rgba(40, 200, 64, 0.3); }
-    50% { box-shadow: 0 0 12px rgba(40, 200, 64, 0.6); }
+    0%, 100% { box-shadow: 0 0 4px rgba(var(--color-text-rgb), 0.3); }
+    50% { box-shadow: 0 0 12px rgba(var(--color-text-rgb), 0.6); }
 }
 
 .card-1 {

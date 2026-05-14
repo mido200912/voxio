@@ -23,12 +23,26 @@ const DashboardLayout = () => {
             if (!token) return;
             try {
                 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+                
+                // ⚡ Critical: Check if company exists. If not, redirect to onboarding.
+                try {
+                    await axios.get(`${BACKEND_URL}/company`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                } catch (err) {
+                    if (err.response?.status === 404) {
+                        console.log('Company not found, redirecting to onboarding...');
+                        window.location.href = '/onboarding/profile';
+                        return;
+                    }
+                }
+
                 const res = await axios.get(`${BACKEND_URL}/integration-manager`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setActiveIntegrations(res.data.filter(i => i.isActive).map(i => i.platform));
             } catch (err) {
-                console.error('Failed to fetch integrations sidebar:', err);
+                console.error('Failed to fetch sidebar data:', err);
             }
         };
         fetchIntegrations();

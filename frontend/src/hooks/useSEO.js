@@ -29,7 +29,33 @@ export const useSEO = ({ title, description, keywords, schema }) => {
       metaKey.setAttribute('content', keywords);
     }
 
-    // 4. Update JSON-LD Schema
+    // 4. Update OpenGraph / Twitter Tags
+    const ogTags = {
+      'og:title': title,
+      'og:description': description,
+      'og:type': 'website',
+      'twitter:card': 'summary_large_image',
+      'twitter:title': title,
+      'twitter:description': description
+    };
+
+    Object.entries(ogTags).forEach(([property, content]) => {
+      if (content) {
+        let meta = document.querySelector(`meta[property="${property}"], meta[name="${property}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          if (property.startsWith('twitter:')) {
+            meta.setAttribute('name', property);
+          } else {
+            meta.setAttribute('property', property);
+          }
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', content);
+      }
+    });
+
+    // 5. Update JSON-LD Schema
     if (schema) {
       let script = document.querySelector('script[type="application/ld+json"]');
       if (!script) {
