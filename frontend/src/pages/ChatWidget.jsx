@@ -4,7 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import './ChatWidget.css';
 
-const API = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const ChatWidget = ({ apiKeyProp }) => {
     const params = useParams();

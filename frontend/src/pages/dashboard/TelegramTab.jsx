@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line 
 import PageLoader from '../../components/PageLoader';
 import './DashboardShared.css';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const TelegramTab = () => {
     const { language } = useLanguage();

@@ -9,7 +9,7 @@ const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeLink, setActiveLink] = useState('home');
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const token = secureStorage.getItem('token');
     const { theme, toggleTheme } = useTheme();
     const { language, toggleLanguage, t } = useLanguage();

@@ -20,7 +20,7 @@ const WidgetTab = () => {
     const [apiKey, setApiKey] = useState('YOUR_API_KEY');
     const [config, setConfig] = useState({});
     
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const CLEAN_BACKEND_URL = BACKEND_URL.replace('/api', '');
     
     useEffect(() => {

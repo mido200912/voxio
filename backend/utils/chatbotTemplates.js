@@ -5,7 +5,7 @@ export function getChatbotTemplate(type = 'default', company) {
   const slug = company.slug || '';
   
   // Use BASE_URL if available, otherwise fallback to local for development
-  const base = process.env.BASE_URL || 'https://aithor1.vercel.app';
+  const base = process.env.BASE_URL || 'http://localhost:5000';
   const apiUrl = `${base}/api`;
 
   const logoHtml = logo 

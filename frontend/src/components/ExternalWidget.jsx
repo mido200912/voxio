@@ -2,9 +2,12 @@ import { useEffect } from 'react';
 
 const ExternalWidget = () => {
     useEffect(() => {
+        const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const CLEAN_URL = BACKEND_URL.replace('/api', '');
+        
         // Create script element
         const script = document.createElement('script');
-        script.src = "https://aithor1.vercel.app/widget.js";
+        script.src = `${CLEAN_URL}/widget.js`;
         script.setAttribute('data-api-key', "fe22aaf150819d660081b15d5209a650414f620ab929511a");
         script.setAttribute('data-primary-color', "#6C63FF");
         script.setAttribute('data-launcher-color', "#1e293b");

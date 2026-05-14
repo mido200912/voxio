@@ -104,7 +104,7 @@ const Integrations = () => {
         }
     ]);
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const token = secureStorage.getItem('token');
 
     useEffect(() => {

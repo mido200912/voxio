@@ -22,7 +22,7 @@ const DashboardLayout = () => {
             const token = secureStorage.getItem('token');
             if (!token) return;
             try {
-                const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+                const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
                 
                 // ⚡ Critical: Check if company exists. If not, redirect to onboarding.
                 try {

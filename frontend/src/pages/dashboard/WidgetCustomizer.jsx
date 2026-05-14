@@ -6,7 +6,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useToast } from '../../components/Toast';
 import './DashboardShared.css';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const WidgetCustomizer = () => {
     const { language } = useLanguage();

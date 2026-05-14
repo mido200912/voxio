@@ -18,7 +18,7 @@ const VOXIOChatWidget = () => {
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
-    const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://aithor1.vercel.app/api';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
     const [sessionId] = useState(() => {
         let sid = localStorage.getItem('voxio_sid');
