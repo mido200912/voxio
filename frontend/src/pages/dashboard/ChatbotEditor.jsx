@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext'; // eslint-disable-line no-unused-vars
 import { useLanguage } from '../../context/LanguageContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import Prism from 'prismjs';
 import Editor from 'react-simple-code-editor';
 
@@ -140,7 +140,7 @@ const ChatbotEditor = () => {
     };
 
     // Web Editor Specialized AI Model
-    const [codingModel, setCodingModel] = useState('google/gemini-2.0-flash-001');
+    const [codingModel, setCodingModel] = useState('openrouter/owl-alpha');
 
     const sendMessage = async (e) => {
         e.preventDefault();
@@ -280,7 +280,7 @@ const ChatbotEditor = () => {
                                         style={{ width: '100%', fontSize: '0.85rem', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }}
                                     >
                                         <optgroup label="Coding Specialists">
-                                            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Fast & Stable)</option>
+                                            <option value="openrouter/owl-alpha">Owl Alpha (Advanced Design AI)</option>
                                         </optgroup>
                                     </select>
                                 </div>

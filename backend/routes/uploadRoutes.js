@@ -6,7 +6,7 @@ import { requireAuth as protect } from '../middleware/auth.js';
 import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+// const pdfParse = require('pdf-parse'); // Moved to lazy load inside the route handler
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
@@ -90,8 +90,13 @@ router.post('/upload', protect, (req, res, next) => {
 
             let extractedFileText = '';
             if (req.file.mimetype === 'application/pdf') {
+                const pdfParse = require('pdf-parse'); // Lazy load to prevent startup crashes
                 const pdfData = await pdfParse(req.file.buffer);
                 extractedFileText = pdfData.text;
+            } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                const mammoth = require('mammoth'); // Lazy load for Word docs
+                const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+                extractedFileText = result.value;
             } else if (req.file.mimetype === 'text/plain') {
                 extractedFileText = req.file.buffer.toString('utf-8');
             } else {

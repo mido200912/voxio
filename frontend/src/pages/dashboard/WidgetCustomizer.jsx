@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import { secureStorage } from '../../utils/secureStorage';
 import { useLanguage } from '../../context/LanguageContext';
 import { useToast } from '../../components/Toast';

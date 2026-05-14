@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "framer-motion"; // eslint-disable-line no-unused-vars
 
 function FloatingPaths({ position }) {
     const paths = Array.from({ length: 15 }, (_, i) => ({

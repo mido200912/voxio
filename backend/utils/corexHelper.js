@@ -117,7 +117,7 @@ export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallback
     
     // Try OpenRouter FIRST (POST = no URL length limits = full code context)
     if (openRouterApiKey) {
-        let targetModel = preferredModel || "google/gemini-2.0-flash-001";
+        let targetModel = preferredModel || "openrouter/owl-alpha";
         let modelsToTry = [targetModel];
         if (!modelsToTry.includes("openrouter/free")) {
             modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");
