@@ -41,7 +41,8 @@ router.get("/current", requireAuth, async (req, res) => {
 });
 
 /*-------------------------------
-  AI-powered chatbot editor
+  AI-powered website editor
+  Now passes ALL company data to AI
 -------------------------------*/
 router.post("/edit", requireAuth, async (req, res) => {
   try {
@@ -59,29 +60,58 @@ router.post("/edit", requireAuth, async (req, res) => {
       .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
       .join('\n');
 
+    // ─── Gather ALL company data for the AI ───
+    const companyProfile = `
+=== COMPANY PROFILE (Use this data to personalize the website) ===
+Company Name: ${company.name || 'N/A'}
+Industry: ${company.industry || 'N/A'}
+Company Size: ${company.size || 'N/A'}
+Description: ${company.description || 'N/A'}
+Vision: ${company.vision || 'N/A'}
+Mission: ${company.mission || 'N/A'}
+Values: ${company.values ? company.values.join(', ') : 'N/A'}
+Website URL: ${company.websiteUrl || 'N/A'}
+Logo URL: ${company.logo || 'No logo uploaded'}
+=== END COMPANY PROFILE ===
+
+=== AI TRAINING DATA (Knowledge the company provided) ===
+Custom Instructions: ${company.customInstructions || 'None'}
+PDF/Document Knowledge: ${(company.extractedKnowledge || 'None').substring(0, 3000)}
+URL Extracted Knowledge: ${(company.urlExtractedKnowledge || 'None').substring(0, 3000)}
+=== END TRAINING DATA ===`;
+
     const systemPrompt = `You are "VOXIO Designer Pro", a world-class UI/UX Designer and Lead Frontend Engineer.
 You specialize in creating "stunning", "premium", and "state-of-the-art" web interfaces.
 You speak all languages fluently. Always reply in the same language the user uses.
 
-The user owns a company called "${company.name}". You are editing their public chatbot page.
+The user owns a company called "${company.name}". You are editing their FULL COMPANY WEBSITE/PORTFOLIO.
+This is NOT just a chatbot page — it's a complete single-page website with sections like Hero, About, Services, Contact, etc.
+The site also includes an embedded AI chatbot widget (floating chat button in the corner).
+
+${companyProfile}
+
+IMPORTANT: You MUST use the company data above to fill in the website content. Replace placeholder text with REAL company data:
+- Use the company name, description, vision, mission, and values in the appropriate sections.
+- If a logo URL exists, use it as the company logo <img>.
+- Use the training data (knowledge base) to understand the company's products/services and display them.
+- If the user asks to change something, understand the CONTEXT from the company data.
 
 GOAL: Modify the provided HTML code to fulfill the user's request while maintaining a high-end, premium aesthetic.
 
 STYLE GUIDELINES for "Premium" Design:
 1. COLORS: Use sophisticated palettes. Avoid flat colors. Use gradients, deep shadows, and glows.
-2. GLASSMORPHISM: Use backdrop-filter: blur(), subtle borders (1px solid rgba(255,255,255,0.1)), and semi-transparent backgrounds.
-3. TYPOGRAPHY: Use 'Cairo' for Arabic and 'Inter' or 'Poppins' for English. Ensure hierarchy with font-weights and sizes.
-4. ANIMATIONS: Add smooth transitions, hover effects, and subtle entry animations (fade-in, slide-up).
+2. GLASSMORPHISM: Use backdrop-filter: blur(), subtle borders, and semi-transparent backgrounds.
+3. TYPOGRAPHY: Use 'Cairo' for Arabic and 'Inter' or 'Poppins' for English. Ensure hierarchy.
+4. ANIMATIONS: Add smooth transitions, hover effects, and subtle entry animations.
 5. RESPONSIVENESS: Ensure the design looks perfect on all screen sizes.
 
 CRITICAL TECHNICAL RULES:
 - RESPOND WITH ONLY RAW JSON (NO EXPLANATION, NO MARKDOWN):
   {"message": "Concise description of changes in the user's language", "code": "The FULL updated HTML file"}
-- PRESERVE FUNCTIONALITY: Never remove or break the IDs: chat-box, user-input, send-btn.
-- PRESERVE LOGIC: Keep the <script> section that handles fetching and sending messages. You can style the elements, but don't break the 'async function send()' or 'append()' logic.
+- PRESERVE THE CHATBOT WIDGET: Never remove the floating chat widget and its script. The IDs chat-box, user-input, send-btn must be preserved.
 - COMPLETE CODE: Always return the full HTML starting from <!DOCTYPE html>.
-- NO ESCAPING: Use raw < and > characters. DO NOT use HTML entities like &lt; or &gt; in the code.
-- CREATIVITY: If the user says "make it better", use your designer expertise to add professional touches like gradients, shadows, or refined spacing.`;
+- NO ESCAPING: Use raw < and > characters. DO NOT use HTML entities.
+- CREATIVITY: If the user says "make it better", use your designer expertise to add professional touches.`;
 
     const userPrompt = `Existing code:
 ${currentHtml}
@@ -91,9 +121,9 @@ ${historyContext}
 
 Current User Request: ${userRequest}
 
-Remember: Modify the code to fulfill the current request while respecting the context of previous changes.`;
+Remember: Modify the code to fulfill the current request while respecting the context of previous changes. Use real company data from the profile above.`;
 
-    console.log(`🤖 Chatbot Editor: Sending to AI... (Model: ${codingModel || 'default'})`);
+    console.log(`🤖 Website Editor: Sending to AI... (Model: ${codingModel || 'default'})`);
     const aiResult = await fetchDesignerAiResponse(systemPrompt, userPrompt, "Failed to process request.", codingModel);
     
     // Parse AI response JSON
@@ -134,13 +164,13 @@ Remember: Modify the code to fulfill the current request while respecting the co
 
     res.json({ message: parsed.message, code: finalCode });
   } catch (err) {
-    console.error("🤖 Chatbot Editor Edit Error:", err);
+    console.error("🤖 Website Editor Error:", err);
     res.status(500).json({ error: "فشل التعديل، حاول تاني", details: err.message });
   }
 });
 
 /*-------------------------------
-  Reset chatbot to default template
+  Reset to template
 -------------------------------*/
 router.post("/reset", requireAuth, async (req, res) => {
   try {
@@ -155,7 +185,7 @@ router.post("/reset", requireAuth, async (req, res) => {
     };
     await company.save();
 
-    res.json({ message: "تم إعادة التصميم للقالب الأصلي بنجاح ✅", code: defaultHtml });
+    res.json({ message: "تم تطبيق القالب بنجاح ✅", code: defaultHtml });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -201,21 +231,24 @@ router.post("/save", requireAuth, async (req, res) => {
 
     res.json({ message: "تم حفظ الكود بنجاح ✅" });
   } catch (err) {
-    console.error("🤖 Chatbot Editor Save Error:", err);
+    console.error("🤖 Website Editor Save Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
 /*-------------------------------
-  Get available templates
+  Get available templates (7 templates)
 -------------------------------*/
 router.get("/templates", requireAuth, async (req, res) => {
   res.json({
     templates: [
-      { id: 'default', name: 'الافتراضي (Classic Night)', thumbnail: '/image.png' },
-      { id: 'glassmorphism', name: 'الزجاجي (Glass Bloom)', thumbnail: '/image copy.png' },
-      { id: 'luxury', name: 'الملكي (Royal Gold)', thumbnail: '/image copy 2.png' },
-      { id: 'cyberpunk', name: 'المستقبلي (Cyber Neon)', thumbnail: '/image copy 3.png' }
+      { id: 'default', name: 'كلاسيك دارك — Classic Dark' },
+      { id: 'glassmorphism', name: 'الزجاجي — Glass Aurora' },
+      { id: 'luxury', name: 'الملكي — Royal Gold' },
+      { id: 'cyberpunk', name: 'المستقبلي — Cyber Neon' },
+      { id: 'minimal-white', name: 'الأبيض الأنيق — Minimal White' },
+      { id: 'startup', name: 'شركة ناشئة — Startup SaaS' },
+      { id: 'restaurant', name: 'مطعم فاخر — Restaurant' }
     ]
   });
 });

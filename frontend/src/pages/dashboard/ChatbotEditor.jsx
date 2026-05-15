@@ -92,8 +92,8 @@ const ChatbotEditor = () => {
                 id: 1,
                 role: 'ai',
                 content: language === 'ar' 
-                    ? `مرحباً ${user?.name || ''}! 👋 أنا مصممك الخاص. اطلب مني أي تعديل وسأقوم بتعديل الكود فوراً.` 
-                    : `Hello ${user?.name || ''}! 👋 I'm your AI Designer. Ask for any changes.`
+                    ? `مرحباً ${user?.name || ''}! 👋 أنا مصمم موقعك الخاص. أقدر أبني لك بورتفوليو كامل لشركتك، أغيّر الألوان والتصميم، وأضيف أقسام جديدة. اطلب مني أي تعديل!` 
+                    : `Hello ${user?.name || ''}! 👋 I'm your Website Builder AI. I can build your full company portfolio, change colors, layouts, and add new sections. Ask me anything!`
             }]);
         } catch (err) { console.error(err); }
         finally { setInitialLoading(false); }
@@ -211,41 +211,57 @@ const ChatbotEditor = () => {
 
     return (
         <div className={`chatbot-editor-container ${isFullscreen ? 'fullscreen' : ''}`} style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
-            {/* ─── Premium Header ─── */}
-            <div className="dash-page-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--dash-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', boxShadow: '0 8px 16px rgba(var(--dash-primary-rgb, 108, 99, 255), 0.2)' }}>
-                        <i className="fas fa-magic" />
+            
+            {/* ─── Lovable-style Top Toolbar ─── */}
+            <div className="editor-toolbar">
+                <div className="toolbar-left">
+                    <div className="toolbar-logo">
+                        <i className="fas fa-bolt"></i>
                     </div>
-                    <div>
-                        <h1 className="dash-page-title">{language === 'ar' ? 'مصمم الشات بوت' : 'Chatbot Designer'}</h1>
-                        <p className="dash-page-subtitle">{companyName || 'VOXIO AI'}</p>
-                    </div>
+                    <span className="toolbar-project-name">{companyName || 'VOXIO AI'}</span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    {/* View Toggles */}
-                    <div style={{ display: 'flex', gap: '4px', background: 'var(--dash-card)', padding: '4px', borderRadius: '10px', border: '1px solid var(--dash-border)' }} className="desktop-only">
-                        <button className={`dash-btn ${viewMode === 'code-only' ? 'dash-btn-primary' : 'dash-btn-outline'}`} onClick={() => setViewMode('code-only')} style={{ padding: '6px 12px', height: 'auto' }}>
-                            <i className="fas fa-code"></i>
-                        </button>
-                        <button className={`dash-btn ${viewMode === 'split' ? 'dash-btn-primary' : 'dash-btn-outline'}`} onClick={() => setViewMode('split')} style={{ padding: '6px 12px', height: 'auto' }}>
-                            <i className="fas fa-columns"></i>
-                        </button>
-                        <button className={`dash-btn ${viewMode === 'preview-only' ? 'dash-btn-primary' : 'dash-btn-outline'}`} onClick={() => setViewMode('preview-only')} style={{ padding: '6px 12px', height: 'auto' }}>
-                            <i className="fas fa-mobile-screen"></i>
-                        </button>
-                    </div>
+                <div className="toolbar-center desktop-only">
+                    <button className={`tb-btn ${viewMode === 'code-only' ? 'active' : ''}`} onClick={() => setViewMode('code-only')}>
+                        <i className="fas fa-code"></i>
+                        <span>{isArabic ? 'كود' : 'Code'}</span>
+                    </button>
+                    <button className={`tb-btn ${viewMode === 'split' ? 'active' : ''}`} onClick={() => setViewMode('split')}>
+                        <i className="fas fa-columns"></i>
+                        <span>{isArabic ? 'تقسيم' : 'Split'}</span>
+                    </button>
+                    <button className={`tb-btn ${viewMode === 'preview-only' ? 'active' : ''}`} onClick={() => setViewMode('preview-only')}>
+                        <i className="fas fa-eye"></i>
+                        <span>{isArabic ? 'معاينة' : 'Preview'}</span>
+                    </button>
+                </div>
 
-                    <div className="divider desktop-only" style={{ width: '1px', background: 'var(--dash-border)', margin: '0 8px' }}></div>
-
-                    <button className="dash-btn dash-btn-outline" onClick={() => setCodeHistory(prev => prev.slice(0, -1))} disabled={codeHistory.length === 0} style={{ width: '42px', padding: 0 }}>
+                <div className="toolbar-right">
+                    <button 
+                        className="tb-icon-btn" 
+                        onClick={() => setIsSidebarOpen(prev => !prev)} 
+                        title={isArabic ? 'القائمة الجانبية' : 'Toggle Sidebar'}
+                    >
+                        <i className={`fas ${isSidebarOpen ? 'fa-sidebar' : 'fa-bars'}`}></i>
+                    </button>
+                    <button 
+                        className="tb-icon-btn" 
+                        onClick={() => { if (codeHistory.length > 0) { setCurrentCode(codeHistory[codeHistory.length - 1]); parseAndSetSegments(codeHistory[codeHistory.length - 1]); setCodeHistory(prev => prev.slice(0, -1)); }}} 
+                        disabled={codeHistory.length === 0}
+                        title={isArabic ? 'تراجع' : 'Undo'}
+                    >
                         <i className="fas fa-rotate-left"></i>
                     </button>
-                    
-                    <button className="dash-btn dash-btn-primary" onClick={handleManualSave} disabled={isSaving}>
-                        <i className={`fas ${isSaving ? 'fa-spinner fa-spin' : 'fa-save'}`}></i>
-                        <span>{language === 'ar' ? 'حفظ' : 'Save'}</span>
+                    <button 
+                        className="tb-icon-btn desktop-only" 
+                        onClick={() => setIsFullscreen(prev => !prev)}
+                        title={isArabic ? 'ملء الشاشة' : 'Fullscreen'}
+                    >
+                        <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
+                    </button>
+                    <button className="tb-save-btn" onClick={handleManualSave} disabled={isSaving}>
+                        <i className={`fas ${isSaving ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-up'}`}></i>
+                        <span>{isArabic ? 'نشر' : 'Publish'}</span>
                     </button>
                 </div>
             </div>
@@ -258,10 +274,12 @@ const ChatbotEditor = () => {
                 <aside className={`ai-sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
                     <div className="sidebar-nav">
                         <button className={activeSidebarTab === 'ai' ? 'active' : ''} onClick={() => setActiveSidebarTab('ai')}>
-                            Chat
+                            <i className="fas fa-sparkles"></i>
+                            {isArabic ? 'المساعد' : 'Chat'}
                         </button>
                         <button className={activeSidebarTab === 'theme' ? 'active' : ''} onClick={() => setActiveSidebarTab('theme')}>
-                            Templates
+                            <i className="fas fa-swatchbook"></i>
+                            {isArabic ? 'قوالب' : 'Templates'}
                         </button>
                     </div>
 
@@ -269,15 +287,11 @@ const ChatbotEditor = () => {
                         {activeSidebarTab === 'ai' && (
                             <div className="chat-interface" dir={isArabic ? 'rtl' : 'ltr'}>
                                 
-                                <div style={{ padding: '10px 15px', borderBottom: '1px solid var(--dash-border)', background: 'rgba(0,0,0,0.02)' }}>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '6px', color: 'var(--dash-text-sec)' }}>
-                                        {isArabic ? 'موديل البرمجة' : 'Coding Model'}
-                                    </label>
+                                <div className="model-selector-bar">
+                                    <label>{isArabic ? 'موديل البرمجة' : 'Coding Model'}</label>
                                     <select 
                                         value={codingModel} 
                                         onChange={(e) => setCodingModel(e.target.value)}
-                                        className="settings-select"
-                                        style={{ width: '100%', fontSize: '0.85rem', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }}
                                     >
                                         <optgroup label="Coding Specialists">
                                             <option value="openrouter/owl-alpha">Owl Alpha (Advanced Design AI)</option>
@@ -290,8 +304,9 @@ const ChatbotEditor = () => {
                                         {messages.map((msg) => (
                                             <motion.div 
                                                 key={msg.id} 
-                                                initial={{ opacity: 0, y: 10 }}
+                                                initial={{ opacity: 0, y: 8 }}
                                                 animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.2 }}
                                                 className={`message-row ${msg.role}`}
                                             >
                                                 {msg.role === 'ai' && <div className="avatar ai"><i className="fas fa-robot"></i></div>}
@@ -397,7 +412,7 @@ const ChatbotEditor = () => {
                                     activeFile)}
                                 padding={20}
                                 className="prism-editor"
-                                style={{ fontFamily: '"Fira Code", "Consolas", monospace', fontSize: '14px', direction: 'ltr' }}
+                                style={{ fontFamily: '"Fira Code", "Consolas", monospace', fontSize: '13px', direction: 'ltr' }}
                             />
                         </div>
                     </div>
@@ -429,7 +444,7 @@ const ChatbotEditor = () => {
                                         className="building-overlay"
                                     >
                                         <div className="magic-spinner"></div>
-                                        <p>AI is coding...</p>
+                                        <p>{isArabic ? 'الذكاء الاصطناعي يكتب الكود...' : 'AI is coding...'}</p>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -442,7 +457,7 @@ const ChatbotEditor = () => {
             <AnimatePresence>
                 {showCopied && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="toast-notification">
-                        <i className="fas fa-check-circle"></i> Saved Successfully
+                        <i className="fas fa-check-circle"></i> {isArabic ? 'تم الحفظ بنجاح' : 'Published Successfully'}
                     </motion.div>
                 )}
             </AnimatePresence>
