@@ -175,39 +175,107 @@ const ChatbotEditor = () => {
 
     // Web Editor Specialized AI Model
     const [codingModel, setCodingModel] = useState('openrouter/owl-alpha');
+    const [workflow, setWorkflow] = useState({ active: false, step: 'idle', request: '', pendingCode: null });
 
-    const sendMessage = async (e) => {
+    const processSegment = async (targetSegment, currentCode) => {
+        const token = secureStorage.getItem('token');
+        const res = await axios.post(
+            `${BACKEND_URL}/chatbot-editor/edit-segment`,
+            { userRequest: workflow.request, targetSegment, currentCode, codingModel },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return res.data;
+    };
+
+    const startWorkflow = async (e) => {
         e.preventDefault();
-        if (!input.trim() || loading) return;
+        if (!input.trim() || loading || workflow.active) return;
 
-        const userMsg = { id: Date.now(), role: 'user', content: input };
-        setMessages(prev => [...prev, userMsg]);
         const request = input;
         setInput('');
+        setMessages(prev => [...prev, { id: Date.now(), role: 'user', content: request }]);
+        setWorkflow({ active: true, step: 'html', request, pendingCode: null });
+        setAiProcessing(true);
+        setLoading(true);
+
+        try {
+            setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🔍 جاري تحليل وتعديل الـ HTML...` }]);
+            const result = await processSegment('html', segments.html);
+            
+            // Save backup and show preview
+            setCodeHistory(prev => [...prev, currentCode]);
+            handleSegmentChange(result.code, 'html');
+            
+            setWorkflow(prev => ({ ...prev, step: 'review_html', pendingCode: result.code }));
+            setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `✅ ${result.message}\nيرجى معاينة التعديل والموافقة (Accept) أو الرفض (Reject).` }]);
+        } catch (err) {
+            console.error(err);
+            setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `❌ حدث خطأ في تعديل HTML` }]);
+            setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null });
+        } finally {
+            setAiProcessing(false);
+            setLoading(false);
+        }
+    };
+
+    const handleAcceptReject = async (action) => {
+        if (!workflow.active) return;
         setLoading(true);
         setAiProcessing(true);
 
-        try {
-            const token = secureStorage.getItem('token');
-            const res = await axios.post(
-                `${BACKEND_URL}/chatbot-editor/edit`,
-                { userRequest: request, history: messages, codingModel },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            if (res.data.code && res.data.code !== currentCode) {
-                setCodeHistory(prev => [...prev, currentCode]);
-                setCurrentCode(res.data.code);
-                parseAndSetSegments(res.data.code);
+        const currentStep = workflow.step;
+        const segmentType = currentStep.replace('review_', '');
+        
+        if (action === 'accept') {
+            setMessages(prev => [...prev, { id: Date.now(), role: 'user', content: `✅ تم قبول تعديلات ${segmentType.toUpperCase()}` }]);
+        } else {
+            // Revert changes
+            if (codeHistory.length > 0) {
+                const previousCode = codeHistory[codeHistory.length - 1];
+                setCurrentCode(previousCode);
+                parseAndSetSegments(previousCode);
+                setCodeHistory(prev => prev.slice(0, -1));
             }
-            setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: res.data.message || 'Updated! ✅' }]);
-        } catch (err) { 
-            const errorMsg = err.response?.data?.details || err.response?.data?.error || err.message;
-            console.error("🔥 AI Editor Error:", err.response?.data || err.message);
-            setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: `❌ حدث خطأ: ${errorMsg}` }]);
+            setMessages(prev => [...prev, { id: Date.now(), role: 'user', content: `❌ تم رفض تعديلات ${segmentType.toUpperCase()}` }]);
         }
-        finally { setLoading(false); setAiProcessing(false); }
+
+        try {
+            if (currentStep === 'review_html') {
+                setWorkflow(prev => ({ ...prev, step: 'css', pendingCode: null }));
+                setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🎨 جاري تعديل الـ CSS...` }]);
+                const result = await processSegment('css', segments.css);
+                
+                setCodeHistory(prev => [...prev, currentCode]);
+                handleSegmentChange(result.code, 'css');
+                
+                setWorkflow(prev => ({ ...prev, step: 'review_css', pendingCode: result.code }));
+                setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `✅ ${result.message}\nيرجى معاينة التعديل والموافقة (Accept) أو الرفض (Reject).` }]);
+            } else if (currentStep === 'review_css') {
+                setWorkflow(prev => ({ ...prev, step: 'js', pendingCode: null }));
+                setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `⚡ جاري تعديل الـ JS...` }]);
+                const result = await processSegment('js', segments.js);
+                
+                setCodeHistory(prev => [...prev, currentCode]);
+                handleSegmentChange(result.code, 'js');
+                
+                setWorkflow(prev => ({ ...prev, step: 'review_js', pendingCode: result.code }));
+                setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `✅ ${result.message}\nيرجى معاينة التعديل والموافقة (Accept) أو الرفض (Reject).` }]);
+            } else if (currentStep === 'review_js') {
+                setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🎉 اكتملت جميع التعديلات بنجاح!` }]);
+                setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null });
+            }
+        } catch (err) {
+            console.error(err);
+            setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `❌ حدث خطأ أثناء التعديل` }]);
+            setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null });
+        } finally {
+            setAiProcessing(false);
+            setLoading(false);
+        }
     };
+
+    // Replace old sendMessage
+    const sendMessage = startWorkflow;
 
     const handleManualSave = async () => {
         setIsSaving(true);
@@ -365,11 +433,28 @@ const ChatbotEditor = () => {
                                         value={input} 
                                         onChange={(e) => setInput(e.target.value)} 
                                         placeholder={language === 'ar' ? "اطلب تعديل التصميم..." : "Ask AI to edit design..."}
+                                        disabled={workflow.active}
                                     />
-                                    <button type="submit" disabled={!input.trim() || loading}>
+                                    <button type="submit" disabled={!input.trim() || loading || workflow.active}>
                                         <i className="fas fa-arrow-up"></i>
                                     </button>
                                 </form>
+                                {workflow.step.startsWith('review_') && (
+                                    <div className="workflow-actions" style={{ display: 'flex', gap: '10px', padding: '10px', background: 'var(--bg-card)', borderTop: '1px solid var(--border-color)' }}>
+                                        <button 
+                                            onClick={() => handleAcceptReject('accept')} 
+                                            className="tb-btn" style={{ flex: 1, background: '#10b981', color: 'white' }}
+                                        >
+                                            <i className="fas fa-check"></i> {language === 'ar' ? 'قبول' : 'Accept'}
+                                        </button>
+                                        <button 
+                                            onClick={() => handleAcceptReject('reject')} 
+                                            className="tb-btn" style={{ flex: 1, background: '#ef4444', color: 'white' }}
+                                        >
+                                            <i className="fas fa-times"></i> {language === 'ar' ? 'رفض' : 'Reject'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
