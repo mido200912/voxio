@@ -249,7 +249,7 @@ const Settings = () => {
                                 <label>AI Model</label>
                                 <select className="settings-select" value={companyData.aiSettings?.model}
                                     onChange={(e) => setCompanyData({...companyData, aiSettings: {...companyData.aiSettings, model: e.target.value}})}>
-                                    <option value="inclusionai/ring-2.6-1t">Ring 2.6 1T</option>
+                                    <option value="openrouter/owl-alpha">Owl Alpha</option>
                                 </select>
                             </div>
                         </div>

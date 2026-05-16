@@ -699,10 +699,10 @@ const Integrations = () => {
                                 <div className="input-group">
                                     <label>{t.language === 'ar' ? 'موديل AI' : 'AI Model'}</label>
                                     <select
-                                        value={whatsappData.aiModel || 'inclusionai/ring-2.6-1t'}
+                                        value={whatsappData.aiModel || 'openrouter/owl-alpha'}
                                         onChange={(e) => setWhatsappData({ ...whatsappData, aiModel: e.target.value })}
                                     >
-                                        <option value="inclusionai/ring-2.6-1t">Ring 2.6 1T</option>
+                                        <option value="openrouter/owl-alpha">Owl Alpha</option>
                                     </select>
                                 </div>
                             </div>
@@ -745,9 +745,9 @@ const Integrations = () => {
             {/* Telegram Modal */}
             {showTelegramModal && (
                 <div className="modal-overlay" onClick={closeTelegramModal}>
-                    <div className="modal-content telegram-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px' }}>
-                        <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <i className="fab fa-telegram" style={{ color: '#26A5E4' }} />
+                    <div className="modal-content telegram-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px', background: 'var(--dash-bg)', border: '1px solid var(--dash-border)' }}>
+                        <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--dash-text)' }}>
+                            <i className="fab fa-telegram" style={{ color: 'var(--dash-text)' }} />
                             {t.language === 'ar' ? 'إعداد تليجرام' : 'Telegram Setup'}
                         </h2>
                         <form onSubmit={handleTelegramSubmit} style={{
@@ -756,17 +756,17 @@ const Integrations = () => {
                             paddingRight: '8px'
                         }}>
                             <div className="form-group">
-                                <label>{t.language === 'ar' ? 'Bot Token (من @BotFather)' : 'Bot Token (from @BotFather)'}</label>
+                                <label style={{ color: 'var(--dash-text-sec)' }}>{t.language === 'ar' ? 'Bot Token (من @BotFather)' : 'Bot Token (from @BotFather)'}</label>
 
                                 {isTelegramEditing && !isTelegramTokenRevealed ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         {!revealOtpVisible ? (
                                             <button
                                                 type="button"
-                                                className="btn btn-outline"
+                                                className="dash-btn dash-btn-outline"
                                                 onClick={() => requestRevealOtp('telegram')}
                                                 disabled={isRequestingOtp}
-                                                style={{ width: '100%', height: '45px', borderStyle: 'dashed' }}
+                                                style={{ width: '100%', height: '45px', borderStyle: 'dashed', color: 'var(--dash-text)' }}
                                             >
                                                 {isRequestingOtp ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-eye" style={{ marginInlineEnd: '8px' }} />}
                                                 {t.language === 'ar' ? 'كشف الـ Token (يتطلب OTP)' : 'Reveal Token (Requires OTP)'}
@@ -778,14 +778,14 @@ const Integrations = () => {
                                                     placeholder={t.language === 'ar' ? 'أدخل الكود (6 أرقام)' : 'Enter Code (6 digits)'}
                                                     value={revealOtpCode}
                                                     onChange={(e) => setRevealOtpCode(e.target.value)}
-                                                    style={{ flex: 1, borderRadius: '10px', padding: '10px 14px', border: '1px solid #26A5E4' }}
+                                                    style={{ flex: 1, borderRadius: '10px', padding: '10px 14px', border: '1px solid var(--dash-text)', background: 'var(--dash-card)', color: 'var(--dash-text)' }}
                                                 />
                                                 <button
                                                     type="button"
-                                                    className="btn btn-primary"
+                                                    className="dash-btn dash-btn-primary"
                                                     onClick={verifyRevealOtp}
                                                     disabled={isVerifyingRevealOtp}
-                                                    style={{ background: '#26A5E4', padding: '0 20px' }}
+                                                    style={{ background: 'var(--dash-text)', color: 'var(--dash-bg)', padding: '0 20px' }}
                                                 >
                                                     {isVerifyingRevealOtp ? <i className="fas fa-spinner fa-spin" /> : (t.language === 'ar' ? 'تأكيد' : 'Verify')}
                                                 </button>
@@ -799,37 +799,37 @@ const Integrations = () => {
                                         placeholder="123456789:ABCDefghIJKlmnoPQRstUVwxYZ"
                                         value={telegramData.botToken}
                                         onChange={(e) => setTelegramData(prev => ({ ...prev, botToken: e.target.value }))}
-                                        style={{ width: '100%', borderRadius: '10px', padding: '10px 14px', border: '1px solid #ddd' }}
+                                        style={{ width: '100%', borderRadius: '10px', padding: '10px 14px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }}
                                     />
                                 )}
                             </div>
 
-                            <div style={{ marginTop: '25px', borderTop: '2px solid #f0f0f0', paddingTop: '20px' }}>
+                            <div style={{ marginTop: '25px', borderTop: '1px dashed var(--dash-border)', paddingTop: '20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#26A5E415', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#26A5E4' }}>
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--dash-card)', border: '1px solid var(--dash-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--dash-text)' }}>
                                         <i className="fas fa-terminal" style={{ fontSize: '0.9rem' }} />
                                     </div>
-                                    <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#333' }}>
+                                    <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--dash-text)' }}>
                                         {t.language === 'ar' ? 'إعداد الأوامر الذكية' : 'Smart Command Setup'}
                                     </h3>
                                 </div>
 
-                                <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '20px', lineHeight: '1.5' }}>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--dash-text-sec)', marginBottom: '20px', lineHeight: '1.5' }}>
                                     {t.language === 'ar' ? 'قم ببناء تجربة تفاعلية لعملائك عبر تليجرام. حدد الأوامر، المنتجات، والردود التلقائية.' : 'Build an interactive experience for your customers via Telegram.'}
                                 </p>
 
                                 {/* Saved commands list */}
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                                     {telegramData.commands.map((cmd, idx) => (
-                                        <div key={idx} style={{ position: 'relative', background: '#fff', padding: '15px', borderRadius: '15px', border: '1px solid #e8e8e8', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+                                        <div key={idx} style={{ position: 'relative', background: 'var(--dash-card)', padding: '15px', borderRadius: '15px', border: '1px solid var(--dash-border)', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                <span style={{ fontWeight: 800, color: '#26A5E4', fontSize: '0.95rem' }}>/{cmd.command}</span>
-                                                <span style={{ fontSize: '0.7rem', background: '#f0f0f0', padding: '2px 8px', borderRadius: '10px', color: '#888' }}>{cmd.type}</span>
+                                                <span style={{ fontWeight: 800, color: 'var(--dash-text)', fontSize: '0.95rem' }}>/{cmd.command}</span>
+                                                <span style={{ fontSize: '0.7rem', background: 'var(--dash-bg)', border: '1px solid var(--dash-border)', padding: '2px 8px', borderRadius: '10px', color: 'var(--dash-text-sec)' }}>{cmd.type}</span>
                                             </div>
-                                            <div style={{ fontSize: '0.8rem', color: '#555', marginBottom: '4px' }}><b>📝 {t.language === 'ar' ? 'التصنيف:' : 'Category:'}</b> {cmd.category}</div>
-                                            {cmd.products?.length > 0 && <div style={{ fontSize: '0.8rem', color: '#26A5E4' }}><b>📦 {cmd.products.length} {t.language === 'ar' ? 'منتجات' : 'Products'}</b></div>}
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--dash-text)', marginBottom: '4px' }}><b>📝 {t.language === 'ar' ? 'التصنيف:' : 'Category:'}</b> {cmd.category}</div>
+                                            {cmd.products?.length > 0 && <div style={{ fontSize: '0.8rem', color: 'var(--dash-text)' }}><b>📦 {cmd.products.length} {t.language === 'ar' ? 'منتجات' : 'Products'}</b></div>}
 
-                                            <button type="button" onClick={() => removeTelegramCommand(idx)} style={{ position: 'absolute', top: '12px', right: '12px', color: '#ff4d4f', background: '#fff', border: '1px solid #ff4d4f30', cursor: 'pointer', width: '24px', height: '24px', borderRadius: '50%', fontSize: '0.7rem' }}>
+                                            <button type="button" onClick={() => removeTelegramCommand(idx)} style={{ position: 'absolute', top: '12px', right: '12px', color: 'var(--dash-text)', background: 'var(--dash-bg)', border: '1px solid var(--dash-border)', cursor: 'pointer', width: '24px', height: '24px', borderRadius: '50%', fontSize: '0.7rem' }}>
                                                 <i className="fas fa-trash" />
                                             </button>
                                         </div>
@@ -837,24 +837,24 @@ const Integrations = () => {
                                 </div>
 
                                 {/* New command builder */}
-                                <div style={{ background: '#fbfcfe', border: '1px solid #e6ebf5', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <div style={{ background: 'var(--dash-card)', border: '1px solid var(--dash-border)', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '15px' }}>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label style={{ fontSize: '0.8rem', color: '#666', fontWeight: '600' }}>{t.language === 'ar' ? 'اسم الأمر (بدون /)' : 'Command ID'}</label>
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--dash-text-sec)', fontWeight: '600' }}>{t.language === 'ar' ? 'اسم الأمر (بدون /)' : 'Command ID'}</label>
                                             <input type="text" placeholder="shopping" value={newCommand.command}
                                                 onChange={e => updateNewCommand('command', e.target.value)}
-                                                style={{ borderRadius: '10px', padding: '10px 14px', border: '1px solid #ddd' }} />
+                                                style={{ borderRadius: '10px', padding: '10px 14px', border: '1px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)' }} />
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label style={{ fontSize: '0.8rem', color: '#666', fontWeight: '600' }}>{t.language === 'ar' ? 'التصنيف' : 'Category'}</label>
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--dash-text-sec)', fontWeight: '600' }}>{t.language === 'ar' ? 'التصنيف' : 'Category'}</label>
                                             <input type="text" placeholder={t.language === 'ar' ? 'مبيعات' : 'Sales'} value={newCommand.category}
                                                 onChange={e => updateNewCommand('category', e.target.value)}
-                                                style={{ borderRadius: '10px', padding: '10px 14px', border: '1px solid #ddd' }} />
+                                                style={{ borderRadius: '10px', padding: '10px 14px', border: '1px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)' }} />
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label style={{ fontSize: '0.8rem', color: '#666', fontWeight: '600' }}>{t.language === 'ar' ? 'نوع الرد' : 'Logic Type'}</label>
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--dash-text-sec)', fontWeight: '600' }}>{t.language === 'ar' ? 'نوع الرد' : 'Logic Type'}</label>
                                             <select value={newCommand.type} onChange={e => updateNewCommand('type', e.target.value)}
-                                                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #ddd', background: 'white' }}>
+                                                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)' }}>
                                                 <option value="ai">🤖 AI Reply</option>
                                                 <option value="fixed_message">💬 Fixed Message</option>
                                                 <option value="product_menu">🛍️ Product Menu + Order</option>
@@ -866,39 +866,39 @@ const Integrations = () => {
                                     {newCommand.type !== 'ai' && (
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                                <label style={{ fontSize: '0.8rem', color: '#666', fontWeight: '600' }}>{t.language === 'ar' ? 'رسالة الترحيب' : 'Intro Message'}</label>
+                                                <label style={{ fontSize: '0.8rem', color: 'var(--dash-text-sec)', fontWeight: '600' }}>{t.language === 'ar' ? 'رسالة الترحيب' : 'Intro Message'}</label>
                                                 <textarea rows="3" value={newCommand.message}
                                                     placeholder={t.language === 'ar' ? 'مرحباً بك، اختر طلبك...' : 'Welcome! Please choose...'}
                                                     onChange={e => updateNewCommand('message', e.target.value)}
-                                                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '0.85rem' }} />
+                                                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)', fontSize: '0.85rem' }} />
                                             </div>
                                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                                <label style={{ fontSize: '0.8rem', color: '#666', fontWeight: '600' }}>{t.language === 'ar' ? 'رسالة النجاح (بعد الرقم)' : 'Success Message'}</label>
+                                                <label style={{ fontSize: '0.8rem', color: 'var(--dash-text-sec)', fontWeight: '600' }}>{t.language === 'ar' ? 'رسالة النجاح (بعد الرقم)' : 'Success Message'}</label>
                                                 <textarea rows="3" value={newCommand.successMessage}
                                                     placeholder={t.language === 'ar' ? 'تم استلام طلبك، سنتصل بك قريباً!' : 'Success! We will call you soon.'}
                                                     onChange={e => updateNewCommand('successMessage', e.target.value)}
-                                                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '0.85rem' }} />
+                                                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--dash-border)', background: 'var(--dash-bg)', color: 'var(--dash-text)', fontSize: '0.85rem' }} />
                                             </div>
                                         </div>
                                     )}
 
                                     {/* Product Menu Management */}
                                     {newCommand.type === 'product_menu' && (
-                                        <div style={{ background: '#fff', borderRadius: '15px', padding: '18px', border: '1px solid #e0e0e0' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', color: '#333', fontSize: '0.9rem', fontWeight: '700' }}>
+                                        <div style={{ background: 'var(--dash-bg)', borderRadius: '15px', padding: '18px', border: '1px solid var(--dash-border)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', color: 'var(--dash-text)', fontSize: '0.9rem', fontWeight: '700' }}>
                                                 <i className="fas fa-boxes" /> {t.language === 'ar' ? 'قائمة المنتجات' : 'Products List'}
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
                                                 {(newCommand.products || []).map((p, i) => (
-                                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px', background: '#f8fbfc', borderRadius: '10px', border: '1px solid #ececec' }}>
+                                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px', background: 'var(--dash-card)', borderRadius: '10px', border: '1px solid var(--dash-border)' }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                             {p.imageUrl && <img src={p.imageUrl} alt={p.name} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />}
                                                             <div>
-                                                                <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{p.name} <small style={{ color: '#26A5E4', marginInlineStart: '10px' }}>{p.price}</small></span>
-                                                                {p.description && <div style={{ fontSize: '0.75rem', color: '#666' }}>{p.description}</div>}
+                                                                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--dash-text)' }}>{p.name} <small style={{ color: 'var(--dash-text-sec)', marginInlineStart: '10px' }}>{p.price}</small></span>
+                                                                {p.description && <div style={{ fontSize: '0.75rem', color: 'var(--dash-text-sec)' }}>{p.description}</div>}
                                                             </div>
                                                         </div>
-                                                        <button type="button" onClick={() => removeProductFromCommand(i)} style={{ color: '#ff4d4f', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                                        <button type="button" onClick={() => removeProductFromCommand(i)} style={{ color: 'var(--dash-text)', background: 'var(--dash-bg)', border: '1px solid var(--dash-border)', cursor: 'pointer', borderRadius: '6px', padding: '4px 8px' }}>
                                                             <i className="fas fa-times" />
                                                         </button>
                                                     </div>
@@ -908,25 +908,25 @@ const Integrations = () => {
                                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                                                     <input type="text" placeholder={t.language === 'ar' ? 'اسم المنتج' : 'Product name'} value={newProduct.name}
                                                         onChange={e => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
-                                                        style={{ flex: 2, padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+                                                        style={{ flex: 2, padding: '10px', borderRadius: '8px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }} />
                                                     <input type="text" placeholder={t.language === 'ar' ? 'السعر' : 'Price'} value={newProduct.price}
                                                         onChange={e => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
-                                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+                                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }} />
                                                 </div>
                                                 <textarea placeholder={t.language === 'ar' ? 'وصف المنتج' : 'Product description'} value={newProduct.description}
                                                     onChange={e => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
-                                                    rows="2" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+                                                    rows="2" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--dash-border)', background: 'var(--dash-card)', color: 'var(--dash-text)' }} />
                                                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: '#f0f0f0', borderRadius: '8px', cursor: 'pointer', flex: 1 }}>
-                                                        <i className="fas fa-image" style={{ color: '#666' }} />
-                                                        <span style={{ fontSize: '0.85rem', color: '#444' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'var(--dash-card)', border: '1px dashed var(--dash-border)', borderRadius: '8px', cursor: 'pointer', flex: 1, justifyContent: 'center' }}>
+                                                        <i className="fas fa-image" style={{ color: 'var(--dash-text)' }} />
+                                                        <span style={{ fontSize: '0.85rem', color: 'var(--dash-text)' }}>
                                                             {newProduct.imageUrl ? (t.language === 'ar' ? 'تم رفع الصورة' : 'Image Uploaded') : (t.language === 'ar' ? 'إرفاق صورة' : 'Attach Image')}
                                                         </span>
                                                         <input type="file" accept="image/*" onChange={handleProductImageUpload} style={{ display: 'none' }} disabled={isUploadingProductImg} />
-                                                        {isUploadingProductImg && <i className="fas fa-spinner fa-spin" style={{ marginInlineStart: 'auto', color: '#26A5E4' }} />}
+                                                        {isUploadingProductImg && <i className="fas fa-spinner fa-spin" style={{ marginInlineStart: 'auto', color: 'var(--dash-text)' }} />}
                                                     </label>
                                                     <button type="button" onClick={addProductToCommand}
-                                                        style={{ width: '100px', height: '40px', background: '#26A5E4', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 'bold' }}>
+                                                        style={{ width: '100px', height: '40px', background: 'var(--dash-text)', color: 'var(--dash-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 'bold' }}>
                                                         {t.language === 'ar' ? 'إضافة' : 'Add'} <i className="fas fa-plus" />
                                                     </button>
                                                 </div>
@@ -935,18 +935,18 @@ const Integrations = () => {
                                     )}
 
                                     <button type="button" onClick={addTelegramCommand}
-                                        style={{ width: '100%', padding: '12px', background: '#26A5E4', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(38, 165, 228, 0.2)' }}>
-                                        <i className="fas fa-check-circle" />
+                                        style={{ width: '100%', padding: '12px', background: 'var(--dash-card)', color: 'var(--dash-text)', border: '1px solid var(--dash-text)', borderRadius: '12px', cursor: 'pointer', fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                        <i className="fas fa-plus" />
                                         {t.language === 'ar' ? 'حفظ هذا الأمر والبدء في آخر' : 'Add Command to Platform'}
                                     </button>
                                 </div>
                             </div>
 
                             <div className="modal-actions" style={{ marginTop: '30px' }}>
-                                <button type="button" className="btn btn-outline" onClick={closeTelegramModal}>
+                                <button type="button" className="dash-btn dash-btn-outline" onClick={closeTelegramModal}>
                                     {t.dashboard.integrationsPage.whatsappCancel || 'Cancel'}
                                 </button>
-                                <button type="submit" className="btn btn-primary" style={{ background: '#26A5E4', borderColor: '#26A5E4' }}>
+                                <button type="submit" className="dash-btn dash-btn-primary" style={{ background: 'var(--dash-text)', borderColor: 'var(--dash-text)', color: 'var(--dash-bg)' }}>
                                     {t.dashboard.integrationsPage.whatsappSave || 'Save & Connect'}
                                 </button>
                             </div>
