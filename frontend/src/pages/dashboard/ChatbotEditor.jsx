@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext'; // eslint-disable-line no-unused-vars
+import { useAuth } from '../../context/AuthContext';  
 import { useLanguage } from '../../context/LanguageContext';
-import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';  
 import Prism from 'prismjs';
 import Editor from 'react-simple-code-editor';
 

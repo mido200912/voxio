@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext'; // eslint-disable-line no-unused-vars
+import { useAuth } from '../../context/AuthContext';  
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
-import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';  
 import { useToast } from '../../components/Toast';
 import { Link } from 'react-router-dom';
 import './Integrations.css';
@@ -42,18 +42,18 @@ const Integrations = () => {
     const [isRequestingOtp, setIsRequestingOtp] = useState(false);
     const [isVerifyingRevealOtp, setIsVerifyingRevealOtp] = useState(false);
     const [isTelegramTokenRevealed, setIsTelegramTokenRevealed] = useState(false);
-    const [isWhatsappTokenRevealed, setIsWhatsappTokenRevealed] = useState(false); // eslint-disable-line no-unused-vars
-    const [isInstagramTokenRevealed, setIsInstagramTokenRevealed] = useState(false); // eslint-disable-line no-unused-vars
+    const [isWhatsappTokenRevealed, setIsWhatsappTokenRevealed] = useState(false);  
+    const [isInstagramTokenRevealed, setIsInstagramTokenRevealed] = useState(false);  
     const [revealPlatform, setRevealPlatform] = useState('telegram');
     const [isTelegramEditing, setIsTelegramEditing] = useState(false);
-    const [isWhatsappEditing, setIsWhatsappEditing] = useState(false); // eslint-disable-line no-unused-vars
-    const [isInstagramEditing, setIsInstagramEditing] = useState(false); // eslint-disable-line no-unused-vars
+    const [isWhatsappEditing, setIsWhatsappEditing] = useState(false);  
+    const [isInstagramEditing, setIsInstagramEditing] = useState(false);  
 
     // useRef always holds the LATEST value - immune to stale closures
     const newCommandRef = useRef(newCommand);
     useEffect(() => { newCommandRef.current = newCommand; }, [newCommand]);
 
-    const [availableIntegrations, setAvailableIntegrations] = useState([ // eslint-disable-line no-unused-vars
+    const [availableIntegrations, setAvailableIntegrations] = useState([  
         {
             id: 'whatsapp',
             name: 'WhatsApp Business',
@@ -123,7 +123,7 @@ const Integrations = () => {
             window.history.replaceState({}, document.title, window.location.pathname);
             fetchIntegrations();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, []);
 
     const fetchIntegrations = async () => {
@@ -173,7 +173,7 @@ const Integrations = () => {
 
         try {
             const userStr = secureStorage.getItem('user');
-            const user = userStr ? userStr : null; // eslint-disable-line no-unused-vars
+            const user = userStr ? userStr : null;  
 
             if (integration.id === 'facebook') {
                 const companyRes = await axios.get(`${BACKEND_URL}/company`, {
@@ -511,12 +511,12 @@ const Integrations = () => {
         setRevealOtpCode('');
     };
 
-    const containerVariants = { // eslint-disable-line no-unused-vars
+    const containerVariants = {  
         hidden: { opacity: 0 },
         visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
     };
 
-    const itemVariants = { // eslint-disable-line no-unused-vars
+    const itemVariants = {  
         hidden: { opacity: 0, scale: 0.95 },
         visible: { opacity: 1, scale: 1 }
     };

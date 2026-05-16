@@ -1,5 +1,5 @@
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import { useState, useEffect, createContext, useContext, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';  
 
 const ToastContext = createContext(null);
 
@@ -21,12 +21,12 @@ export const ToastProvider = ({ children }) => {
         setToasts(prev => prev.filter(t => t.id !== id));
     }, []);
 
-    const toast = useCallback({
+    const toast = useMemo(() => ({
         success: (msg, dur) => addToast(msg, 'success', dur),
         error: (msg, dur) => addToast(msg, 'error', dur),
         info: (msg, dur) => addToast(msg, 'info', dur),
         warning: (msg, dur) => addToast(msg, 'warning', dur),
-    }, [addToast]);
+    }), [addToast]);
 
     // Reassign methods directly
     const value = { toast: Object.assign(addToast, toast) };

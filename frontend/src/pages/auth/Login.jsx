@@ -52,7 +52,7 @@ const Login = () => {
                 }
             };
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [GOOGLE_CLIENT_ID, handleGoogleResponse]);
 
     const [step, setStep] = useState(1);

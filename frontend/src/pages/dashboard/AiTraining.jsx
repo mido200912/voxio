@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { secureStorage } from '../../utils/secureStorage';
 import { useLanguage } from '../../context/LanguageContext';
-import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import { motion } from 'framer-motion';  
 import { useToast } from '../../components/Toast';
 import './AiTraining.css';
 import './DashboardShared.css';

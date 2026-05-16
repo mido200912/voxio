@@ -15,7 +15,7 @@ import {
     Sparkles,
     Command,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // eslint-disable-line no-unused-vars
+import { motion, AnimatePresence } from "framer-motion";  
 
 function useAutoResizeTextarea({
     minHeight,
