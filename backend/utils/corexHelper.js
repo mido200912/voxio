@@ -140,7 +140,7 @@ export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallback
                         "Authorization": `Bearer ${openRouterApiKey}`,
                         "Content-Type": "application/json"
                     },
-                    timeout: 90000
+                    timeout: 60000
                 });
                 
                 if (response.data?.choices?.length > 0) {
