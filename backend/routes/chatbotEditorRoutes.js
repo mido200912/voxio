@@ -76,7 +76,12 @@ RESPOND WITH ONLY RAW JSON: {"message": "Concise description", "code": "The FULL
 router.post("/edit-segment", requireAuth, async (req, res) => {
   try {
     const { userRequest, targetSegment, currentCode, codingModel, context } = req.body;
-    if (!userRequest || !targetSegment) return res.status(400).json({ error: "Missing required fields" });
+    if (!userRequest || !targetSegment) {
+        return res.status(400).json({ 
+            error: "Missing required fields", 
+            received: req.body 
+        });
+    }
 
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
