@@ -126,21 +126,82 @@ Remember: Modify the code to fulfill the current request while respecting the co
     console.log(`🤖 Website Editor: Sending to AI... (Model: ${codingModel || 'default'})`);
     const aiResult = await fetchDesignerAiResponse(systemPrompt, userPrompt, "Failed to process request.", codingModel);
     
-    // Parse AI response JSON
+    // Parse AI response JSON (robust parser)
     let parsed;
     try {
       let cleaned = aiResult;
-      cleaned = cleaned.replace(/```json\s*/gi, '').replace(/```html\s*/gi, '').replace(/```\s*/gi, '');
+      // Remove markdown wrappers
+      cleaned = cleaned.replace(/```json\s*/gi, '').replace(/```html\s*/gi, '').replace(/```\s*/gi, '').trim();
 
+      // Attempt 1: Standard JSON parse
       const startIdx = cleaned.indexOf('{');
       const endIdx = cleaned.lastIndexOf('}');
       if (startIdx !== -1 && endIdx !== -1) {
-        parsed = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
+        try {
+          parsed = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
+        } catch (_jsonErr) {
+          // Attempt 2: Scan for the "code" value properly
+          console.warn("🤖 Standard JSON parse failed, trying manual extraction...");
+          
+          // Extract message
+          const msgMatch = cleaned.match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+          const message = msgMatch ? JSON.parse('"' + msgMatch[1] + '"') : 'تم التعديل ✅';
+          
+          // Extract code using JSON string scanner
+          const codeKeyIdx = cleaned.indexOf('"code"');
+          if (codeKeyIdx === -1) throw new Error("No 'code' key found");
+          
+          // Find the opening quote of the code value
+          let quoteStart = cleaned.indexOf('"', codeKeyIdx + 6); // skip past "code"
+          // skip the : between key and value
+          const colonIdx = cleaned.indexOf(':', codeKeyIdx + 6);
+          if (colonIdx !== -1) quoteStart = cleaned.indexOf('"', colonIdx + 1);
+          
+          if (quoteStart === -1) throw new Error("No code value found");
+          
+          // Scan for the matching closing quote (respecting JSON escaping)
+          let i = quoteStart + 1;
+          let codeChars = [];
+          let foundEnd = false;
+          while (i < cleaned.length) {
+            if (cleaned[i] === '\\' && i + 1 < cleaned.length) {
+              // Escaped character — keep both chars and move past
+              codeChars.push(cleaned[i], cleaned[i + 1]);
+              i += 2;
+            } else if (cleaned[i] === '"') {
+              // End of the JSON string value
+              foundEnd = true;
+              break;
+            } else {
+              codeChars.push(cleaned[i]);
+              i++;
+            }
+          }
+          
+          const rawCodeStr = codeChars.join('');
+          
+          // Properly unescape using JSON.parse
+          let codeContent;
+          try {
+            codeContent = JSON.parse('"' + rawCodeStr + '"');
+          } catch (_unescErr) {
+            // If JSON.parse fails (truncated response), do manual unescape in correct order
+            codeContent = rawCodeStr
+              .replace(/\\\\/g, '\x00BS\x00')   // preserve escaped backslashes first
+              .replace(/\\n/g, '\n')
+              .replace(/\\t/g, '\t')
+              .replace(/\\r/g, '\r')
+              .replace(/\\"/g, '"')
+              .replace(/\x00BS\x00/g, '\\');     // restore backslashes
+          }
+          
+          parsed = { message, code: codeContent };
+        }
       } else {
         throw new Error("No JSON found in AI response");
       }
     } catch (e) {
-      console.error("🤖 AI Parse Error:", aiResult.substring(0, 500));
+      console.error("🤖 AI Parse Error:", e.message, aiResult.substring(0, 500));
       return res.status(500).json({ error: "فشل التعديل، حاول تاني", details: aiResult.substring(0, 300) });
     }
 

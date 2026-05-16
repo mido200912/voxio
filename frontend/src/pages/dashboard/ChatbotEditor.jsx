@@ -107,36 +107,70 @@ const ChatbotEditor = () => {
             code = code.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
         }
 
-        const styleMatch = code.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
-        const scriptMatch = code.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+        // Extract ALL style blocks
+        const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+        let allCss = '';
+        let styleMatch;
+        while ((styleMatch = styleRegex.exec(code)) !== null) {
+            allCss += (allCss ? '\n' : '') + styleMatch[1].trim();
+        }
 
-        let htmlOnly = code;
-        if (styleMatch) htmlOnly = htmlOnly.replace(styleMatch[0], '');
-        if (scriptMatch) htmlOnly = htmlOnly.replace(scriptMatch[0], '');
+        // Extract ALL script blocks
+        const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+        let allJs = '';
+        let scriptMatch;
+        while ((scriptMatch = scriptRegex.exec(code)) !== null) {
+            allJs += (allJs ? '\n\n' : '') + scriptMatch[1].trim();
+        }
+
+        // Remove all style and script blocks from HTML
+        let htmlOnly = code
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
 
         setSegments({
             html: htmlOnly.trim(),
-            css: styleMatch ? styleMatch[1].trim() : '',
-            js: scriptMatch ? scriptMatch[1].trim() : ''
+            css: allCss,
+            js: allJs
         });
 
         // Discover colors from CSS
         try {
-            const cssText = styleMatch ? styleMatch[1] : '';
             const colorRegex = /#[0-9a-fA-F]{3,8}\b/g;
-            const found = cssText.match(colorRegex) || [];
+            const found = allCss.match(colorRegex) || [];
             const unique = [...new Set(found)].slice(0, 12);
             setDiscoveredColors(unique);
-        } catch (e) { /* ignore */ }
+        } catch (_e) { /* ignore */ }
     };
 
     const handleSegmentChange = (newCode, type) => {
         const newSegments = { ...segments, [type]: newCode };
         setSegments(newSegments);
-        let merged = newSegments.html;
-        merged += `\n<style>\n${newSegments.css}\n</style>`;
-        merged += `\n<script>\n${newSegments.js}\n</script>`;
-        setCurrentCode(merged);
+
+        // Rebuild the full HTML properly
+        let html = newSegments.html;
+        
+        // Insert <style> before </head> if head exists, otherwise before </html>
+        if (newSegments.css) {
+            const styleBlock = `\n<style>\n${newSegments.css}\n</style>\n`;
+            if (html.includes('</head>')) {
+                html = html.replace('</head>', styleBlock + '</head>');
+            } else {
+                html = styleBlock + html;
+            }
+        }
+
+        // Insert <script> before </body> if body exists, otherwise at end
+        if (newSegments.js) {
+            const scriptBlock = `\n<script>\n${newSegments.js}\n</script>\n`;
+            if (html.includes('</body>')) {
+                html = html.replace('</body>', scriptBlock + '</body>');
+            } else {
+                html += scriptBlock;
+            }
+        }
+
+        setCurrentCode(html);
     };
 
     // Web Editor Specialized AI Model
