@@ -177,11 +177,11 @@ const ChatbotEditor = () => {
     const [codingModel, setCodingModel] = useState('openrouter/owl-alpha');
     const [workflow, setWorkflow] = useState({ active: false, step: 'idle', request: '', pendingCode: null });
 
-    const processSegment = async (targetSegment, currentCode) => {
+    const processSegment = async (targetSegment, currentCode, requestText) => {
         const token = secureStorage.getItem('token');
         const res = await axios.post(
             `${BACKEND_URL}/chatbot-editor/edit-segment`,
-            { userRequest: workflow.request, targetSegment, currentCode, codingModel },
+            { userRequest: requestText || workflow.request, targetSegment, currentCode, codingModel },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return res.data;
@@ -200,7 +200,7 @@ const ChatbotEditor = () => {
 
         try {
             setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🔍 جاري تحليل وتعديل الـ HTML...` }]);
-            const result = await processSegment('html', segments.html);
+            const result = await processSegment('html', segments.html, request);
             
             // Save backup and show preview
             setCodeHistory(prev => [...prev, currentCode]);
