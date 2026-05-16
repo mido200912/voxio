@@ -337,6 +337,8 @@ if (mongoose.connection.readyState === 0) {
         socketTimeoutMS: 45000,   // Close stale sockets
         // ⚡ Heartbeat — less frequent pings = less overhead
         heartbeatFrequencyMS: 30000,
+        // Disable autoIndex in production to prevent buffering timeouts on serverless
+        autoIndex: process.env.NODE_ENV !== 'production'
     })
         .then(() => {
             console.log('🍃 Connected to MongoDB (Main Server)');
