@@ -175,13 +175,13 @@ const ChatbotEditor = () => {
 
     // Web Editor Specialized AI Model
     const [codingModel, setCodingModel] = useState('openrouter/owl-alpha');
-    const [workflow, setWorkflow] = useState({ active: false, step: 'idle', request: '', pendingCode: null });
+    const [workflow, setWorkflow] = useState({ active: false, step: 'idle', request: '', pendingCode: null, report: '' });
 
-    const processSegment = async (targetSegment, currentCode, requestText) => {
+    const processSegment = async (targetSegment, currentCode, requestText, reportContext) => {
         const token = secureStorage.getItem('token');
         const res = await axios.post(
             `${BACKEND_URL}/chatbot-editor/edit-segment`,
-            { userRequest: requestText || workflow.request, targetSegment, currentCode, codingModel },
+            { userRequest: requestText || workflow.request, targetSegment, currentCode, codingModel, context: reportContext || workflow.report },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return res.data;
@@ -194,24 +194,37 @@ const ChatbotEditor = () => {
         const request = input;
         setInput('');
         setMessages(prev => [...prev, { id: Date.now(), role: 'user', content: request }]);
-        setWorkflow({ active: true, step: 'html', request, pendingCode: null });
+        setWorkflow({ active: true, step: 'analyzing', request, pendingCode: null, report: '' });
         setAiProcessing(true);
         setLoading(true);
 
         try {
-            setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🔍 جاري تحليل وتعديل الـ HTML...` }]);
-            const result = await processSegment('html', segments.html, request);
+            setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🧠 جاري تحليل الكود وعمل خطة التعديلات...` }]);
+            
+            // Step 1: Analyze
+            const token = secureStorage.getItem('token');
+            const analyzeRes = await axios.post(
+                `${BACKEND_URL}/chatbot-editor/analyze`,
+                { userRequest: request, html: segments.html, css: segments.css, js: segments.js, codingModel },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            const report = analyzeRes.data.report;
+            setWorkflow(prev => ({ ...prev, report }));
+
+            // Step 2: Edit HTML
+            setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `🔍 الخطة جاهزة! جاري تحليل وتعديل الـ HTML...` }]);
+            const result = await processSegment('html', segments.html, request, report);
             
             // Save backup and show preview
             setCodeHistory(prev => [...prev, currentCode]);
             handleSegmentChange(result.code, 'html');
             
             setWorkflow(prev => ({ ...prev, step: 'review_html', pendingCode: result.code }));
-            setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `✅ ${result.message}\nيرجى معاينة التعديل والموافقة (Accept) أو الرفض (Reject).` }]);
+            setMessages(prev => [...prev, { id: Date.now()+3, role: 'ai', content: `✅ ${result.message}\nيرجى معاينة التعديل والموافقة (Accept) أو الرفض (Reject).` }]);
         } catch (err) {
             console.error(err);
-            setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `❌ حدث خطأ في تعديل HTML` }]);
-            setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null });
+            setMessages(prev => [...prev, { id: Date.now()+3, role: 'ai', content: `❌ حدث خطأ في النظام` }]);
+            setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null, report: '' });
         } finally {
             setAiProcessing(false);
             setLoading(false);

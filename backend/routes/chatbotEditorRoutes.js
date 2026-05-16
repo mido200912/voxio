@@ -73,6 +73,41 @@ RESPOND WITH ONLY RAW JSON: {"message": "Concise description", "code": "The FULL
 /*-------------------------------
   Segment-based Editor (HTML/CSS/JS)
 -------------------------------*/
+router.post("/analyze", requireAuth, async (req, res) => {
+  try {
+    const { userRequest, html, css, js, codingModel } = req.body;
+    if (!userRequest) return res.status(400).json({ error: "Missing required fields" });
+
+    const systemPrompt = `You are an Expert Web Developer analyzing a website edit request.
+Your task is to create a clear, step-by-step ACTION PLAN (Report) on what needs to be changed in the HTML, CSS, and JS to fulfill the user's request.
+CRITICAL COMMAND: You MUST generate this report as quickly and concisely as possible! DO NOT EXCEED 300 SECONDS! DO NOT OVERTHINK.
+RESPOND WITH EXACTLY THIS RAW JSON FORMAT:
+{"message": "Action plan generated", "report": "The detailed action plan to follow..."}`;
+
+    const userPrompt = `Current HTML:\n${html}\n\nCurrent CSS:\n${css}\n\nCurrent JS:\n${js}\n\nTask: ${userRequest}\nGenerate the report on what you will change.`;
+
+    const aiResult = await fetchDesignerAiResponse(systemPrompt, userPrompt, "Failed", codingModel);
+    let parsed;
+    try {
+      let cleaned = aiResult.replace(/```json\s*/gi, '').replace(/```[a-z]*\s*/gi, '').replace(/```\s*/gi, '').trim();
+      const startIdx = cleaned.indexOf('{');
+      const endIdx = cleaned.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx !== -1) {
+          parsed = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
+      } else {
+          throw new Error("No JSON found");
+      }
+    } catch (e) {
+      parsed = { message: "Action plan generated", report: "Proceeding with changes." }; 
+    }
+
+    res.json({ message: parsed.message, report: parsed.report });
+  } catch (err) {
+    console.error("🤖 Analyze Error:", err);
+    res.status(500).json({ error: "Failed to analyze", details: err.message });
+  }
+});
+
 router.post("/edit-segment", requireAuth, async (req, res) => {
   try {
     const { userRequest, targetSegment, currentCode, codingModel, context } = req.body;
@@ -96,8 +131,11 @@ IMPORTANT RULES:
 - RESPOND WITH EXACTLY THIS RAW JSON FORMAT:
   {"message": "شرح التعديل بالعربي في سطر واحد", "code": "THE_MODIFIED_CODE"}
   
+CRITICAL COMMAND: You MUST generate this code modification as quickly and concisely as possible! DO NOT EXCEED 300 SECONDS! Write exactly what is needed without any delays.
+
 Context of what you should do: ${userRequest}
-Company context: ${company.name} - ${company.industry}`;
+Company context: ${company.name} - ${company.industry}
+${context ? `\nCRITICAL ACTION PLAN TO FOLLOW:\n${context}` : ''}`;
 
     const userPrompt = `Current ${targetSegment.toUpperCase()} Code:\n${currentCode}\n\nTask: Modify this ${targetSegment} to fulfill the request. If no changes are needed for ${targetSegment}, return the same code.`;
 
