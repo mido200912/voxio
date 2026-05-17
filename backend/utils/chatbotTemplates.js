@@ -780,7 +780,7 @@ function getTemplateScript(apiUrl, apiKey) {
             const res = await fetch('${apiUrl}/public/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: '${apiKey}', prompt: text, sessionId: sid })
+                body: JSON.stringify({ apiKey: '${apiKey}', prompt: text, sessionId: sid, platform: 'widget' })
             });
             const data = await res.json();
             

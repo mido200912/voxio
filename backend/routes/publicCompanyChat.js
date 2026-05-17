@@ -74,10 +74,11 @@ router.post("/chat", async (req, res) => {
     // Priority: sessionId -> sid -> fallback to IP based ID
     const userId = sessionId || sid || `web_${clientIp.replace(/:/g, '_')}`;
     const cleanPrompt = prompt.trim().toLowerCase();
+    const platform = req.body.platform || 'website';
 
-    const baseChatData = { company: company._id, user: userId, ip: clientIp, platform: 'web' };
+    const baseChatData = { company: company._id, user: userId, ip: clientIp, platform: platform === 'widget' ? 'widget' : 'web' };
 
-    // ── CHECK ORDER SESSION (Waiting for Name or Phone) ──
+    // ── CHECK ORDER SESSION (Waiting for Name, Phone, or Confirmation) ──
     if (webOrderSessions[userId]) {
       const session = webOrderSessions[userId];
 
@@ -98,30 +99,71 @@ router.post("/chat", async (req, res) => {
         }
 
         const phone = prompt.trim();
-        // Valid phone, save order!
-        company.requests.push({
-          customerName: `${session.customerName} (${phone})`,
-          product: session.productName,
-          message: `📦 طلب ويب جديد!\nالمنتج: ${session.productName}\nالعميل: ${session.customerName}\nالهاتف: ${phone}`,
-          source: 'web',
-          date: new Date()
-        });
-        await company.save();
+        session.phone = phone;
+        session.step = 'awaiting_confirmation';
 
-        let orderSummary = `✅ تم استلام طلبك بنجاح:\n📦 المنتج: ${session.productName}\n👤 الاسم: ${session.customerName}\n📱 الموبايل: ${phone}`;
-        let confirmMsg = session.successMessage ? `${orderSummary}\n\n${session.successMessage}` : orderSummary;
+        const confirmPromptMsg = `⚠️ <b>يرجى تأكيد طلبك:</b>\n\n📦 المنتج: <b>${session.productName}</b>\n👤 الاسم: <b>${session.customerName}</b>\n📱 الهاتف: <b>${phone}</b>\n\nهل ترغب في تأكيد الشراء الآن؟`;
         
-        delete webOrderSessions[userId];
-
         await CompanyChat.create({ ...baseChatData, text: prompt, sender: 'user' });
-        await CompanyChat.create({ ...baseChatData, text: confirmMsg, sender: 'ai' });
+        await CompanyChat.create({ ...baseChatData, text: confirmPromptMsg, sender: 'ai' });
 
-        return res.json({ success: true, company: company.name, reply: confirmMsg });
+        return res.json({ 
+          success: true, 
+          company: company.name, 
+          reply: confirmPromptMsg, 
+          buttons: ['تأكيد الطلب ✅', 'إلغاء الطلب ❌'] 
+        });
+      }
+
+      if (session.step === 'awaiting_confirmation') {
+        await CompanyChat.create({ ...baseChatData, text: prompt, sender: 'user' });
+
+        const isConfirm = cleanPrompt.includes('تأكيد') || cleanPrompt.includes('تاكيد') || cleanPrompt.includes('نعم') || cleanPrompt.includes('yes') || cleanPrompt.includes('confirm') || cleanPrompt.includes('ok') || cleanPrompt.includes('موافق');
+        const isCancel = cleanPrompt.includes('إلغاء') || cleanPrompt.includes('الغاء') || cleanPrompt.includes('لا') || cleanPrompt.includes('cancel') || cleanPrompt.includes('no') || cleanPrompt.includes('رفض');
+
+        if (isConfirm) {
+          const orderSource = session.platform === 'widget' ? 'widget' : 'web';
+          company.requests.push({
+            customerName: `${session.customerName} (${session.phone})`,
+            product: session.productName,
+            message: `📦 طلب مؤكد!\nالمنتج: ${session.productName}\nالعميل: ${session.customerName}\nالهاتف: ${session.phone}`,
+            source: orderSource,
+            date: new Date()
+          });
+          await company.save();
+
+          const orderId = `VOX_${Math.floor(1000 + Math.random() * 9000)}`;
+          let successMsg = `✅ تم تأكيد طلبك بنجاح! رقم طلبك هو: <b>#${orderId}</b>\nسنتواصل معك قريباً لتسليم طلبك.`;
+          if (session.successMessage) {
+            successMsg += `\n\n${session.successMessage}`;
+          }
+
+          delete webOrderSessions[userId];
+          await CompanyChat.create({ ...baseChatData, text: successMsg, sender: 'ai' });
+          return res.json({ success: true, company: company.name, reply: successMsg });
+
+        } else if (isCancel) {
+          const cancelMsg = `❌ تم إلغاء الطلب بنجاح. يمكنك مواصلة التصفح في أي وقت!`;
+          delete webOrderSessions[userId];
+          await CompanyChat.create({ ...baseChatData, text: cancelMsg, sender: 'ai' });
+          return res.json({ success: true, company: company.name, reply: cancelMsg });
+
+        } else {
+          // Send the confirmation prompt again
+          const repromptMsg = `⚠️ من فضلك اختر من الأزرار بالأسفل للتأكيد أو الإلغاء:\n\n📦 المنتج: <b>${session.productName}</b>\n👤 الاسم: <b>${session.customerName}</b>\n📱 الهاتف: <b>${session.phone}</b>`;
+          await CompanyChat.create({ ...baseChatData, text: repromptMsg, sender: 'ai' });
+          return res.json({ 
+            success: true, 
+            company: company.name, 
+            reply: repromptMsg, 
+            buttons: ['تأكيد الطلب ✅', 'إلغاء الطلب ❌'] 
+          });
+        }
       }
     }
 
     // ── COMMAND CHECK (`/` or product menus) ──
-    const integration = await Integration.findOne({ company: company._id, platform: 'website' });
+    const integration = await Integration.findOne({ company: company._id, platform });
     const commands = integration?.settings?.commands || [];
     
     const matchedCmd = commands.find(c => cleanPrompt === c.command || cleanPrompt === `/${c.command}`);
@@ -134,7 +176,7 @@ router.post("/chat", async (req, res) => {
          await CompanyChat.create({ ...baseChatData, text: replyMsg, sender: 'ai' });
          
          // Register as a regular request as well for tracking
-         company.requests.push({ customerName: 'عميل ويب', product: matchedCmd.command, message: prompt, source: 'web', date: new Date() });
+         company.requests.push({ customerName: 'عميل ويب', product: matchedCmd.command, message: prompt, source: platform === 'widget' ? 'widget' : 'web', date: new Date() });
          await company.save();
          
          return res.json({ success: true, company: company.name, reply: replyMsg });
@@ -143,8 +185,8 @@ router.post("/chat", async (req, res) => {
          const products = matchedCmd.products || [];
          const btnList = products.map(p => p.name);
          const replyMsg = matchedCmd.message || `🛍️ اختر المنتج الذي ترغب به:`;
-         await CompanyChat.create({ company: company._id, user: userId, text: replyMsg, sender: 'ai', platform: 'web' });
-         return res.json({ success: true, company: company.name, reply: replyMsg, buttons: btnList });
+         await CompanyChat.create({ company: company._id, user: userId, text: replyMsg, sender: 'ai', platform: platform === 'widget' ? 'widget' : 'web' });
+         return res.json({ success: true, company: company.name, reply: replyMsg, buttons: btnList, products: products });
       }
     }
 
@@ -166,7 +208,8 @@ router.post("/chat", async (req, res) => {
        webOrderSessions[userId] = {
           step: 'awaiting_name',
           productName: selectedProductName,
-          successMessage: selectedProductCmd.successMessage || ''
+          successMessage: selectedProductCmd.successMessage || '',
+          platform: platform
        };
        const requestNameMsg = `اختيار رائع! أنت اخترت: <b>${selectedProductName}</b>.\n\nلتأكيد الطلب، برجاء كتابة <b>اسمك الكريم</b> أولاً:`;
        await CompanyChat.create({ ...baseChatData, text: prompt, sender: 'user' });

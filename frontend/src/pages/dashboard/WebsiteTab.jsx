@@ -38,7 +38,24 @@ const WebsiteTab = () => {
             const res = await axios.get(`${BACKEND_URL}/company/requests`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const webRequests = res.data.filter(r => r.source === 'web');
+            const webRequests = res.data.filter(r => {
+                const src = (r.source || '').toLowerCase().trim();
+                const msg = (r.message || '').toLowerCase();
+                const cname = (r.customerName || '').toLowerCase();
+                const combined = msg + ' ' + cname;
+
+                // Explicit Telegram markers - filter them out
+                if (src === 'telegram' || combined.includes('تليجرام') || combined.includes('telegram') || combined.includes('العميل: @') || cname.includes('@')) {
+                    return false;
+                }
+
+                // Explicitly other platforms
+                if (src === 'whatsapp' || src === 'instagram' || src === 'widget') {
+                    return false;
+                }
+
+                return src === 'web' || src === 'website' || src === '';
+            });
             setRequests(webRequests);
             const unique = [...new Set(webRequests.map(r => r.product || 'عام'))];
             setCategories(unique);

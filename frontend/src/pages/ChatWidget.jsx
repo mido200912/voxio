@@ -61,11 +61,40 @@ const ChatWidget = ({ apiKeyProp }) => {
             const { data } = await axios.post(`${API}/public/chat`, {
                 companyApiKey: apiKey,
                 prompt: text,
+                platform: 'widget',
             });
             setMessages(prev => [...prev, {
                 role: 'ai',
                 text: data.reply || 'لم يتم الحصول على رد.',
                 time: new Date(),
+                buttons: data.buttons || [],
+                products: data.products || []
+            }]);
+        } catch {
+            setMessages(prev => [...prev, {
+                role: 'ai',
+                text: 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.',
+                time: new Date(),
+            }]);
+        } finally { setSending(false); }
+    };
+
+    const handleQuickMessageSend = async (text) => {
+        if (sending) return;
+        setMessages(prev => [...prev, { role: 'user', text, time: new Date() }]);
+        setSending(true);
+        try {
+            const { data } = await axios.post(`${API}/public/chat`, {
+                companyApiKey: apiKey,
+                prompt: text,
+                platform: 'widget',
+            });
+            setMessages(prev => [...prev, {
+                role: 'ai',
+                text: data.reply || 'لم يتم الحصول على رد.',
+                time: new Date(),
+                buttons: data.buttons || [],
+                products: data.products || []
             }]);
         } catch {
             setMessages(prev => [...prev, {
@@ -111,6 +140,7 @@ const ChatWidget = ({ apiKeyProp }) => {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             className={`vx-msg-row ${msg.role}`}
+                            style={{ flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-start' : 'flex-end', gap: '4px' }}
                         >
                             <div className={`vx-bubble ${msg.role}`} style={msg.role === 'user' ? {background: color} : {}}>
                                 <p>
@@ -120,6 +150,38 @@ const ChatWidget = ({ apiKeyProp }) => {
                                 </p>
                                 <time>{formatTime(msg.time)}</time>
                             </div>
+
+                            {/* Horizontal Showcase Card Slider */}
+                            {msg.role === 'ai' && msg.products && msg.products.length > 0 && (
+                                <div className="vx-products-slider">
+                                    {msg.products.map((p, idx) => (
+                                        <div key={idx} className="vx-product-card">
+                                            <div className="vx-product-img-wrap">
+                                                <img src={p.imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&auto=format&fit=crop&q=60'} alt={p.name} />
+                                                <span className="vx-product-price">{p.price}</span>
+                                            </div>
+                                            <div className="vx-product-info">
+                                                <h3>{p.name}</h3>
+                                                {p.description && <p>{p.description}</p>}
+                                                <button onClick={() => handleQuickMessageSend(p.name)} className="vx-product-buy-btn">
+                                                    طلب الآن ✅
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Quick Reply Buttons */}
+                            {msg.role === 'ai' && msg.buttons && msg.buttons.length > 0 && (
+                                <div className="vx-quick-replies">
+                                    {msg.buttons.map((btnText, idx) => (
+                                        <button key={idx} onClick={() => handleQuickMessageSend(btnText)} className="vx-quick-reply-btn">
+                                            {btnText}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </motion.div>
                     ))}
                 </AnimatePresence>

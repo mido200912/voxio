@@ -276,3 +276,182 @@
         background: rgba(255,255,255,0.1);
     }
 }
+
+/* 🛍️ Gorgeous Product Showcase Slider */
+.vx-products-slider {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 8px 4px;
+    margin-top: 10px;
+    width: 100%;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    scroll-snap-type: x mandatory;
+}
+
+.vx-products-slider::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari */
+}
+
+.vx-product-card {
+    flex: 0 0 180px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+}
+
+.vx-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.vx-product-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 110px;
+    background: #f8fafc;
+}
+
+.vx-product-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vx-product-price {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.vx-product-info {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.vx-product-info h3 {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vx-product-info p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.4;
+    height: 32px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.vx-product-buy-btn {
+    width: 100%;
+    padding: 8px;
+    background: var(--vx-color);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    text-align: center;
+    margin-top: auto;
+}
+
+.vx-product-buy-btn:hover {
+    filter: brightness(1.08);
+}
+
+.vx-product-buy-btn:active {
+    transform: scale(0.97);
+}
+
+/* 💬 Quick Reply Buttons Layout */
+.vx-quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+.vx-quick-reply-btn {
+    padding: 8px 14px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 14px;
+    color: #334155;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s ease;
+}
+
+.vx-quick-reply-btn:hover {
+    background: var(--vx-color);
+    color: #ffffff;
+    border-color: var(--vx-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(108, 99, 255, 0.15);
+}
+
+/* Dark Mode Overrides for Product Cards & Quick Replies */
+@media (prefers-color-scheme: dark) {
+    .vx-product-card {
+        background: #1a1a1c;
+        border-color: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .vx-product-img-wrap {
+        background: #0f0f11;
+    }
+    
+    .vx-product-info h3 {
+        color: #f1f5f9;
+    }
+    
+    .vx-product-info p {
+        color: #94a3b8;
+    }
+    
+    .vx-quick-reply-btn {
+        background: #1e1e20;
+        border-color: rgba(255, 255, 255, 0.05);
+        color: #cbd5e1;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .vx-quick-reply-btn:hover {
+        background: var(--vx-color);
+        color: #ffffff;
+        border-color: var(--vx-color);
+    }
+}
+

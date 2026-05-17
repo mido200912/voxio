@@ -53,12 +53,28 @@ const TelegramTab = () => {
             const res = await axios.get(`${BACKEND_URL}/company/requests`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // Filter out website requests to completely isolate Telegram from Web
-            const tgRequests = res.data.filter(r => 
-                r.source !== 'web' && 
-                (!r.message || !r.message.includes('طلب ويب')) &&
-                (!r.customerName || !r.customerName.includes('عميل ويب'))
-            );
+            // Filter out website requests to completely isolate Telegram from Web (supporting legacy retrofits)
+            const tgRequests = res.data.filter(r => {
+                const src = (r.source || '').toLowerCase().trim();
+                const msg = (r.message || '').toLowerCase();
+                const cname = (r.customerName || '').toLowerCase();
+                const combined = msg + ' ' + cname;
+
+                // Explicit Telegram markers
+                if (src === 'telegram' || combined.includes('تليجرام') || combined.includes('telegram') || combined.includes('العميل: @') || cname.includes('@')) {
+                    return true;
+                }
+
+                // Explicitly other platforms
+                if (src === 'whatsapp' || src === 'instagram' || src === 'widget') {
+                    return false;
+                }
+
+                // Otherwise filter out website strings
+                return src !== 'web' && 
+                       (!r.message || !r.message.includes('طلب ويب')) &&
+                       (!r.customerName || !r.customerName.includes('عميل ويب'));
+            });
             const reversed = [...tgRequests].reverse();
             setRequests(reversed);
             const unique = [...new Set(reversed.map(r => r.product || 'عام'))];

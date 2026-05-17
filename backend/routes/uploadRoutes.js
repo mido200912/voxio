@@ -401,6 +401,62 @@ router.put('/instructions', protect, async (req, res) => {
     }
 });
 
+// ✨ Get all discovered media/image URLs in company chats and requests (Telegram, WhatsApp, Web)
+router.get('/media-library', protect, async (req, res) => {
+    try {
+        const company = await Company.findOne({ owner: req.user.id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        const CompanyChat = (await import("../models/CompanyChat.js")).default;
+        
+        // Discovered image URLs set
+        const imagesSet = new Set();
+
+        // 1. Add some premium default product placeholders so the user has beautiful instant choices!
+        const presets = [
+            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60', // Watch
+            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60', // Shoes
+            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60', // Headphone
+            'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&auto=format&fit=crop&q=60', // Sunglasses
+            'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&auto=format&fit=crop&q=60', // Shoes premium
+            'https://images.unsplash.com/photo-1527689368864-3a821dbccc34?w=500&auto=format&fit=crop&q=60', // Laptop
+            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60', // Food
+            'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=60'  // Tech gadget
+        ];
+        presets.forEach(p => imagesSet.add(p));
+
+        // 2. Scan past company chat history
+        const chats = await CompanyChat.find({ company: company._id });
+        chats.forEach(c => {
+            if (c.text) {
+                // Find anything like a URL ending in image extensions
+                const matches = c.text.match(/https?:\/\/[^\s"'<>\(\)]+\.(jpg|jpeg|png|webp|gif|svg)/gi);
+                if (matches) {
+                    matches.forEach(m => imagesSet.add(m));
+                }
+            }
+        });
+
+        // 3. Scan requests (orders) messages or products
+        const requests = company.requests || [];
+        requests.forEach(r => {
+            if (r.message) {
+                const matches = r.message.match(/https?:\/\/[^\s"'<>\(\)]+\.(jpg|jpeg|png|webp|gif|svg)/gi);
+                if (matches) {
+                    matches.forEach(m => imagesSet.add(m));
+                }
+            }
+        });
+
+        res.json({ success: true, images: Array.from(imagesSet) });
+    } catch (error) {
+        console.error('Error fetching media library:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Delete a file from knowledge base
 router.delete('/:fileId', protect, async (req, res) => {
     try {

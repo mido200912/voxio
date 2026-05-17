@@ -230,7 +230,7 @@ const WidgetTab = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                     >
-                        <WebCommandsModal isInline={true} />
+                        <WebCommandsModal isInline={true} platform="widget" />
                     </motion.div>
                 )}
             </AnimatePresence>

@@ -535,6 +535,51 @@ router.post('/website', requireAuth, async (req, res) => {
     }
 });
 
+// @route   POST /api/integration-manager/widget
+// @desc    Manually configure Web Widget Commands
+// @access  Private
+router.post('/widget', requireAuth, async (req, res) => {
+    try {
+        const { commands } = req.body;
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
+
+        const sanitizedSettingsCommands = (commands || []).map(c => ({
+            command: (c.command || '').toLowerCase().replace(/[^a-z0-9_]/g, ''),
+            description: c.description || c.category || '',
+            category: c.category || '',
+            type: c.type || 'ai',
+            message: c.message || '',
+            successMessage: c.successMessage || '',
+            products: c.products || []
+        }));
+
+        let integration = await Integration.findOne({ company: company._id, platform: 'widget' });
+        
+        if (!integration) {
+            integration = await Integration.create({
+                company: company._id,
+                platform: 'widget',
+                credentials: {},
+                settings: { commands: sanitizedSettingsCommands },
+                isActive: true
+            });
+        } else {
+            integration.settings = { commands: sanitizedSettingsCommands };
+            integration.isActive = true;
+            await integration.save();
+        }
+
+        res.json({ message: 'Widget commands configured successfully!', integration });
+    } catch (error) {
+        console.error('Widget integration error:', error);
+        res.status(500).json({ error: 'Server error configure Widget' });
+    }
+});
+
+
 // @route   POST /api/integration-manager/request-reveal-otp
 // @desc    Send OTP to user email to reveal sensitive bot token
 // @access  Private

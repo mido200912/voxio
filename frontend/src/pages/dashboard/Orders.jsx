@@ -64,29 +64,35 @@ const Orders = () => {
     // Returns a `key` (always English lowercase) for filtering + localized `name` for display
     const getPlatformInfo = (req) => {
         const src = (req.source || req.platform || '').toLowerCase().trim();
-        
+        const msg = (req.message || '').toLowerCase();
+        const cname = (req.customerName || '').toLowerCase();
+        const combined = msg + ' ' + cname;
+
+        // 1. Fallback / Retrofit Checks (highest priority to correctly catch legacy Telegram requests with 'web' source)
+        if (combined.includes('تليجرام') || combined.includes('telegram') || combined.includes('العميل: @') || cname.includes('@')) {
+            return { key: 'telegram', name: 'Telegram', icon: 'fab fa-telegram-plane', color: '#0088cc' };
+        } else if (combined.includes('واتساب') || combined.includes('whatsapp') || combined.includes('طلب جديد من واتساب')) {
+            return { key: 'whatsapp', name: 'WhatsApp', icon: 'fab fa-whatsapp', color: '#25D366' };
+        } else if (combined.includes('إنستجرام') || combined.includes('instagram')) {
+            return { key: 'instagram', name: 'Instagram', icon: 'fab fa-instagram', color: '#E1306C' };
+        } else if (combined.includes('widget') || combined.includes('أداة الدردشة')) {
+            return { key: 'widget', name: isArabic ? 'أداة الدردشة' : 'Chat Widget', icon: 'fas fa-comments', color: '#0ea5e9' };
+        }
+
+        // 2. Explicit Database Source Checks
         if (src === 'whatsapp') {
             return { key: 'whatsapp', name: 'WhatsApp', icon: 'fab fa-whatsapp', color: '#25D366' };
         } else if (src === 'telegram') {
             return { key: 'telegram', name: 'Telegram', icon: 'fab fa-telegram-plane', color: '#0088cc' };
         } else if (src === 'instagram') {
             return { key: 'instagram', name: 'Instagram', icon: 'fab fa-instagram', color: '#E1306C' };
+        } else if (src === 'widget') {
+            return { key: 'widget', name: isArabic ? 'أداة الدردشة' : 'Chat Widget', icon: 'fas fa-comments', color: '#0ea5e9' };
         } else if (src === 'web' || src === 'website') {
             return { key: 'website', name: isArabic ? 'موقع الويب' : 'Website', icon: 'fas fa-globe', color: '#4f46e5' };
         }
 
-        // Fallback: check message + customerName for platform hints
-        const msg = (req.message || '').toLowerCase();
-        const cname = (req.customerName || '').toLowerCase();
-        const combined = msg + ' ' + cname;
-
-        if (combined.includes('واتساب') || combined.includes('whatsapp') || combined.includes('طلب جديد من واتساب')) {
-            return { key: 'whatsapp', name: 'WhatsApp', icon: 'fab fa-whatsapp', color: '#25D366' };
-        } else if (combined.includes('تليجرام') || combined.includes('telegram') || combined.includes('العميل: @') || cname.includes('@')) {
-            return { key: 'telegram', name: 'Telegram', icon: 'fab fa-telegram-plane', color: '#0088cc' };
-        } else if (combined.includes('إنستجرام') || combined.includes('instagram')) {
-            return { key: 'instagram', name: 'Instagram', icon: 'fab fa-instagram', color: '#E1306C' };
-        } else if (combined.includes('طلب ويب') || combined.includes('عميل ويب') || combined.includes('web')) {
+        if (combined.includes('طلب ويب') || combined.includes('عميل ويب') || combined.includes('web')) {
             return { key: 'website', name: isArabic ? 'موقع الويب' : 'Website', icon: 'fas fa-globe', color: '#4f46e5' };
         }
 
@@ -201,6 +207,12 @@ const Orders = () => {
                         onClick={() => setPlatformFilter('website')}
                     >
                         <i className="fas fa-globe" style={{ color: '#4f46e5' }} /> Website
+                    </button>
+                    <button 
+                        className={`platform-tab ${platformFilter === 'widget' ? 'active' : ''}`}
+                        onClick={() => setPlatformFilter('widget')}
+                    >
+                        <i className="fas fa-comments" style={{ color: '#0ea5e9' }} /> {isArabic ? 'أداة الدردشة' : 'Widget'}
                     </button>
                 </div>
             </div>
