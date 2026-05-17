@@ -34,7 +34,7 @@ export function extractCorexReply(data, fallback = "لم أتمكن من الر�
  * Unified AI Request Handler
  * Tries CoreSys first, falls back to OpenRouter if API limits are hit or server fails.
  */
-export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.", preferredModel = null) {
+export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.", preferredModel = null, base64Image = null) {
     let reply = null;
     const truncatedQuestion = fullQuestion.length > 12000 ? fullQuestion.substring(0, 12000) + "..." : fullQuestion;
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
@@ -53,9 +53,18 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
         for (let targetModel of modelsToTry) {
             try {
                 console.log(`🤖 AI: Requesting OpenRouter (${targetModel})...`);
+                
+                let contentPayload = truncatedQuestion;
+                if (base64Image) {
+                    contentPayload = [
+                        { type: "text", text: truncatedQuestion },
+                        { type: "image_url", image_url: { url: base64Image } }
+                    ];
+                }
+
                 const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
                     model: targetModel, 
-                    messages: [{ role: "user", content: truncatedQuestion }],
+                    messages: [{ role: "user", content: contentPayload }],
                     max_tokens: 2000
                 }, {
                     headers: {

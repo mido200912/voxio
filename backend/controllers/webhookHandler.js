@@ -12,6 +12,26 @@ import { getCompanyAIContext } from "../utils/promptHelper.js";
 // تتبع الرسائل المعالجة لمنع التكرار
 const processedMessages = new Set();
 
+// ─── Helper: Download WhatsApp Media (Images/Stickers) ──────────────────────
+async function downloadWaMedia(mediaId, accessToken) {
+  try {
+    const res = await axios.get(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const mediaUrl = res.data.url;
+    const mediaRes = await axios.get(mediaUrl, {
+      responseType: 'arraybuffer',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const mimeType = mediaRes.headers['content-type'] || 'image/jpeg';
+    const base64 = Buffer.from(mediaRes.data, 'binary').toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  } catch (e) {
+    console.error('Error downloading WA media:', e.response?.data || e.message);
+    return null;
+  }
+}
+
 // تتبع حالات الطلب المؤقتة (في الانتاج يفضل Redis)
 const orderSessions = {};
 
@@ -133,7 +153,20 @@ export const handleWhatsAppMessage = async (body) => {
             const message = value.messages[0];
             const messageId = message.id;
             const from = message.from;
-            const messageText = message.text?.body || "[Non-text message]";
+            let messageText = message.text?.body || "";
+            let mediaId = null;
+
+            if (message.type === 'image' && message.image?.id) {
+                mediaId = message.image.id;
+                messageText = message.image.caption || "";
+            } else if (message.type === 'sticker' && message.sticker?.id) {
+                mediaId = message.sticker.id;
+            } else if (message.type === 'document' && message.document?.id) {
+                mediaId = message.document.id;
+                messageText = message.document.caption || "";
+            }
+
+            if (!messageText && !mediaId) messageText = "[Non-text message]";
             const phoneNumberId = value.metadata.phone_number_id;
             const displayPhoneNumber = value.metadata.display_phone_number;
 
@@ -196,6 +229,12 @@ export const handleWhatsAppMessage = async (body) => {
                 continue;
               }
               const accessToken = integration.credentials.accessToken;
+
+              let base64Image = null;
+              if (mediaId) {
+                  base64Image = await downloadWaMedia(mediaId, accessToken);
+                  if (base64Image && !messageText) messageText = "قام العميل بإرسال صورة/ملصق.";
+              }
 
               // 🌍 Get Global AI Settings from Company
               const aiSettings = company.aiSettings || {};
@@ -269,8 +308,9 @@ export const handleWhatsAppMessage = async (body) => {
 
               let reply = await fetchAiResponse(
                 `${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`,
-                "AI_ERROR_RETRY_LATER",
-                company.aiSettings?.model,
+                "عذراً، لا أستطيع الرد في الوقت الحالي.",
+                aiModel,
+                base64Image
               );
 
               if (reply === "AI_ERROR_RETRY_LATER") {
