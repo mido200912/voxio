@@ -6,6 +6,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { useToast } from '../../components/Toast';
 import WidgetCustomizer from './WidgetCustomizer';
+import WebCommandsModal from './WebCommandsModal';
 import './WidgetTab.css';
 import './WidgetCustomizer.css';
 import './DashboardShared.css';
@@ -113,6 +114,14 @@ const WidgetTab = () => {
                         <i className="fas fa-sliders-h"></i>
                         {language === 'ar' ? 'المظهر' : 'Appearance'}
                     </button>
+                    <button 
+                        className={`dash-btn ${activeTab === 'commands' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setActiveTab('commands')}
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
+                    >
+                        <i className="fas fa-terminal"></i>
+                        {language === 'ar' ? 'الأوامر المخصصة' : 'Custom Commands'}
+                    </button>
                 </div>
             </div>
 
@@ -205,7 +214,7 @@ const WidgetTab = () => {
                             </div>
                         </div>
                     </motion.div>
-                ) : (
+                ) : activeTab === 'customize' ? (
                     <motion.div 
                         key="customize"
                         initial={{ opacity: 0, y: 10 }}
@@ -213,6 +222,15 @@ const WidgetTab = () => {
                         exit={{ opacity: 0, y: -10 }}
                     >
                         <WidgetCustomizer />
+                    </motion.div>
+                ) : (
+                    <motion.div 
+                        key="commands"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                    >
+                        <WebCommandsModal isInline={true} />
                     </motion.div>
                 )}
             </AnimatePresence>

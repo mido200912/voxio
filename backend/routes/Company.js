@@ -509,17 +509,27 @@ router.post("/", requireAuth, async (req, res) => {
   try {
     const {
       name, industry, size, companySize, description,
-      vision, mission, values, websiteUrl, allowedDomains, logo, aiSettings
+      vision, mission, values, websiteUrl, allowedDomains, logo, aiSettings, slug, customDomain
     } = req.body;
 
     const safeData = {
       name, industry, description, vision, mission, logo,
       size: size || companySize || "",
       websiteUrl: websiteUrl || "",
+      customDomain: customDomain || "",
       values: Array.isArray(values) ? values : [],
       allowedDomains: Array.isArray(allowedDomains) ? allowedDomains : [],
       ...(aiSettings && { aiSettings }) // Only add if it exists
     };
+
+    if (slug) {
+      const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+      const checkExisting = await Company.findOne({ slug: cleanSlug, owner: { $ne: req.user._id } });
+      if (checkExisting) {
+        return res.status(400).json({ error: "Website subdomain is already taken. Please choose another." });
+      }
+      safeData.slug = cleanSlug;
+    }
 
     const existing = await Company.findOne({ owner: req.user._id });
 
@@ -533,20 +543,80 @@ router.post("/", requireAuth, async (req, res) => {
       if (!existing.slug && name) {
         existing.slug = name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4);
       }
+      const oldSlug = existing.slug;
       Object.assign(existing, safeData);
       await existing.save();
+
+      // Auto-deploy to Vercel if slug changed
+      if (safeData.slug && safeData.slug !== oldSlug && process.env.VERCEL_API_TOKEN) {
+         try {
+             const cleanHtml = existing.websiteConfig?.htmlContent || existing.websiteConfig?.customHtml || `<div style='display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#0f172a;color:#fff;'><h1>${existing.name} - VOXIO Agent Site</h1></div>`;
+             const axios = (await import('axios')).default;
+             await axios.post(
+               'https://api.vercel.com/v13/deployments',
+               {
+                 name: `voxio-${safeData.slug}`,
+                 target: 'production',
+                 files: [ { file: "index.html", data: cleanHtml } ],
+                 projectSettings: { framework: null }
+               },
+               { headers: { Authorization: `Bearer ${process.env.VERCEL_API_TOKEN}`, 'Content-Type': 'application/json' } }
+             );
+         } catch(e) { console.error("Vercel auto-deploy failed:", e?.response?.data || e.message); }
+      }
+
+      // Add custom domain to Vercel if it changed
+      if (safeData.customDomain && safeData.customDomain !== existing.customDomain && process.env.VERCEL_API_TOKEN) {
+          try {
+              const axios = (await import('axios')).default;
+              await axios.post(
+                  `https://api.vercel.com/v10/projects/voxio-${safeData.slug || existing.slug}/domains`,
+                  { name: safeData.customDomain },
+                  { headers: { Authorization: `Bearer ${process.env.VERCEL_API_TOKEN}`, 'Content-Type': 'application/json' } }
+              );
+          } catch(e) { console.error("Vercel custom domain failed:", e?.response?.data || e.message); }
+      }
+
       return res.json(existing);
     }
 
     const apiKey = crypto.randomBytes(24).toString("hex");
-    const slug = name ? name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4) : `company-${Date.now()}`;
+    const fallbackSlug = safeData.slug || (name ? name.toLowerCase().replace(/ /g, "-") + "-" + Date.now().toString().slice(-4) : `company-${Date.now()}`);
     const company = await Company.create({
       ...safeData,
       owner: req.user._id,
       apiKey,
-      slug,
+      slug: fallbackSlug,
       requests: [],
     });
+
+    if (process.env.VERCEL_API_TOKEN) {
+         try {
+             const cleanHtml = "<div style='display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#0f172a;color:#fff;'><h1>New VOXIO Agent Site</h1></div>";
+             const axios = (await import('axios')).default;
+             await axios.post(
+               'https://api.vercel.com/v13/deployments',
+               {
+                 name: `voxio-${fallbackSlug}`,
+                 target: 'production',
+                 files: [ { file: "index.html", data: cleanHtml } ],
+                 projectSettings: { framework: null }
+               },
+               { headers: { Authorization: `Bearer ${process.env.VERCEL_API_TOKEN}`, 'Content-Type': 'application/json' } }
+             );
+         } catch(e) { console.error("Vercel auto-deploy failed:", e?.response?.data || e.message); }
+    }
+
+    if (safeData.customDomain && process.env.VERCEL_API_TOKEN) {
+        try {
+            const axios = (await import('axios')).default;
+            await axios.post(
+                `https://api.vercel.com/v10/projects/voxio-${fallbackSlug}/domains`,
+                { name: safeData.customDomain },
+                { headers: { Authorization: `Bearer ${process.env.VERCEL_API_TOKEN}`, 'Content-Type': 'application/json' } }
+            );
+        } catch(e) { console.error("Vercel custom domain failed:", e?.response?.data || e.message); }
+    }
 
     res.status(201).json(company);
   } catch (err) {
@@ -768,7 +838,7 @@ router.get("/analytics", requireAuth, async (req, res) => {
 -------------------------------*/
 router.post("/requests", requireAuth, async (req, res) => {
   try {
-    const { customerName, product, message } = req.body;
+    const { customerName, product, message, source } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: "Message is required" });
@@ -781,6 +851,7 @@ router.post("/requests", requireAuth, async (req, res) => {
       customerName: customerName || "عميل غير معروف",
       product: product || "عام",
       message,
+      source: source || 'web',
       date: new Date()
     };
 
@@ -874,6 +945,7 @@ router.post("/external-request", async (req, res) => {
       product,
       message,
       aiReply: reply,
+      source: 'web',
       date: new Date(),
     });
     await company.save();
@@ -901,6 +973,7 @@ router.post("/use-model", verifyApiKey, async (req, res) => {
       product: "API Interaction",
       message: prompt,
       aiReply: responseText,
+      source: 'web',
       date: new Date(),
     });
     await company.save();

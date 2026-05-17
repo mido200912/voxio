@@ -13,7 +13,7 @@ const WhatsappTab = () => {
     const isArabic = language === 'ar';
     const token = secureStorage.getItem('token');
 
-    const [subTab, setSubTab] = useState('inbox'); // 'inbox' | 'settings'
+    const [subTab, setSubTab] = useState('requests'); // 'requests' | 'inbox' | 'settings'
     const [settings, setSettings] = useState({
         website: '',
         about: '',
@@ -26,6 +26,9 @@ const WhatsappTab = () => {
     const [chats, setChats] = useState([]);
     const [activeChatUser, setActiveChatUser] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [requests, setRequests] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [activeCategory, setActiveCategory] = useState('');
     const [loading, setLoading] = useState(true);
     const [chatsLoading, setChatsLoading] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
@@ -34,8 +37,13 @@ const WhatsappTab = () => {
     useEffect(() => { 
         fetchSettings();
         fetchChats();
-        const interval = setInterval(fetchChats, 15000);
-        return () => clearInterval(interval);
+        fetchRequests();
+        const chatsInterval = setInterval(fetchChats, 15000);
+        const reqInterval = setInterval(fetchRequests, 15000);
+        return () => {
+            clearInterval(chatsInterval);
+            clearInterval(reqInterval);
+        };
     }, []);
 
     useEffect(() => { 
@@ -60,6 +68,39 @@ const WhatsappTab = () => {
             }
         } catch (e) {
             console.error("Error fetching settings:", e);
+        }
+    };
+
+    const fetchRequests = async () => {
+        try {
+            const res = await axios.get(`${BACKEND_URL}/company/requests`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // Filter out WhatsApp-only requests
+            const waRequests = res.data.filter(r => 
+                r.source === 'whatsapp' || 
+                (r.message && (r.message.includes('واتساب') || r.message.includes('whatsapp')))
+            );
+            const reversed = [...waRequests].reverse();
+            setRequests(reversed);
+            const unique = [...new Set(reversed.map(r => r.product || 'عام'))];
+            setCategories(unique);
+            if (unique.length > 0) setActiveCategory(unique[0]);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const deleteRequest = async (originalIndex) => {
+        if (!confirm(isArabic ? 'متأكد من حذف هذا الطلب؟' : 'Delete this request?')) return;
+        try {
+            const actualDbIndex = requests.length - 1 - originalIndex;
+            await axios.delete(`${BACKEND_URL}/company/requests/${actualDbIndex}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchRequests();
+        } catch (e) {
+            console.error(e);
         }
     };
 
@@ -127,6 +168,14 @@ const WhatsappTab = () => {
 
                 <div style={{ display: 'flex', gap: '8px', background: 'var(--dash-card)', padding: '6px', borderRadius: '14px', border: '1px solid var(--dash-border)' }}>
                     <button 
+                        className={`dash-btn ${subTab === 'requests' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setSubTab('requests')}
+                        style={{ padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
+                    >
+                        <i className="fas fa-inbox"></i>
+                        {isArabic ? 'الطلبات' : 'Requests'}
+                    </button>
+                    <button 
                         className={`dash-btn ${subTab === 'inbox' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
                         onClick={() => setSubTab('inbox')}
                         style={{ padding: '8px 16px', fontSize: '0.9rem', height: 'auto' }}
@@ -146,7 +195,85 @@ const WhatsappTab = () => {
             </div>
 
             <AnimatePresence mode="wait">
-                {subTab === 'inbox' ? (
+                {subTab === 'requests' ? (
+                    <motion.div key="requests" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                        {loading ? (
+                            <PageLoader text={isArabic ? 'جاري تحميل الطلبات...' : 'Loading requests...'} />
+                        ) : requests.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
+                                <div style={{ fontSize: '48px', color: '#25D366', marginBottom: '16px' }}><i className="fab fa-whatsapp" /></div>
+                                <h3>{isArabic ? 'لا توجد طلبات بعد' : 'No requests yet'}</h3>
+                                <p>{isArabic ? 'سيظهر هنا كل طلب شراء يتم فهمه تلقائياً بواسطة المساعد الذكي عبر واتساب.' : 'Requests understood by the AI Assistant on WhatsApp will populate here.'}</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Category Tabs */}
+                                <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '24px' }}>
+                                    {categories.map(cat => (
+                                        <button 
+                                            key={cat} 
+                                            className={`dash-btn ${activeCategory === cat ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                                            onClick={() => setActiveCategory(cat)}
+                                            style={{ borderRadius: '24px', padding: '6px 20px', fontSize: '0.85rem', height: 'auto', background: activeCategory === cat ? '#25D366' : 'transparent', borderColor: activeCategory === cat ? '#25D366' : 'var(--dash-border)', color: activeCategory === cat ? '#fff' : 'var(--dash-text)' }}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Cards Grid */}
+                                <div className="dash-grid">
+                                    <AnimatePresence>
+                                        {requests.filter(r => (r.product || 'عام') === activeCategory).map((req, idx) => {
+                                            const cleanPhone = (req.customerName || '').match(/\((.*?)\)/)?.[1] || '';
+                                            const cleanName = (req.customerName || '').replace(/\(.*?\)/, '').trim();
+
+                                            return (
+                                                <motion.div key={idx} className="dash-card animate-slide-in" layout
+                                                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                                        <div>
+                                                            <div style={{ fontWeight: '700', color: 'var(--dash-text)', fontSize: '1rem' }}>
+                                                                <i className="fas fa-user-circle" style={{ marginInlineEnd: '8px', color: '#25D366' }} />
+                                                                {cleanName}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--dash-text-sec)', marginTop: '4px' }}>
+                                                                {req.product && <span style={{ background: 'rgba(37, 211, 102, 0.1)', color: '#25D366', borderRadius: '6px', padding: '2px 8px', marginInlineEnd: '8px', fontSize: '0.7rem', fontWeight: 'bold' }}>{req.product}</span>}
+                                                                {req.date ? (new Date(req.date)).toLocaleString() : ''}
+                                                            </div>
+                                                        </div>
+                                                        <button onClick={() => deleteRequest(idx)}
+                                                            style={{ border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', opacity: 0.6 }}>
+                                                            <i className="fas fa-trash" />
+                                                        </button>
+                                                    </div>
+                                                    <div style={{ background: 'rgba(var(--color-text-rgb), 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid var(--dash-border)', fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--dash-text)' }}>
+                                                        {req.message}
+                                                    </div>
+                                                    
+                                                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                                                        {cleanPhone && (
+                                                            <a 
+                                                                href={`https://wa.me/${cleanPhone.replace(/[^0-9]/g, '')}`} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className="dash-btn"
+                                                                style={{ flex: 1, padding: '8px 12px', fontSize: '0.8rem', background: '#25D366', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: 'auto', borderRadius: '10px' }}
+                                                            >
+                                                                <i className="fab fa-whatsapp" />
+                                                                {isArabic ? 'مراسلة واتساب' : 'Chat WhatsApp'}
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </AnimatePresence>
+                                </div>
+                            </>
+                        )}
+                    </motion.div>
+                ) : subTab === 'inbox' ? (
                     <motion.div key="inbox" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
                         {chats.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>

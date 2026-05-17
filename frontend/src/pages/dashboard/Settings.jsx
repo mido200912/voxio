@@ -41,6 +41,8 @@ const Settings = () => {
         websiteUrl: '',
         allowedDomains: '', 
         logo: '',
+        slug: '',
+        customDomain: '',
         aiSettings: {
             mode: 'restricted',
             model: 'inclusionai/ring-2.6-1t',
@@ -71,6 +73,8 @@ const Settings = () => {
                 websiteUrl: data.websiteUrl || '',
                 allowedDomains: data.allowedDomains ? data.allowedDomains.join(', ') : '',
                 logo: data.logo || '',
+                slug: data.slug || '',
+                customDomain: data.customDomain || '',
                 aiSettings: data.aiSettings || {
                     mode: 'restricted',
                     model: 'inclusionai/ring-2.6-1t',
@@ -162,6 +166,8 @@ const Settings = () => {
                 allowedDomains: companyData.allowedDomains.split(',').map(d => d.trim()).filter(d => d),
                 size: companyData.companySize,
                 logo: logoUrl,
+                slug: companyData.slug,
+                customDomain: companyData.customDomain,
                 aiSettings: companyData.aiSettings
             };
 
@@ -280,38 +286,20 @@ const Settings = () => {
                         <h3>{t.dashboard.settingsPage.orgData}</h3>
                     </div>
                     <div className="card-body">
-                        <div className="form-group" style={{ textAlign: 'center', marginBottom: '25px' }}>
-                            <label htmlFor="logo-upload" style={{ cursor: 'pointer', display: 'inline-block' }}>
-                                <div style={{
-                                    width: '100px',
-                                    height: '100px',
-                                    borderRadius: '50%',
-                                    backgroundColor: 'var(--color-bg)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    overflow: 'hidden',
-                                    border: '2px dashed var(--color-border)',
-                                    margin: '0 auto 10px'
-                                }}>
-                                    {logoPreview ? (
-                                        <img src={logoPreview} alt="Logo Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        <span style={{ fontSize: '24px', color: 'var(--color-text-secondary)' }}>📷</span>
-                                    )}
-                                </div>
-                                <span className="text-sm" style={{ color: 'var(--color-text)' }}>
-                                    {language === 'ar' ? 'تحميل لوجو الشركة' : 'Upload Company Logo'}
-                                </span>
-                            </label>
-                            <input
-                                id="logo-upload"
-                                type="file"
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                onChange={handleLogoChange}
-                            />
-                        </div>
+                        <label htmlFor="logo-upload" className="logo-upload-area">
+                            <div className="logo-avatar">
+                                {logoPreview ? (
+                                    <img src={logoPreview} alt="Logo" />
+                                ) : (
+                                    <i className="fas fa-camera" style={{ fontSize: '1.5rem', color: 'var(--color-text-secondary)' }} />
+                                )}
+                            </div>
+                            <span className="logo-upload-text">
+                                <i className="fas fa-cloud-upload-alt" />
+                                {language === 'ar' ? 'تحميل لوجو الشركة' : 'Upload Company Logo'}
+                            </span>
+                        </label>
+                        <input id="logo-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
 
                         <div className="form-row">
                             <div className="form-group">
@@ -335,6 +323,41 @@ const Settings = () => {
                                     className="settings-input"
                                     placeholder={t.dashboard.settingsPage.industryHint}
                                 />
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label>{language === 'ar' ? 'رابط الموقع المستضاف (Website Subdomain)' : 'Website Subdomain'}</label>
+                            <div className="settings-input-group">
+                                <span>voxio-</span>
+                                <input
+                                    type="text"
+                                    name="slug"
+                                    value={companyData.slug}
+                                    onChange={handleInputChange}
+                                    placeholder="your-brand-name"
+                                />
+                                <span>.vercel.app</span>
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label>{language === 'ar' ? 'ربط دومين مخصص (Custom Domain)' : 'Custom Domain (Optional)'}</label>
+                            <div className="settings-input-group">
+                                <span><i className="fas fa-globe" /></span>
+                                <input
+                                    type="text"
+                                    name="customDomain"
+                                    value={companyData.customDomain}
+                                    onChange={handleInputChange}
+                                    placeholder={language === 'ar' ? 'www.mycompany.com' : 'www.mycompany.com'}
+                                />
+                            </div>
+                            <div className="domain-info-box">
+                                <i className="fas fa-info-circle" />
+                                {language === 'ar' 
+                                    ? 'وجّه إعدادات الـ DNS (CNAME) إلى cname.vercel-dns.com'
+                                    : 'Point your DNS (CNAME) to cname.vercel-dns.com'}
                             </div>
                         </div>
 
@@ -411,10 +434,11 @@ const Settings = () => {
                                 />
                             </div>
                         </div>
-                        <p style={{ fontSize: '12px', opacity: 0.6, marginBottom: '20px' }}>
+                        <p className="security-note">
+                            <i className="fas fa-shield-alt" />
                             {language === 'ar'
-                                ? '⚠️ تأمين الـ API: أدخل النطاقات التي سيتم تشغيل البوت عليها فقط لمنع استخدامه في مواقع أخرى.'
-                                : '⚠️ API Security: Enter specific domains where your bot is allowed to run to prevent unauthorized use.'}
+                                ? 'أدخل النطاقات التي سيتم تشغيل البوت عليها فقط لمنع استخدامه في مواقع أخرى.'
+                                : 'Enter specific domains where your bot is allowed to run to prevent unauthorized use.'}
                         </p>
                     </div>
                 </motion.div>
@@ -432,40 +456,42 @@ const Settings = () => {
                                 : 'Your API keys. Use the Chat Token for your website for higher security.'}
                         </p>
 
-                        <div className="api-keys-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div className="api-keys-container">
                             <div className="api-key-item">
-                                <label style={{ fontSize: '13px', fontWeight: '600', marginBottom: '5px', display: 'block' }}>
-                                    {language === 'ar' ? 'مفتاح الشات (Chat Token) - آمن للمتصفح' : 'Chat Token - Browser Safe'}
+                                <label>
+                                    <span className="key-badge safe"><i className="fas fa-check-circle" /> SAFE</span>
+                                    {language === 'ar' ? 'مفتاح الشات (Chat Token)' : 'Chat Token'}
                                 </label>
                                 <div className="api-key-box">
                                     <input type="text" value={chatToken || "Generating..."} readOnly />
                                     <button className="icon-btn" onClick={() => copyToClipboard(chatToken)} title={t.dashboard.settingsPage.copy}>
-                                        <i className={`fas ${copySuccess ? 'fa-check' : 'fa-copy'}`}></i>
+                                        <i className={`fas ${copySuccess ? 'fa-check' : 'fa-copy'}`} />
                                     </button>
                                 </div>
                             </div>
 
                             <div className="api-key-item">
-                                <label style={{ fontSize: '13px', fontWeight: '600', marginBottom: '5px', display: 'block', color: '#ff4444' }}>
-                                    {language === 'ar' ? 'مفتاح الإدارة (Secret API Key) - لا تشاركه أبداً' : 'Secret API Key - Never Share'}
+                                <label>
+                                    <span className="key-badge secret"><i className="fas fa-lock" /> SECRET</span>
+                                    {language === 'ar' ? 'مفتاح الإدارة (API Key)' : 'Secret API Key'}
                                 </label>
                                 <div className="api-key-box">
                                     <input type="text" value={apiKey} readOnly />
                                     <button className="icon-btn" onClick={() => copyToClipboard(apiKey)} title={t.dashboard.settingsPage.copy}>
-                                        <i className={`fas ${copySuccess ? 'fa-check' : 'fa-copy'}`}></i>
+                                        <i className={`fas ${copySuccess ? 'fa-check' : 'fa-copy'}`} />
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        {copySuccess && <span className="copy-feedback" style={{ marginTop: '10px', display: 'block' }}>{copySuccess}</span>}
+                        {copySuccess && <span className="copy-feedback">{copySuccess}</span>}
 
-                        <div className="warning-box" style={{ marginTop: '20px' }}>
-                            <i className="fas fa-exclamation-triangle"></i>
+                        <div className="warning-box">
+                            <i className="fas fa-exclamation-triangle" />
                             <p>
                                 {language === 'ar'
-                                    ? 'تنبيه: لا تستخدم الـ Secret API Key داخل كود الجافا سكريبت في موقعك، استخدم دائماً الـ Chat Token.'
-                                    : 'Warning: Never use your Secret API Key inside your website\'s JavaScript code. Always use the Chat Token instead.'}
+                                    ? 'لا تستخدم الـ Secret API Key داخل كود الجافا سكريبت في موقعك. استخدم دائماً الـ Chat Token.'
+                                    : 'Never use your Secret API Key in frontend JavaScript. Always use the Chat Token instead.'}
                             </p>
                         </div>
                     </div>
@@ -478,7 +504,7 @@ const Settings = () => {
                         <h3>Change Password</h3>
                     </div>
                     <div className="card-body">
-                        {pwdError && <p style={{ color: 'red', marginBottom: '10px', fontWeight: 'bold' }}>{pwdError}</p>}
+                        {pwdError && <div className="pwd-error"><i className="fas fa-exclamation-circle" /> {pwdError}</div>}
 
                         <div className="form-group">
                             <label>Current Password</label>
@@ -520,9 +546,9 @@ const Settings = () => {
                             className="dash-btn dash-btn-outline"
                             onClick={handleSavePassword}
                             disabled={pwdSaving}
-                            style={{ marginTop: '10px', width: '100%' }}
                         >
-                            {pwdSaving ? 'Updating...' : 'Update Password'}
+                            <i className={`fas ${pwdSaving ? 'fa-spinner fa-spin' : 'fa-key'}`} />
+                            {pwdSaving ? (language === 'ar' ? 'جاري التحديث...' : 'Updating...') : (language === 'ar' ? 'تحديث كلمة المرور' : 'Update Password')}
                         </button>
                     </div>
                 </motion.div>

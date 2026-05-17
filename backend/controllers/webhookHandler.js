@@ -216,6 +216,15 @@ export const handleWhatsAppMessage = async (body) => {
 
               // 🧠 Build Powerful System Prompt based on Mode
               let systemPrompt = context;
+              
+              // 📦 Add WhatsApp-Specific Settings (Products, etc.)
+              if (integration.settings) {
+                  if (integration.settings.about) systemPrompt += `\n\n[نبذة عن الشركة]: ${integration.settings.about}`;
+                  if (integration.settings.products) systemPrompt += `\n\n[المنتجات والخدمات المتاحة]:\n${integration.settings.products}`;
+                  if (integration.settings.website) systemPrompt += `\n\n[رابط الموقع]: ${integration.settings.website}`;
+                  if (integration.settings.contactPhone) systemPrompt += `\n\n[رقم التواصل الإضافي]: ${integration.settings.contactPhone}`;
+              }
+
               if (aiMode === "restricted") {
                 systemPrompt += `\n⚠️ STRICT MODE: You are a professional assistant for this company ONLY. Do NOT answer questions about politics, other companies, general trivia, or anything unrelated to the company info above. If the question is unrelated, politely say that you can only help with company matters.`;
               } else {
@@ -223,6 +232,14 @@ export const handleWhatsAppMessage = async (body) => {
               }
 
               systemPrompt += `\n🌐 LANGUAGE: You MUST respond only in one of these languages: [${languages}]. Default to Arabic if the user speaks Arabic.`;
+
+              // 🛒 ORDERING SYSTEM INSTRUCTIONS
+              systemPrompt += `\n\n🛒 **نظام الطلبات (ORDERING SYSTEM):**
+1. إذا طلب العميل شراء منتج، اعرض عليه المنتجات المتاحة.
+2. إذا اختار منتجاً للطلب، اطلب منه بلطف إرسال "الاسم" و "رقم الموبايل" لتأكيد الطلب.
+3. بمجرد أن يرسل العميل رقم الموبايل، قم بتأكيد الطلب له، وفي **نهاية رسالتك تماماً** يجب أن تكتب هذا الكود البرمجي (الذي سيقوم بحفظ الطلب في قاعدة بياناتنا):
+[SAVE_ORDER: أسم العميل | رقم الموبايل | أسم المنتج]
+تأكد أن تستبدل البيانات بما طلبه العميل. النظام الخاص بنا سيقرأ هذا الكود ولن يظهر للعميل.`;
 
               // Save user message to DB
               await CompanyChat.create({
@@ -260,6 +277,25 @@ export const handleWhatsAppMessage = async (body) => {
                 throw new Error(
                   "AI Assistant failed to generate a response. Please check API keys.",
                 );
+              }
+
+              // 📝 PARSE ORDER TAG AND SAVE TO DATABASE
+              const orderMatch = reply.match(/\[SAVE_ORDER:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\]/i);
+              if (orderMatch) {
+                  const [fullMatch, customerName, phone, productName] = orderMatch;
+                  
+                  // Save to Database
+                  company.requests.push({
+                      customerName: `${customerName.trim()} (${phone.trim()})`,
+                      product: productName.trim(),
+                      message: `📦 طلب جديد من واتساب!\nالمنتج: ${productName.trim()}\nالعميل: ${customerName.trim()}\nرقم الموبايل: ${phone.trim()}`,
+                      source: 'whatsapp',
+                      date: new Date()
+                  });
+                  await company.save().catch(e => console.error("Failed to save order to DB:", e));
+                  
+                  // Remove the tag from the reply sent to the user
+                  reply = reply.replace(fullMatch, "").trim();
               }
 
               // ✂️ WhatsApp Max Length is 4096. We trim at 4000 to be safe.
@@ -733,6 +769,7 @@ export const handleTelegramWebhook = async (req, res) => {
           customerName: `${session.customerName} (${phoneNumber})`,
           product: session.productName,
           message: `📦 طلب جديد!\nالمنتج: ${session.productName}\nالعميل: @${session.customerName}\nرقم الموبايل: ${phoneNumber}`,
+          source: 'telegram',
           date: new Date(),
         });
         await companyDoc.save();
@@ -790,6 +827,7 @@ export const handleTelegramWebhook = async (req, res) => {
             customerName: user,
             product: commandConfig.category || commandConfig.command,
             message: text,
+            source: 'telegram',
             date: new Date(),
           });
           await companyDoc.save();
@@ -824,6 +862,7 @@ export const handleTelegramWebhook = async (req, res) => {
             customerName: user,
             product: commandConfig.category || commandConfig.command,
             message: text,
+            source: 'telegram',
             date: new Date(),
           });
           await companyDoc.save();

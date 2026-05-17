@@ -268,7 +268,8 @@ router.post("/publish-vercel", requireAuth, async (req, res) => {
     const response = await axios.post(
       'https://api.vercel.com/v13/deployments',
       {
-        name: `voxio-site-${company.slug}`,
+        name: `voxio-${company.slug}`,
+        target: 'production',
         files: [
           { file: "index.html", data: cleanHtml }
         ],
@@ -284,8 +285,15 @@ router.post("/publish-vercel", requireAuth, async (req, res) => {
       }
     );
 
-    // Vercel returns the deployment URL
-    const deployedUrl = `https://${response.data.url}`;
+    // Vercel returns the deployment URL. For production, it assigns aliases.
+    // The static production alias is usually the first alias, or we construct it.
+    let deployedUrl = `https://${response.data.url}`;
+    if (response.data.alias && response.data.alias.length > 0) {
+      deployedUrl = `https://${response.data.alias[0]}`;
+    } else {
+      // Fallback static URL format for Vercel production projects
+      deployedUrl = `https://voxio-${company.slug}.vercel.app`;
+    }
 
     // Optionally save the URL in DB
     company.websiteConfig = {
