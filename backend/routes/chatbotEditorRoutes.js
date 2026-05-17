@@ -82,7 +82,8 @@ router.post("/analyze", requireAuth, async (req, res) => {
 Your task is to create a clear, step-by-step ACTION PLAN (Report) on what needs to be changed in the HTML, CSS, and JS to fulfill the user's request.
 CRITICAL COMMAND: You MUST generate this report as quickly and concisely as possible! DO NOT EXCEED 300 SECONDS! DO NOT OVERTHINK.
 RESPOND WITH EXACTLY THIS RAW JSON FORMAT:
-{"message": "Action plan generated", "report": "The detailed action plan to follow..."}`;
+{"message": "Action plan generated", "report": "The detailed action plan to follow...", "filesToModify": ["html", "css", "js"]}
+IMPORTANT: The "filesToModify" array must ONLY contain the exact strings "html", "css", or "js" for the files that ACTUALLY need modifications. If a file does not need modifications, DO NOT include it in the array.`;
 
     const userPrompt = `Current HTML:\n${html}\n\nCurrent CSS:\n${css}\n\nCurrent JS:\n${js}\n\nTask: ${userRequest}\nGenerate the report on what you will change.`;
 
@@ -98,10 +99,10 @@ RESPOND WITH EXACTLY THIS RAW JSON FORMAT:
           throw new Error("No JSON found");
       }
     } catch (e) {
-      parsed = { message: "Action plan generated", report: "Proceeding with changes." }; 
+      parsed = { message: "Action plan generated", report: "Proceeding with changes.", filesToModify: ['html', 'css', 'js'] }; 
     }
 
-    res.json({ message: parsed.message, report: parsed.report });
+    res.json({ message: parsed.message, report: parsed.report, filesToModify: parsed.filesToModify || ['html', 'css', 'js'] });
   } catch (err) {
     console.error("🤖 Analyze Error:", err);
     res.status(500).json({ error: "Failed to analyze", details: err.message });
@@ -110,8 +111,8 @@ RESPOND WITH EXACTLY THIS RAW JSON FORMAT:
 
 router.post("/edit-segment", requireAuth, async (req, res) => {
   try {
-    const { userRequest, targetSegment, currentCode, codingModel, context } = req.body;
-    if (!userRequest || !targetSegment) {
+    const { userRequest, targetSegment, currentCode, allSegments, codingModel, context } = req.body;
+    if (!userRequest || !targetSegment || !allSegments) {
         return res.status(400).json({ 
             error: "Missing required fields", 
             received: req.body 
@@ -131,13 +132,25 @@ IMPORTANT RULES:
 - RESPOND WITH EXACTLY THIS RAW JSON FORMAT:
   {"message": "شرح التعديل بالعربي في سطر واحد", "code": "THE_MODIFIED_CODE"}
   
-CRITICAL COMMAND: You MUST generate this code modification as quickly and concisely as possible! DO NOT EXCEED 300 SECONDS! Write exactly what is needed without any delays.
+CRITICAL COMMAND: You MUST generate this code modification quickly. DO NOT EXCEED 300 SECONDS!
+CRITICAL COMMAND 2: You MUST return the ENTIRE and COMPLETE ${targetSegment.toUpperCase()} code with your modifications integrated. Do NOT return partial snippets or just the changed lines. Return the full code.
+WARNING: DO NOT use ellipsis (...) or placeholders to skip code! You MUST write out every single line of the code from start to finish. If you omit code using ..., the website will break!
 
 Context of what you should do: ${userRequest}
 Company context: ${company.name} - ${company.industry}
 ${context ? `\nCRITICAL ACTION PLAN TO FOLLOW:\n${context}` : ''}`;
 
-    const userPrompt = `Current ${targetSegment.toUpperCase()} Code:\n${currentCode}\n\nTask: Modify this ${targetSegment} to fulfill the request. If no changes are needed for ${targetSegment}, return the same code.`;
+    const userPrompt = `Here is the current full state of the project for your context:
+--- CURRENT HTML ---
+${allSegments.html}
+
+--- CURRENT CSS ---
+${allSegments.css}
+
+--- CURRENT JS ---
+${allSegments.js}
+
+Task: Modify ONLY the ${targetSegment.toUpperCase()} to fulfill the request. If no changes are needed for ${targetSegment.toUpperCase()}, return the exact same ${targetSegment.toUpperCase()} code. Do not modify the other files, I will ask you for them later.`;
 
     console.log(`🤖 Segment Editor: Editing ${targetSegment}...`);
     const aiResult = await fetchDesignerAiResponse(systemPrompt, userPrompt, "Failed", codingModel);
@@ -231,6 +244,61 @@ router.post("/save", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("🤖 Website Editor Save Error:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+/*-------------------------------
+  Publish to Vercel (API Deploy)
+-------------------------------*/
+router.post("/publish-vercel", requireAuth, async (req, res) => {
+  try {
+    const { htmlContent } = req.body;
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    if (!process.env.VERCEL_API_TOKEN) {
+      return res.status(500).json({ error: "Vercel API token is missing in .env" });
+    }
+
+    const { default: axios } = await import('axios');
+
+    const cleanHtml = unescapeHTML(htmlContent);
+
+    // Call Vercel API
+    const response = await axios.post(
+      'https://api.vercel.com/v13/deployments',
+      {
+        name: `voxio-site-${company.slug}`,
+        files: [
+          { file: "index.html", data: cleanHtml }
+        ],
+        projectSettings: {
+          framework: null
+        }
+      },
+      {
+        headers: { 
+          Authorization: `Bearer ${process.env.VERCEL_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Vercel returns the deployment URL
+    const deployedUrl = `https://${response.data.url}`;
+
+    // Optionally save the URL in DB
+    company.websiteConfig = {
+      ...(company.websiteConfig || {}),
+      htmlContent: cleanHtml,
+      publishedUrl: deployedUrl
+    };
+    await company.save();
+
+    res.json({ message: "تم النشر بنجاح ✅", url: deployedUrl });
+  } catch (err) {
+    console.error("🤖 Vercel Publish Error:", err.response?.data || err.message);
+    res.status(500).json({ error: err.response?.data?.error?.message || err.message });
   }
 });
 

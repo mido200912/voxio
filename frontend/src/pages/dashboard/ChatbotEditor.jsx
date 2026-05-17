@@ -175,13 +175,20 @@ const ChatbotEditor = () => {
 
     // Web Editor Specialized AI Model
     const [codingModel, setCodingModel] = useState('openrouter/owl-alpha');
-    const [workflow, setWorkflow] = useState({ active: false, step: 'idle', request: '', pendingCode: null, report: '' });
+    const [workflow, setWorkflow] = useState({ active: false, step: 'idle', request: '', pendingCode: null, report: '', pendingFiles: [] });
 
-    const processSegment = async (targetSegment, currentCode, requestText, reportContext) => {
+    const processSegment = async (targetSegment, currentSegments, requestText, reportContext) => {
         const token = secureStorage.getItem('token');
         const res = await axios.post(
             `${BACKEND_URL}/chatbot-editor/edit-segment`,
-            { userRequest: requestText || workflow.request, targetSegment, currentCode, codingModel, context: reportContext || workflow.report },
+            { 
+                userRequest: requestText || workflow.request, 
+                targetSegment, 
+                currentCode: currentSegments[targetSegment],
+                allSegments: currentSegments, // pass all code for context
+                codingModel, 
+                context: reportContext || workflow.report 
+            },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return res.data;
@@ -194,7 +201,7 @@ const ChatbotEditor = () => {
         const request = input;
         setInput('');
         setMessages(prev => [...prev, { id: Date.now(), role: 'user', content: request }]);
-        setWorkflow({ active: true, step: 'analyzing', request, pendingCode: null, report: '' });
+        setWorkflow({ active: true, step: 'analyzing', request, pendingCode: null, report: '', pendingFiles: [] });
         setAiProcessing(true);
         setLoading(true);
 
@@ -209,22 +216,34 @@ const ChatbotEditor = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             const report = analyzeRes.data.report;
-            setWorkflow(prev => ({ ...prev, report }));
+            let filesToModify = analyzeRes.data.filesToModify || ['html', 'css', 'js'];
+            
+            // Fallback: If AI returns empty array, force 'html' just in case
+            if (!Array.isArray(filesToModify) || filesToModify.length === 0) {
+                filesToModify = ['html'];
+            }
 
-            // Step 2: Edit HTML
-            setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `🔍 الخطة جاهزة! جاري تحليل وتعديل الـ HTML...` }]);
-            const result = await processSegment('html', segments.html, request, report);
+            setMessages(prev => [...prev, { id: Date.now()+1.5, role: 'ai', content: `📝 تم إنشاء خطة التعديل:\n\n${report}\n\nالملفات المستهدفة: ${filesToModify.join(', ').toUpperCase()}` }]);
+
+            const firstFile = filesToModify[0];
+            const remainingFiles = filesToModify.slice(1);
+
+            setWorkflow(prev => ({ ...prev, report, pendingFiles: remainingFiles }));
+
+            // Step 2: Edit First Segment
+            setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `🔍 جاري تحليل وتعديل الـ ${firstFile.toUpperCase()}...` }]);
+            const result = await processSegment(firstFile, segments, request, report);
             
             // Save backup and show preview
             setCodeHistory(prev => [...prev, currentCode]);
-            handleSegmentChange(result.code, 'html');
+            handleSegmentChange(result.code, firstFile);
             
-            setWorkflow(prev => ({ ...prev, step: 'review_html', pendingCode: result.code }));
+            setWorkflow(prev => ({ ...prev, step: `review_${firstFile}`, pendingCode: result.code }));
             setMessages(prev => [...prev, { id: Date.now()+3, role: 'ai', content: `✅ ${result.message}\nيرجى معاينة التعديل والموافقة (Accept) أو الرفض (Reject).` }]);
         } catch (err) {
             console.error(err);
             setMessages(prev => [...prev, { id: Date.now()+3, role: 'ai', content: `❌ حدث خطأ في النظام` }]);
-            setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null, report: '' });
+            setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null, report: '', pendingFiles: [] });
         } finally {
             setAiProcessing(false);
             setLoading(false);
@@ -239,6 +258,9 @@ const ChatbotEditor = () => {
         const currentStep = workflow.step;
         const segmentType = currentStep.replace('review_', '');
         
+        let activeSegments = { ...segments };
+        let localCurrentCode = currentCode;
+
         if (action === 'accept') {
             setMessages(prev => [...prev, { id: Date.now(), role: 'user', content: `✅ تم قبول تعديلات ${segmentType.toUpperCase()}` }]);
         } else {
@@ -248,39 +270,47 @@ const ChatbotEditor = () => {
                 setCurrentCode(previousCode);
                 parseAndSetSegments(previousCode);
                 setCodeHistory(prev => prev.slice(0, -1));
+                
+                // Immediately parse the previous code to use for the next step so we don't send the rejected code!
+                localCurrentCode = previousCode;
+                let rawCode = previousCode;
+                if (typeof rawCode === 'string') rawCode = rawCode.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+                const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+                let allCss = ''; let styleMatch;
+                while ((styleMatch = styleRegex.exec(rawCode)) !== null) allCss += (allCss ? '\n' : '') + styleMatch[1].trim();
+                const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+                let allJs = ''; let scriptMatch;
+                while ((scriptMatch = scriptRegex.exec(rawCode)) !== null) allJs += (allJs ? '\n\n' : '') + scriptMatch[1].trim();
+                let htmlOnly = rawCode.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+                
+                activeSegments = { html: htmlOnly.trim(), css: allCss, js: allJs };
             }
             setMessages(prev => [...prev, { id: Date.now(), role: 'user', content: `❌ تم رفض تعديلات ${segmentType.toUpperCase()}` }]);
         }
 
         try {
-            if (currentStep === 'review_html') {
-                setWorkflow(prev => ({ ...prev, step: 'css', pendingCode: null }));
-                setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🎨 جاري تعديل الـ CSS...` }]);
-                const result = await processSegment('css', segments.css);
+            if (workflow.pendingFiles.length > 0) {
+                const nextFile = workflow.pendingFiles[0];
+                const remainingFiles = workflow.pendingFiles.slice(1);
                 
-                setCodeHistory(prev => [...prev, currentCode]);
-                handleSegmentChange(result.code, 'css');
+                setWorkflow(prev => ({ ...prev, step: `editing_${nextFile}`, pendingCode: null, pendingFiles: remainingFiles }));
+                setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🎨 جاري تعديل الـ ${nextFile.toUpperCase()}...` }]);
                 
-                setWorkflow(prev => ({ ...prev, step: 'review_css', pendingCode: result.code }));
+                const result = await processSegment(nextFile, activeSegments, workflow.request, workflow.report);
+                
+                setCodeHistory(prev => [...prev, localCurrentCode]);
+                handleSegmentChange(result.code, nextFile);
+                
+                setWorkflow(prev => ({ ...prev, step: `review_${nextFile}`, pendingCode: result.code }));
                 setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `✅ ${result.message}\nيرجى معاينة التعديل والموافقة (Accept) أو الرفض (Reject).` }]);
-            } else if (currentStep === 'review_css') {
-                setWorkflow(prev => ({ ...prev, step: 'js', pendingCode: null }));
-                setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `⚡ جاري تعديل الـ JS...` }]);
-                const result = await processSegment('js', segments.js);
-                
-                setCodeHistory(prev => [...prev, currentCode]);
-                handleSegmentChange(result.code, 'js');
-                
-                setWorkflow(prev => ({ ...prev, step: 'review_js', pendingCode: result.code }));
-                setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `✅ ${result.message}\nيرجى معاينة التعديل والموافقة (Accept) أو الرفض (Reject).` }]);
-            } else if (currentStep === 'review_js') {
+            } else {
                 setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', content: `🎉 اكتملت جميع التعديلات بنجاح!` }]);
-                setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null });
+                setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null, report: '', pendingFiles: [] });
             }
         } catch (err) {
             console.error(err);
             setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `❌ حدث خطأ أثناء التعديل` }]);
-            setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null });
+            setWorkflow({ active: false, step: 'idle', request: '', pendingCode: null, report: '', pendingFiles: [] });
         } finally {
             setAiProcessing(false);
             setLoading(false);
@@ -290,7 +320,9 @@ const ChatbotEditor = () => {
     // Replace old sendMessage
     const sendMessage = startWorkflow;
 
-    const handleManualSave = async () => {
+    const [publishedUrl, setPublishedUrl] = useState('');
+
+    const handleSave = async () => {
         setIsSaving(true);
         try {
             const token = secureStorage.getItem('token');
@@ -298,8 +330,35 @@ const ChatbotEditor = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setShowCopied(true);
-            setTimeout(() => setShowCopied(false), 2000);
-        } catch (err) { console.error(err); }
+            setTimeout(() => setShowCopied(false), 3000);
+        } catch (err) { 
+            console.error(err); 
+            alert('Error saving: ' + (err.response?.data?.error || err.message));
+        }
+        finally { setIsSaving(false); }
+    };
+
+    const handlePublish = async () => {
+        setIsSaving(true);
+        try {
+            const token = secureStorage.getItem('token');
+            // Save first
+            await axios.post(`${BACKEND_URL}/chatbot-editor/save`, { htmlContent: currentCode }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Publish to Vercel
+            const res = await axios.post(`${BACKEND_URL}/chatbot-editor/publish-vercel`, { htmlContent: currentCode }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            setPublishedUrl(res.data.url);
+            setShowCopied(true);
+            setTimeout(() => setShowCopied(false), 8000);
+        } catch (err) { 
+            console.error(err); 
+            alert('Error publishing: ' + (err.response?.data?.error || err.message));
+        }
         finally { setIsSaving(false); }
     };
 
@@ -374,9 +433,12 @@ const ChatbotEditor = () => {
                     >
                         <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
                     </button>
-                    <button className="tb-save-btn" onClick={handleManualSave} disabled={isSaving}>
+                    <button className="tb-icon-btn" onClick={handleSave} disabled={isSaving} title={isArabic ? 'حفظ التعديلات' : 'Save Changes'}>
+                        <i className={`fas ${isSaving ? 'fa-spinner fa-spin' : 'fa-save'}`}></i>
+                    </button>
+                    <button className="tb-save-btn" onClick={handlePublish} disabled={isSaving}>
                         <i className={`fas ${isSaving ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-up'}`}></i>
-                        <span>{isArabic ? 'نشر' : 'Publish'}</span>
+                        <span>{isArabic ? 'نشر الموقع' : 'Publish'}</span>
                     </button>
                 </div>
             </div>
@@ -409,6 +471,7 @@ const ChatbotEditor = () => {
                                         onChange={(e) => setCodingModel(e.target.value)}
                                     >
                                         <optgroup label="Coding Specialists">
+                                            <option value="inclusionai/ring-2.6-1t:free">Ring 2.6 (Fast & Accurate)</option>
                                             <option value="openrouter/owl-alpha">Owl Alpha (Advanced Design AI)</option>
                                         </optgroup>
                                     </select>
@@ -588,8 +651,13 @@ const ChatbotEditor = () => {
 
             <AnimatePresence>
                 {showCopied && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="toast-notification">
-                        <i className="fas fa-check-circle"></i> {isArabic ? 'تم الحفظ بنجاح' : 'Published Successfully'}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="toast-notification" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                        <div><i className="fas fa-check-circle"></i> {isArabic ? 'تم النشر بنجاح' : 'Published Successfully'}</div>
+                        {publishedUrl && (
+                            <a href={publishedUrl} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', textDecoration: 'underline', fontSize: '0.9rem' }}>
+                                {publishedUrl}
+                            </a>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
