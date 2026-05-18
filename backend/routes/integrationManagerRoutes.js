@@ -391,6 +391,20 @@ router.post('/instagram', requireAuth, async (req, res) => {
             integration.isActive = true;
             await integration.save();
         }
+        // Subscribe the app to the page's webhooks if credentials are provided
+        if (integration.credentials?.pageId && integration.credentials?.accessToken) {
+            try {
+                const axios = (await import('axios')).default;
+                await axios.post(
+                    `https://graph.facebook.com/v20.0/${integration.credentials.pageId}/subscribed_apps`,
+                    { subscribed_fields: ['messages', 'messaging_postbacks', 'feed', 'instagram_manage_messages', 'instagram_manage_comments'] },
+                    { headers: { Authorization: `Bearer ${integration.credentials.accessToken}` } }
+                );
+                console.log(`[Instagram] Successfully subscribed webhook for page ${integration.credentials.pageId}`);
+            } catch (subErr) {
+                console.error(`[Instagram] Failed to subscribe webhook:`, subErr.response?.data || subErr.message);
+            }
+        }
 
         res.json({ message: 'Instagram integrated successfully', integration });
     } catch (error) {

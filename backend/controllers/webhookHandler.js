@@ -451,20 +451,23 @@ export const handleWhatsAppMessage = async (body) => {
  */
 export const handleInstagramWebhook = async (body) => {
   try {
+    console.log(`[IG Webhook] Received body object: ${body.object}`);
     // Meta webhooks for Instagram usually have object === 'page' or 'instagram'
     if (body.object !== "page" && body.object !== "instagram") return;
 
     for (const entry of body.entry) {
-      // "id" here is usually the Facebook Page ID or IG Account ID
       const receiverId = entry.id;
+      console.log(`[IG Webhook] Processing entry for receiverId: ${receiverId}`);
 
       // Handle Messages (DM)
       if (entry.messaging) {
+        console.log(`[IG Webhook] Messaging events count: ${entry.messaging.length}`);
         for (const event of entry.messaging) {
           if (event.message && event.message.text && !event.message.is_echo) {
             const senderId = event.sender.id;
             const messageText = event.message.text;
             const messageId = event.message.mid;
+            console.log(`[IG Webhook] Received message '${messageText}' from ${senderId}`);
 
             if (processedMessages.has(messageId)) continue;
             processedMessages.add(messageId);
@@ -479,11 +482,19 @@ export const handleInstagramWebhook = async (body) => {
 
             let integration = allIgIntegrations.find(
               (int) =>
-                int.credentials?.pageId === receiverId ||
-                int.credentials?.igAccountId === receiverId,
+                String(int.credentials?.pageId) === String(receiverId) ||
+                String(int.credentials?.igAccountId) === String(receiverId),
             );
 
-            if (!integration || !integration.company) continue;
+            if (!integration) {
+                console.error(`[IG Webhook] ❌ No active Instagram integration found for receiverId: ${receiverId}`);
+                continue;
+            }
+            if (!integration.company) {
+                console.error(`[IG Webhook] ❌ Integration has no associated company.`);
+                continue;
+            }
+            console.log(`[IG Webhook] ✅ Found integration for company: ${integration.company}`);
 
             const accessToken = integration.credentials.accessToken;
             const settings = integration.settings || {};
