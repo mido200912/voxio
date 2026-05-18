@@ -357,7 +357,7 @@ router.post('/whatsapp/exchange', requireAuth, async (req, res, next) => {
 // @access  Private
 router.post('/instagram', requireAuth, async (req, res) => {
     try {
-        const { pageId, igAccountId, accessToken } = req.body;
+        const { pageId, igAccountId, accessToken, commands } = req.body;
         
         const company = await Company.findOne({ owner: req.user._id });
         if (!company) {
@@ -367,21 +367,27 @@ router.post('/instagram', requireAuth, async (req, res) => {
         let integration = await Integration.findOne({ company: company._id, platform: 'instagram' });
 
         if (!integration) {
-            if (!pageId || !igAccountId || !accessToken) {
-                return res.status(400).json({ error: 'Page ID, IG Account ID and Access Token are required for new integration' });
+            if (!pageId && !igAccountId && !accessToken && !commands) {
+                return res.status(400).json({ error: 'Data required for new integration' });
             }
             integration = await Integration.create({
                 company: company._id,
                 platform: 'instagram',
                 credentials: { pageId, igAccountId, accessToken },
+                settings: { commands: commands || [] },
                 isActive: true
             });
         } else {
-            integration.credentials = { 
-                pageId: pageId || integration.credentials?.pageId, 
-                igAccountId: igAccountId || integration.credentials?.igAccountId, 
-                accessToken: accessToken || integration.credentials?.accessToken 
-            };
+            if (pageId || igAccountId || accessToken) {
+                integration.credentials = { 
+                    pageId: pageId || integration.credentials?.pageId, 
+                    igAccountId: igAccountId || integration.credentials?.igAccountId, 
+                    accessToken: accessToken || integration.credentials?.accessToken 
+                };
+            }
+            if (commands !== undefined) {
+                integration.settings = { ...integration.settings, commands };
+            }
             integration.isActive = true;
             await integration.save();
         }

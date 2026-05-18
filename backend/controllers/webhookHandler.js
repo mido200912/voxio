@@ -487,7 +487,7 @@ export const handleInstagramWebhook = async (body) => {
 
             const accessToken = integration.credentials.accessToken;
             const settings = integration.settings || {};
-            const chatbotRules = settings.chatbotRules || [];
+            const commands = settings.commands || [];
 
             await CompanyChat.create({
               company: integration.company,
@@ -499,16 +499,25 @@ export const handleInstagramWebhook = async (body) => {
 
             let replyMsg = null;
 
-            // 1. Check if matches any exact rule
-            const rule = chatbotRules.find(
-              (r) =>
-                r.trigger.toLowerCase() === messageText.trim().toLowerCase(),
+            // 1. Check if matches any exact command (ignoring leading slashes)
+            const cleanMessageText = messageText.trim().toLowerCase().replace(/^\/+/, '');
+            const command = commands.find(
+              (cmd) =>
+                (cmd.command || '').toLowerCase().trim().replace(/^\/+/, '') === cleanMessageText
             );
-            if (rule) {
-              replyMsg = rule.response;
+
+            const company = await Company.findById(integration.company);
+
+            if (command && command.type === "fixed_message") {
+              replyMsg = command.message;
+            } else if (command && command.type === "product_menu") {
+              let menuText = command.message + "\n\n";
+              (command.products || []).forEach((p, idx) => {
+                  menuText += `${idx + 1}. ${p.name} - ${p.price}\n`;
+              });
+              replyMsg = menuText;
             } else {
-              // 2. AI Fallback
-              const company = await Company.findById(integration.company);
+              // 2. AI Fallback (or if type === "ai")
               if (company) {
                 const context = await getCompanyAIContext(company, integration);
                 replyMsg = await fetchAiResponse(
