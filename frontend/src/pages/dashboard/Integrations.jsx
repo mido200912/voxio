@@ -991,6 +991,30 @@ const Integrations = () => {
                             <p className="help-text" style={{ fontSize: '0.9rem', color: '#666', marginBottom: '20px' }}>
                                 {t.language === 'ar' ? 'احصل على هذه البيانات من منصة مطوري ميتا.' : 'Get these details from the Meta Developer Dashboard.'}
                             </p>
+
+                            {/* Logs Display Section */}
+                            {(() => {
+                                const igInt = integrations.find(i => i.platform === 'instagram');
+                                const logs = igInt?.logs || [];
+                                if (logs.length === 0) return null;
+                                return (
+                                    <div className="integration-logs" style={{ marginBottom: '20px', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '8px', maxHeight: '150px', overflowY: 'auto' }}>
+                                        <h4 style={{ color: '#d32f2f', margin: '0 0 10px 0', fontSize: '0.95rem' }}>
+                                            <i className="fas fa-bug" style={{ marginRight: '5px' }}></i>
+                                            {t.language === 'ar' ? 'سجل الأخطاء والمشاكل (Bug Logs)' : 'Error & Bug Logs'}
+                                        </h4>
+                                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: '#b71c1c' }}>
+                                            {logs.map((log, idx) => (
+                                                <li key={idx} style={{ marginBottom: '8px', borderBottom: idx !== logs.length -1 ? '1px solid #ffcdd2' : 'none', paddingBottom: '5px' }}>
+                                                    <strong style={{ fontSize: '0.75rem', color: '#d32f2f', display: 'block' }}>{new Date(log.date).toLocaleString(t.language === 'ar' ? 'ar-EG' : 'en-US')}</strong>
+                                                    {log.message}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                );
+                            })()}
+
                             <div className="modal-actions">
                                 <button type="button" className="btn btn-outline" onClick={() => setShowInstagramModal(false)}>
                                     {t.language === 'ar' ? 'إلغاء' : 'Cancel'}

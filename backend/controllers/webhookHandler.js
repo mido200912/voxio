@@ -32,6 +32,20 @@ async function downloadWaMedia(mediaId, accessToken) {
   }
 }
 
+// ─── Helper: Log Integration Errors ─────────────────────────────────────────
+async function logIntegrationError(integration, errorMessage) {
+  if (!integration || !integration.save) return;
+  try {
+      const logs = integration.logs || [];
+      logs.unshift({ type: 'error', message: errorMessage, date: new Date().toISOString() });
+      if (logs.length > 20) logs.length = 20;
+      integration.logs = logs;
+      await integration.save();
+  } catch(e) {
+      console.error("Failed to save integration log:", e.message);
+  }
+}
+
 // تتبع حالات الطلب المؤقتة (في الانتاج يفضل Redis)
 const orderSessions = {};
 
@@ -541,6 +555,7 @@ export const handleInstagramWebhook = async (body) => {
                   const errMsg = aiErr.response?.data?.error?.message || aiErr.message;
                   replyMsg = `[AI System Error]: ${errMsg}`;
                   console.error("AI Error for Instagram:", errMsg);
+                  await logIntegrationError(integration, `AI Error: ${errMsg}`);
                 }
               }
             }
@@ -564,6 +579,7 @@ export const handleInstagramWebhook = async (body) => {
               } catch (err) {
                 const errorMessage = err.response?.data?.error?.message || err.message;
                 console.error("Error sending IG DM:", errorMessage);
+                await logIntegrationError(integration, `DM Send Error: ${errorMessage}`);
                 
                 await CompanyChat.create({
                   company: integration.company,
