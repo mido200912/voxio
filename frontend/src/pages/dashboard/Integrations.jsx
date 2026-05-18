@@ -424,7 +424,8 @@ const Integrations = () => {
             fetchIntegrations();
         } catch (error) {
             console.error('Error configuring Instagram:', error);
-            showToast('error', t.language === 'ar' ? 'خطأ' : 'Error', 'Failed to configure Instagram');
+            const backendError = error.response?.data?.error || 'Failed to configure Instagram';
+            showToast('error', t.language === 'ar' ? 'خطأ' : 'Error', backendError);
         }
     };
 
