@@ -961,6 +961,38 @@ const Integrations = () => {
                 <div className="modal-overlay" onClick={() => setShowInstagramModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <h2>{t.language === 'ar' ? 'ربط إنستاجرام (API)' : 'Instagram Integration (API)'}</h2>
+                        
+                        <div style={{ marginBottom: '20px', textAlign: 'center', padding: '15px', background: '#f0f2f5', borderRadius: '8px' }}>
+                            <p style={{ fontSize: '0.9rem', color: '#1c1e21', marginBottom: '10px' }}>
+                                {t.language === 'ar' ? 'الطريقة الأسهل للربط: قم بتسجيل الدخول باستخدام فيسبوك ليتم جلب كل البيانات تلقائياً.' : 'Easiest way: Log in with Facebook to automatically fetch all details.'}
+                            </p>
+                            <button 
+                                type="button" 
+                                className="btn btn-primary" 
+                                style={{ background: '#1877F2', borderColor: '#1877F2', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                onClick={async () => {
+                                    try {
+                                        const companyRes = await axios.get(`${BACKEND_URL}/company`, {
+                                            headers: { Authorization: `Bearer ${secureStorage.getItem('token')}` }
+                                        });
+                                        const companyId = companyRes.data._id;
+                                        window.location.href = `${BACKEND_URL}/integrations/meta/login?companyId=${companyId}`;
+                                    } catch (err) {
+                                        toast.error(t.language === 'ar' ? 'فشل بدء الربط التلقائي' : 'Auto-connect failed');
+                                    }
+                                }}
+                            >
+                                <i className="fab fa-facebook-f"></i>
+                                {t.language === 'ar' ? 'الربط التلقائي عبر فيسبوك' : 'Auto Connect via Facebook'}
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+                            <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #ddd' }} />
+                            <span style={{ padding: '0 10px', color: '#888', fontSize: '0.85rem' }}>{t.language === 'ar' ? 'أو الإدخال اليدوي' : 'OR MANUAL ENTRY'}</span>
+                            <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #ddd' }} />
+                        </div>
+
                         <form onSubmit={handleInstagramSubmit} className="whatsapp-form">
                             <div className="form-group">
                                 <label>{t.language === 'ar' ? 'معرف الصفحة (Page ID)' : 'Page ID'}</label>

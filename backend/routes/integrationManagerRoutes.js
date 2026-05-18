@@ -365,27 +365,7 @@ router.post('/instagram', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Company not found' });
         }
 
-        // --- VALIDATION STEP ---
-        if (pageId && accessToken) {
-            try {
-                // Verify the page token and ID
-                await axios.get(`https://graph.facebook.com/v20.0/${pageId}?fields=name&access_token=${accessToken}`);
-                
-                // Verify Instagram account link if provided
-                if (igAccountId) {
-                    const igRes = await axios.get(`https://graph.facebook.com/v20.0/${pageId}?fields=instagram_business_account&access_token=${accessToken}`);
-                    const linkedIgId = igRes.data.instagram_business_account?.id;
-                    if (linkedIgId && linkedIgId !== igAccountId) {
-                        return res.status(400).json({ error: `The provided Instagram Account ID does not match the one linked to this Page. Linked ID: ${linkedIgId}` });
-                    } else if (!linkedIgId) {
-                        return res.status(400).json({ error: 'No Instagram Business Account is linked to this Facebook Page.' });
-                    }
-                }
-            } catch (err) {
-                const errMsg = err.response?.data?.error?.message || err.message;
-                return res.status(400).json({ error: `Validation Failed: ${errMsg}` });
-            }
-        }
+
 
         let integration = await Integration.findOne({ company: company._id, platform: 'instagram' });
 
