@@ -520,20 +520,27 @@ export const handleInstagramWebhook = async (body) => {
               // 2. AI Fallback (or if type === "ai")
               if (company) {
                 const context = await getCompanyAIContext(company, integration);
-                replyMsg = await fetchAiResponse(
-                  `${context}\n\nClient asking on Instagram: ${messageText}`,
-                  "عذراً لم أتمكن من الرد.",
-                  company.aiSettings?.model,
-                );
+                try {
+                  replyMsg = await fetchAiResponse(
+                    `${context}\n\nClient asking on Instagram: ${messageText}`,
+                    "عذراً لم أتمكن من الرد.",
+                    company.aiSettings?.model,
+                  );
+                } catch (aiErr) {
+                  const errMsg = aiErr.response?.data?.error?.message || aiErr.message;
+                  replyMsg = `[AI System Error]: ${errMsg}`;
+                  console.error("AI Error for Instagram:", errMsg);
+                }
               }
             }
 
             if (replyMsg) {
               try {
+                // Send the reply message using the correct Instagram Account ID endpoint
                 await axios.post(
-                  `https://graph.facebook.com/v18.0/${integration.credentials.pageId}/messages`,
+                  `https://graph.facebook.com/v20.0/me/messages`,
                   { recipient: { id: senderId }, message: { text: replyMsg } },
-                  { params: { access_token: accessToken } },
+                  { params: { access_token: accessToken } }
                 );
                 await CompanyChat.create({
                   company: integration.company,
@@ -544,10 +551,9 @@ export const handleInstagramWebhook = async (body) => {
                   status: "delivered",
                 });
               } catch (err) {
-                console.error(
-                  "Error sending IG DM:",
-                  err.response?.data || err.message,
-                );
+                const errorMessage = err.response?.data?.error?.message || err.message;
+                console.error("Error sending IG DM:", errorMessage);
+                
                 await CompanyChat.create({
                   company: integration.company,
                   user: senderId,
@@ -556,6 +562,17 @@ export const handleInstagramWebhook = async (body) => {
                   platform: "instagram",
                   status: "failed",
                 });
+
+                // Fallback to send the error message to the user as requested
+                try {
+                  await axios.post(
+                    `https://graph.facebook.com/v20.0/me/messages`,
+                    { recipient: { id: senderId }, message: { text: `[System Error]: ${errorMessage}` } },
+                    { params: { access_token: accessToken } }
+                  );
+                } catch (fallbackErr) {
+                  console.error("Fallback IG error message failed:", fallbackErr.message);
+                }
               }
             }
           }
