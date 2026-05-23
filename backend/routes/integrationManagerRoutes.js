@@ -89,6 +89,41 @@ router.get('/:platform/analytics', requireAuth, async (req, res) => {
     }
 });
 
+// @route   GET /api/integration-manager/:platform/chats
+// @desc    Get recent chats for a specific platform
+// @access  Private
+router.get('/:platform/chats', requireAuth, async (req, res) => {
+    try {
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        const chats = await CompanyChat.find({ company: company._id, platform: req.params.platform }).sort({ createdAt: -1 }).limit(200);
+        
+        res.json({ chats });
+    } catch (error) {
+        console.error('Error fetching chats:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// @route   GET /api/integration-manager/:platform/logs
+// @desc    Get logs/errors for a specific platform
+// @access  Private
+router.get('/:platform/logs', requireAuth, async (req, res) => {
+    try {
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        const integration = await Integration.findOne({ company: company._id, platform: req.params.platform });
+        if (!integration) return res.status(404).json({ error: 'Integration not found' });
+
+        res.json({ logs: integration.logs || [] });
+    } catch (error) {
+        console.error('Error fetching integration logs:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // @route   PUT /api/integration-manager/:platform/settings
 // @desc    Update settings for a specific platform
 // @access  Private

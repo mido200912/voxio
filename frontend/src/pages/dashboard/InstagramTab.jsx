@@ -28,6 +28,11 @@ const InstagramTab = () => {
     const [analytics, setAnalytics] = useState(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
+    // Logs & Chats State
+    const [chats, setChats] = useState([]);
+    const [logs, setLogs] = useState([]);
+    const [logsLoading, setLogsLoading] = useState(false);
+
     // Chatbot Rules
     const [chatbotRules, setChatbotRules] = useState([]);
     const [newChatbotRule, setNewChatbotRule] = useState({ trigger: '', response: '' });
@@ -79,7 +84,27 @@ const InstagramTab = () => {
         if (mainTab === 'analytics' && !analytics) {
             fetchAnalytics();
         }
+        if (mainTab === 'logs' && chats.length === 0) {
+            fetchLogsAndChats();
+        }
     }, [mainTab]);
+
+    const fetchLogsAndChats = async () => {
+        setLogsLoading(true);
+        try {
+            const [chatsRes, logsRes] = await Promise.all([
+                axios.get(`${BACKEND_URL}/integration-manager/instagram/chats`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${BACKEND_URL}/integration-manager/instagram/logs`, { headers: { Authorization: `Bearer ${token}` } })
+            ]);
+            setChats(chatsRes.data.chats || []);
+            setLogs(logsRes.data.logs || []);
+        } catch (e) {
+            console.error('Error fetching logs and chats:', e);
+            toast.error(isArabic ? 'حدث خطأ في جلب السجلات' : 'Error fetching logs');
+        } finally {
+            setLogsLoading(false);
+        }
+    };
 
     const saveApiConfig = async () => {
         if (!pageId || !igAccountId || !accessToken) return toast.warning(isArabic ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
@@ -193,6 +218,14 @@ const InstagramTab = () => {
                     >
                         <i className="fas fa-chart-line"></i>
                         {isArabic ? 'الإحصائيات' : 'Analytics'}
+                    </button>
+                    <button 
+                        className={`dash-btn ${mainTab === 'logs' ? 'dash-btn-primary' : 'dash-btn-outline'}`} 
+                        onClick={() => setMainTab('logs')}
+                        style={{ padding: '8px 16px', fontSize: '0.85rem', height: 'auto' }}
+                    >
+                        <i className="fas fa-history"></i>
+                        {isArabic ? 'المحادثات' : 'Logs'}
                     </button>
                 </div>
             </div>
@@ -389,6 +422,80 @@ const InstagramTab = () => {
                                 ) : (
                                     <div style={{ textAlign: 'center', padding: '48px', color: 'var(--dash-text-sec)', background: 'rgba(var(--color-text-rgb), 0.02)', borderRadius: '16px', border: '1px dashed var(--dash-border)' }}>
                                         <p style={{ fontSize: '0.9rem' }}>{isArabic ? 'لا توجد بيانات حالياً.' : 'No data available.'}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {mainTab === 'logs' && (
+                        <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                            
+                            <div className="dash-card animate-slide-in" style={{ marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--dash-text)' }}>{isArabic ? 'سجل الأخطاء (Logs)' : 'Error Logs'}</h3>
+                                    <button onClick={fetchLogsAndChats} className="dash-btn dash-btn-outline" style={{ height: '40px', width: '40px', padding: 0, borderRadius: '10px' }}>
+                                        <i className={`fas fa-sync-alt ${logsLoading ? 'fa-spin' : ''}`} />
+                                    </button>
+                                </div>
+                                {logsLoading ? (
+                                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                                        <PageLoader text={isArabic ? 'جاري التحميل...' : 'Loading logs...'} />
+                                    </div>
+                                ) : logs.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto' }}>
+                                        {logs.map((log, i) => (
+                                            <div key={i} style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.05)', borderLeft: '4px solid #ef4444', borderRadius: '8px' }}>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--dash-text-sec)', marginBottom: '4px' }}>{new Date(log.date).toLocaleString()}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#ef4444', fontWeight: '600' }}>{log.message}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--dash-text-sec)', background: 'rgba(var(--color-text-rgb), 0.02)', borderRadius: '12px' }}>
+                                        <p>{isArabic ? 'لا توجد أخطاء مسجلة.' : 'No error logs found.'}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="dash-card animate-slide-in">
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--dash-text)', marginBottom: '24px' }}>{isArabic ? 'آخر المحادثات' : 'Recent Chats'}</h3>
+                                {logsLoading ? (
+                                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                                        <PageLoader text={isArabic ? 'جاري التحميل...' : 'Loading chats...'} />
+                                    </div>
+                                ) : chats.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {chats.map((chat, i) => (
+                                            <div key={i} style={{ 
+                                                display: 'flex', 
+                                                flexDirection: 'column', 
+                                                gap: '8px', 
+                                                padding: '16px', 
+                                                background: chat.sender === 'ai' ? 'rgba(46, 204, 113, 0.05)' : 'rgba(52, 152, 219, 0.05)', 
+                                                borderRadius: '12px', 
+                                                border: `1px solid ${chat.sender === 'ai' ? 'rgba(46, 204, 113, 0.2)' : 'rgba(52, 152, 219, 0.2)'}`,
+                                                alignSelf: chat.sender === 'ai' ? (isArabic ? 'flex-end' : 'flex-start') : (isArabic ? 'flex-start' : 'flex-end'),
+                                                maxWidth: '85%'
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: '700', color: chat.sender === 'ai' ? '#2ecc71' : '#3498db' }}>
+                                                        {chat.sender === 'ai' ? (isArabic ? 'الرد الآلي (AI)' : 'AI Reply') : (isArabic ? `العميل (${chat.user})` : `User (${chat.user})`)}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--dash-text-sec)' }}>{new Date(chat.createdAt).toLocaleString()}</div>
+                                                </div>
+                                                <div style={{ fontSize: '0.95rem', color: 'var(--dash-text)', whiteSpace: 'pre-wrap' }}>{chat.text}</div>
+                                                {chat.status && chat.sender === 'ai' && (
+                                                    <div style={{ fontSize: '0.75rem', color: chat.status === 'delivered' ? '#2ecc71' : chat.status === 'failed' ? '#e74c3c' : 'var(--dash-text-sec)', alignSelf: 'flex-end' }}>
+                                                        {chat.status === 'delivered' ? <i className="fas fa-check-double" /> : chat.status === 'failed' ? <i className="fas fa-exclamation-circle" /> : <i className="fas fa-check" />} {chat.status}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--dash-text-sec)', background: 'rgba(var(--color-text-rgb), 0.02)', borderRadius: '12px' }}>
+                                        <p>{isArabic ? 'لم يتم تسجيل أي محادثات حتى الآن.' : 'No chats recorded yet.'}</p>
                                     </div>
                                 )}
                             </div>
