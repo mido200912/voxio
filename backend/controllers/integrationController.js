@@ -107,9 +107,8 @@ const metaLogin = (req, res) => {
   const nonce = generateNonce(companyId);
   const state = `${companyId}:${nonce}`;
 
-  // Removed pages_messaging and whatsapp_business_messaging to fix "Invalid Scopes" error.
-  // Added pages_read_engagement and pages_manage_metadata which are required to get the Page Access Token.
-  const scope = 'pages_show_list,pages_read_engagement,pages_manage_metadata,instagram_basic,instagram_manage_messages,instagram_manage_comments';
+  // Removed pages_manage_metadata to fix "Invalid Scopes" error.
+  const scope = 'pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_messages,instagram_manage_comments';
 
   const authUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
 
