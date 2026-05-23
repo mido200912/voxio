@@ -107,7 +107,7 @@ const metaLogin = (req, res) => {
   const nonce = generateNonce(companyId);
   const state = `${companyId}:${nonce}`;
 
-  const scope = 'pages_show_list,pages_messaging,instagram_basic,instagram_manage_messages,whatsapp_business_messaging';
+  const scope = 'pages_show_list,pages_messaging,instagram_basic,instagram_manage_messages,instagram_manage_comments,whatsapp_business_messaging';
 
   const authUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
 

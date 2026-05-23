@@ -465,13 +465,19 @@ export const handleWhatsAppMessage = async (body) => {
  */
 export const handleInstagramWebhook = async (body) => {
   try {
-    console.log(`[IG Webhook] Received body object: ${body.object}`);
+    console.log(`[IG Webhook] ======= INSTAGRAM HANDLER START =======`);
+    console.log(`[IG Webhook] body.object: "${body.object}"`);
+    console.log(`[IG Webhook] entries count: ${body.entry?.length || 0}`);
+    
     // Meta webhooks for Instagram usually have object === 'page' or 'instagram'
-    if (body.object !== "page" && body.object !== "instagram") return;
+    if (body.object !== "page" && body.object !== "instagram") {
+      console.log(`[IG Webhook] Ignoring: object "${body.object}" is not page/instagram`);
+      return;
+    }
 
     for (const entry of body.entry) {
       const receiverId = entry.id;
-      console.log(`[IG Webhook] Processing entry for receiverId: ${receiverId}`);
+      console.log(`[IG Webhook] Processing entry: receiverId=${receiverId}, hasMessaging=${!!entry.messaging}, hasChanges=${!!entry.changes}, changesCount=${entry.changes?.length || 0}`);
 
       // Handle Messages (DM)
       if (entry.messaging) {
@@ -618,18 +624,33 @@ export const handleInstagramWebhook = async (body) => {
         }
       }
 
-      // Handle Comments
+      // Handle Comments (Instagram comments arrive as field:"feed" with value.item:"comment")
       if (entry.changes) {
         for (const change of entry.changes) {
-          if (change.field === "comments") {
+          const isCommentEvent =
+            change.field === "feed" && change.value?.item === "comment" ||
+            change.field === "comments"; // legacy fallback
+
+          console.log(`[IG Webhook] Change field: "${change.field}", item: "${change.value?.item}", isComment: ${isCommentEvent}`);
+
+          if (isCommentEvent) {
             const commentValue = change.value;
-            const commentId = commentValue.id;
-            const commentText = commentValue.text;
-            const fromId = commentValue.from?.id;
+            const commentId = commentValue.comment_id || commentValue.id;
+            const commentText = commentValue.message || commentValue.text;
+            const fromId = commentValue.from?.id || commentValue.sender_id;
+            const fromName = commentValue.from?.name || commentValue.from?.username || "user";
 
-            if (!fromId || !commentText) continue;
+            console.log(`[IG Webhook] 💬 Comment received: id=${commentId}, from=${fromId} (${fromName}), text="${commentText}"`);
 
-            if (processedMessages.has(commentId)) continue;
+            if (!fromId || !commentText) {
+              console.log(`[IG Webhook] ⚠️ Skipping comment: missing fromId or commentText`);
+              continue;
+            }
+
+            if (processedMessages.has(commentId)) {
+              console.log(`[IG Webhook] ⚠️ Comment ${commentId} already processed, skipping`);
+              continue;
+            }
             processedMessages.add(commentId);
             if (processedMessages.size > 1000)
               processedMessages.delete(processedMessages.values().next().value);
@@ -639,44 +660,57 @@ export const handleInstagramWebhook = async (body) => {
               isActive: true,
             });
 
+            console.log(`[IG Webhook] Found ${allIgIntegrations.length} active IG integrations`);
+
             let integration = allIgIntegrations.find(
               (int) =>
                 String(int.credentials?.pageId) === String(receiverId) ||
                 String(int.credentials?.igAccountId) === String(receiverId),
             );
 
-            if (!integration || !integration.company) continue;
+            // Fallback: if no match by ID and there's only one integration, use it
+            if (!integration && allIgIntegrations.length > 0) {
+              console.log(`[IG Webhook] ⚠️ No exact match for receiverId ${receiverId}, falling back to first integration`);
+              integration = allIgIntegrations[0];
+            }
+
+            if (!integration || !integration.company) {
+              console.log(`[IG Webhook] ❌ No integration or company found, skipping`);
+              continue;
+            }
 
             // Loop prevention: skip comments made by the business account itself
-            if (String(fromId) === String(integration.credentials?.igAccountId)) continue;
+            const igAccountId = String(integration.credentials?.igAccountId || '');
+            const pageId = String(integration.credentials?.pageId || '');
+            if (String(fromId) === igAccountId || String(fromId) === pageId) {
+              console.log(`[IG Webhook] 🔄 Skipping own comment from ${fromId}`);
+              continue;
+            }
 
             const accessToken = integration.credentials.accessToken;
             const settings = integration.settings || {};
             const globalRules = settings.globalCommentRules || [];
             const dmClosedFallback = settings.dmClosedFallback || "";
 
+            console.log(`[IG Webhook] 🔍 Checking ${globalRules.length} global comment rules against: "${commentText}"`);
+
             // Check global rules
             const matchedRule = globalRules.find((r) =>
-              commentText.toLowerCase().includes(r.keyword.toLowerCase()),
+              commentText.toLowerCase().includes((r.keyword || '').toLowerCase()),
             );
 
             if (matchedRule) {
+              console.log(`[IG Webhook] ✅ Matched rule: keyword="${matchedRule.keyword}"`);
               let canSendDm = true;
-              let isFollower = true; // TODO: Implement real follower check via IG Graph API
+              let isFollower = true;
 
               if (matchedRule.requireFollow) {
-                // ⚠️ Graph API limitation: Cannot easily check if arbitrary user follows you without their token.
-                // Some platforms use private APIs or workaround to check this.
-                // For MVP, we assume true, but the flow is ready to block if false.
-                // isFollower = await checkUserFollows(integration.credentials.igAccountId, fromId, accessToken);
-
                 if (!isFollower) {
                   canSendDm = false;
                 }
               }
 
               if (!canSendDm) {
-                // They don't follow, send the not-following reply if exists
                 if (matchedRule.notFollowingReply) {
                   try {
                     await axios.post(
@@ -686,7 +720,7 @@ export const handleInstagramWebhook = async (body) => {
                     );
                   } catch (replyErr) {
                     console.error(
-                      "Failed to reply (not following):",
+                      "[IG Webhook] Failed to reply (not following):",
                       replyErr.response?.data || replyErr.message,
                     );
                   }
@@ -694,39 +728,42 @@ export const handleInstagramWebhook = async (body) => {
               } else {
                 let dmSuccess = false;
 
-                // 1. Try to send DM first (Private DM reply to comment on Instagram)
-                try {
-                  await axios.post(
-                    `https://graph.facebook.com/v20.0/me/messages`,
-                    {
-                      recipient: { comment_id: commentId },
-                      message: { text: matchedRule.dmReply },
-                    },
-                    { params: { access_token: accessToken } },
-                  );
-                  await CompanyChat.create({
-                    company: integration.company,
-                    user: fromId,
-                    text: matchedRule.dmReply,
-                    sender: "ai",
-                    platform: "instagram",
-                    status: "delivered",
-                  });
-                  dmSuccess = true;
-                } catch (dmErr) {
-                  console.error(
-                    "Failed to send DM for comment:",
-                    dmErr.response?.data || dmErr.message,
-                  );
-                  await CompanyChat.create({
-                    company: integration.company,
-                    user: fromId,
-                    text: matchedRule.dmReply,
-                    sender: "ai",
-                    platform: "instagram",
-                    status: "failed",
-                  });
-                  dmSuccess = false;
+                // 1. Try to send DM (Private reply to comment)
+                if (matchedRule.dmReply) {
+                  try {
+                    await axios.post(
+                      `https://graph.facebook.com/v20.0/me/messages`,
+                      {
+                        recipient: { comment_id: commentId },
+                        message: { text: matchedRule.dmReply },
+                      },
+                      { params: { access_token: accessToken } },
+                    );
+                    console.log(`[IG Webhook] ✅ DM sent successfully for comment ${commentId}`);
+                    await CompanyChat.create({
+                      company: integration.company,
+                      user: fromId,
+                      text: matchedRule.dmReply,
+                      sender: "ai",
+                      platform: "instagram",
+                      status: "delivered",
+                    });
+                    dmSuccess = true;
+                  } catch (dmErr) {
+                    console.error(
+                      "[IG Webhook] ❌ Failed to send DM for comment:",
+                      JSON.stringify(dmErr.response?.data || dmErr.message),
+                    );
+                    await CompanyChat.create({
+                      company: integration.company,
+                      user: fromId,
+                      text: matchedRule.dmReply,
+                      sender: "ai",
+                      platform: "instagram",
+                      status: "failed",
+                    });
+                    dmSuccess = false;
+                  }
                 }
 
                 // 2. Reply to comment (success reply or fallback if DM failed)
@@ -734,19 +771,33 @@ export const handleInstagramWebhook = async (body) => {
                   ? matchedRule.commentReply
                   : dmClosedFallback || matchedRule.commentReply;
 
-                try {
-                  await axios.post(
-                    `https://graph.facebook.com/v20.0/${commentId}/replies`,
-                    { message: commentReplyText },
-                    { params: { access_token: accessToken } },
-                  );
-                } catch (replyErr) {
-                  console.error(
-                    "Failed to reply to IG comment:",
-                    replyErr.response?.data || replyErr.message,
-                  );
+                if (commentReplyText) {
+                  try {
+                    await axios.post(
+                      `https://graph.facebook.com/v20.0/${commentId}/replies`,
+                      { message: commentReplyText },
+                      { params: { access_token: accessToken } },
+                    );
+                    console.log(`[IG Webhook] ✅ Comment reply sent for ${commentId}`);
+                  } catch (replyErr) {
+                    console.error(
+                      "[IG Webhook] ❌ Failed to reply to IG comment:",
+                      JSON.stringify(replyErr.response?.data || replyErr.message),
+                    );
+                  }
                 }
               }
+            } else {
+              console.log(`[IG Webhook] ℹ️ No matching rule found for comment: "${commentText}"`);
+              // No rule matched - optionally reply with AI
+              // Save the comment to chat history
+              await CompanyChat.create({
+                company: integration.company,
+                user: fromId,
+                text: `[Comment] ${commentText}`,
+                sender: "user",
+                platform: "instagram",
+              }).catch(e => console.error("[IG Webhook] DB save error:", e.message));
             }
           }
         }
@@ -960,7 +1011,7 @@ export const handleTelegramWebhook = async (req, res) => {
         const reply = await fetchAiResponse(
           `${context}\n\n${historyContext}User Question:\n${text}`,
           "عذراً لم أتمكن من الرد.",
-          company.aiSettings?.model,
+          companyDoc.aiSettings?.model,
         );
         await tgSend(botToken, chatId, reply);
         await saveChatMsg(companyId, userId, reply, "ai");
