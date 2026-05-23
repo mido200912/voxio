@@ -199,8 +199,10 @@ const metaCallback = async (req, res) => {
     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?status=success&platform=meta`);
 
   } catch (err) {
+    const errorDetails = err.response?.data?.error?.message || err.message || 'Unknown Error';
     console.error('Meta Auth Error:', err.response?.data || err.message);
-    res.redirect('http://localhost:3000/dashboard?status=error&platform=facebook');
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/dashboard?status=error&platform=facebook&message=${encodeURIComponent(errorDetails)}`);
   }
 };
 
