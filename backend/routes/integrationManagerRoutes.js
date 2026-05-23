@@ -97,7 +97,11 @@ router.get('/:platform/chats', requireAuth, async (req, res) => {
         const company = await Company.findOne({ owner: req.user._id });
         if (!company) return res.status(404).json({ error: 'Company not found' });
 
-        const chats = await CompanyChat.find({ company: company._id, platform: req.params.platform }).sort({ createdAt: -1 }).limit(200);
+        // Use .Model to access the underlying mongoose model for sort and limit
+        const chats = await CompanyChat.Model.find({ company: company._id, platform: req.params.platform })
+            .sort({ createdAt: -1 })
+            .limit(200)
+            .lean();
         
         res.json({ chats });
     } catch (error) {
