@@ -512,6 +512,7 @@ export const handleInstagramWebhook = async (body) => {
 
             const accessToken = integration.credentials.accessToken;
             const settings = integration.settings || {};
+            const chatbotRules = settings.chatbotRules || [];
             const commands = settings.commands || [];
 
             await CompanyChat.create({
@@ -524,38 +525,49 @@ export const handleInstagramWebhook = async (body) => {
 
             let replyMsg = null;
 
-            // 1. Check if matches any exact command (ignoring leading slashes)
-            const cleanMessageText = messageText.trim().toLowerCase().replace(/^\/+/, '');
-            const command = commands.find(
-              (cmd) =>
-                (cmd.command || '').toLowerCase().trim().replace(/^\/+/, '') === cleanMessageText
+            // 1. Check if matches any exact chatbot rule (DM trigger)
+            const cleanMessageText = messageText.trim().toLowerCase();
+            const matchedRule = chatbotRules.find(
+              (rule) =>
+                (rule.trigger || '').toLowerCase().trim() === cleanMessageText
             );
 
-            const company = await Company.findById(integration.company);
-
-            if (command && command.type === "fixed_message") {
-              replyMsg = command.message;
-            } else if (command && command.type === "product_menu") {
-              let menuText = command.message + "\n\n";
-              (command.products || []).forEach((p, idx) => {
-                  menuText += `${idx + 1}. ${p.name} - ${p.price}\n`;
-              });
-              replyMsg = menuText;
+            if (matchedRule) {
+              replyMsg = matchedRule.response;
             } else {
-              // 2. AI Fallback (or if type === "ai")
-              if (company) {
-                const context = await getCompanyAIContext(company, integration);
-                try {
-                  replyMsg = await fetchAiResponse(
-                    `${context}\n\nClient asking on Instagram: ${messageText}`,
-                    "عذراً لم أتمكن من الرد.",
-                    company.aiSettings?.model,
-                  );
-                } catch (aiErr) {
-                  const errMsg = aiErr.response?.data?.error?.message || aiErr.message;
-                  replyMsg = `[AI System Error]: ${errMsg}`;
-                  console.error("AI Error for Instagram:", errMsg);
-                  await logIntegrationError(integration, `AI Error: ${errMsg}`);
+              // 2. Check if matches any exact command (ignoring leading slashes)
+              const cleanCmdText = messageText.trim().toLowerCase().replace(/^\/+/, '');
+              const command = commands.find(
+                (cmd) =>
+                  (cmd.command || '').toLowerCase().trim().replace(/^\/+/, '') === cleanCmdText
+              );
+
+              const company = await Company.findById(integration.company);
+
+              if (command && command.type === "fixed_message") {
+                replyMsg = command.message;
+              } else if (command && command.type === "product_menu") {
+                let menuText = command.message + "\n\n";
+                (command.products || []).forEach((p, idx) => {
+                    menuText += `${idx + 1}. ${p.name} - ${p.price}\n`;
+                });
+                replyMsg = menuText;
+              } else {
+                // 3. AI Fallback (or if type === "ai")
+                if (company) {
+                  const context = await getCompanyAIContext(company, integration);
+                  try {
+                    replyMsg = await fetchAiResponse(
+                      `${context}\n\nClient asking on Instagram: ${messageText}`,
+                      "عذراً لم أتمكن من الرد.",
+                      company.aiSettings?.model,
+                    );
+                  } catch (aiErr) {
+                    const errMsg = aiErr.response?.data?.error?.message || aiErr.message;
+                    replyMsg = `[AI System Error]: ${errMsg}`;
+                    console.error("AI Error for Instagram:", errMsg);
+                    await logIntegrationError(integration, `AI Error: ${errMsg}`);
+                  }
                 }
               }
             }
@@ -629,11 +641,14 @@ export const handleInstagramWebhook = async (body) => {
 
             let integration = allIgIntegrations.find(
               (int) =>
-                int.credentials?.pageId === receiverId ||
-                int.credentials?.igAccountId === receiverId,
+                String(int.credentials?.pageId) === String(receiverId) ||
+                String(int.credentials?.igAccountId) === String(receiverId),
             );
 
             if (!integration || !integration.company) continue;
+
+            // Loop prevention: skip comments made by the business account itself
+            if (String(fromId) === String(integration.credentials?.igAccountId)) continue;
 
             const accessToken = integration.credentials.accessToken;
             const settings = integration.settings || {};
@@ -665,7 +680,7 @@ export const handleInstagramWebhook = async (body) => {
                 if (matchedRule.notFollowingReply) {
                   try {
                     await axios.post(
-                      `https://graph.facebook.com/v18.0/${commentId}/replies`,
+                      `https://graph.facebook.com/v20.0/${commentId}/replies`,
                       { message: matchedRule.notFollowingReply },
                       { params: { access_token: accessToken } },
                     );
@@ -679,12 +694,12 @@ export const handleInstagramWebhook = async (body) => {
               } else {
                 let dmSuccess = false;
 
-                // 1. Try to send DM first
+                // 1. Try to send DM first (Private DM reply to comment on Instagram)
                 try {
                   await axios.post(
-                    `https://graph.facebook.com/v18.0/${integration.credentials.pageId}/messages`,
+                    `https://graph.facebook.com/v20.0/me/messages`,
                     {
-                      recipient: { id: fromId },
+                      recipient: { comment_id: commentId },
                       message: { text: matchedRule.dmReply },
                     },
                     { params: { access_token: accessToken } },
@@ -721,7 +736,7 @@ export const handleInstagramWebhook = async (body) => {
 
                 try {
                   await axios.post(
-                    `https://graph.facebook.com/v18.0/${commentId}/replies`,
+                    `https://graph.facebook.com/v20.0/${commentId}/replies`,
                     { message: commentReplyText },
                     { params: { access_token: accessToken } },
                   );
