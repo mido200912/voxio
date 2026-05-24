@@ -161,27 +161,42 @@ const metaCallback = async (req, res) => {
       await fbIntegration.save();
     }
 
-    // 5. Fetch linked Instagram Business Account
+    // 5. Fetch linked Instagram Business Account (or fallback to page credentials)
+    let igAccountId = null;
     try {
       const igUrl = `https://graph.facebook.com/v20.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`;
       const { data: igData } = await axios.get(igUrl);
       if (igData.instagram_business_account) {
-        const igAccountId = igData.instagram_business_account.id;
-        let igIntegration = await Integration.findOne({ company: companyId, platform: 'instagram' });
-        if (!igIntegration) {
-          await Integration.create({
-            company: companyId, platform: 'instagram',
-            credentials: { accessToken: page.access_token, pageId: page.id, igAccountId, userAccessToken },
-            isActive: true
-          });
-        } else {
-          igIntegration.credentials = { accessToken: page.access_token, pageId: page.id, igAccountId, userAccessToken };
-          igIntegration.isActive = true;
-          await igIntegration.save();
-        }
+        igAccountId = igData.instagram_business_account.id;
+        console.log('[Meta Auth] Found Instagram Business Account:', igAccountId);
+      } else {
+        console.log('[Meta Auth] No instagram_business_account found, will use page credentials as fallback.');
       }
     } catch (igError) {
       console.error('Failed to fetch linked Instagram account:', igError?.response?.data || igError.message);
+    }
+
+    // Always create/update Instagram integration (use page credentials even without igAccountId)
+    try {
+      let igIntegration = await Integration.findOne({ company: companyId, platform: 'instagram' });
+      const igCredentials = { accessToken: page.access_token, pageId: page.id, userAccessToken };
+      if (igAccountId) igCredentials.igAccountId = igAccountId;
+
+      if (!igIntegration) {
+        await Integration.create({
+          company: companyId, platform: 'instagram',
+          credentials: igCredentials,
+          isActive: true
+        });
+        console.log('[Meta Auth] Instagram integration CREATED.');
+      } else {
+        igIntegration.credentials = igCredentials;
+        igIntegration.isActive = true;
+        await igIntegration.save();
+        console.log('[Meta Auth] Instagram integration UPDATED.');
+      }
+    } catch (igSaveError) {
+      console.error('Failed to save Instagram integration:', igSaveError.message);
     }
 
     // 💡 يجب هنا تسجيل الـ Webhooks للصفحة (بواسطة رمز الصفحة)
