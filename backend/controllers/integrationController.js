@@ -103,9 +103,8 @@ const metaLogin = (req, res) => {
   const appId = process.env.META_APP_ID;
   const redirectUri = `${BASE_URL}/api/integrations/meta/callback`;
 
-  // الحل الأمني: استخدام Nonce
-  const nonce = generateNonce(companyId);
-  const state = `${companyId}:${nonce}`;
+  // Removed nonce check because in-memory Maps do not work on serverless Vercel
+  const state = companyId;
 
   // Added pages_manage_metadata to allow webhook subscriptions
   const scope = 'pages_show_list,pages_read_engagement,pages_manage_metadata,instagram_basic,instagram_manage_messages,instagram_manage_comments';
@@ -119,14 +118,13 @@ const metaLogin = (req, res) => {
 const metaCallback = async (req, res) => {
   const { code, state, error } = req.query;
 
-  if (error) return res.status(400).send(`Meta Auth Error: ${error}`);
+  if (error) {
+    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?status=error&message=${encodeURIComponent(error)}`);
+  }
 
-  const [companyId, nonce] = state ? state.split(':') : [null, null];
+  const companyId = state;
 
-  if (!code || !companyId || !nonce) return res.status(400).send('Missing required parameters.');
-
-  // التحقق من Nonce (CSRF Protection)
-  if (!verifyNonce(companyId, nonce)) return res.status(403).send('Invalid state nonce. CSRF suspected.');
+  if (!code || !companyId) return res.status(400).send('Missing required parameters.');
 
   try {
     // 1. Exchange code for short-lived access token
