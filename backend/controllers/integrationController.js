@@ -107,8 +107,8 @@ const metaLogin = (req, res) => {
   const nonce = generateNonce(companyId);
   const state = `${companyId}:${nonce}`;
 
-  // Removed pages_manage_metadata to fix "Invalid Scopes" error.
-  const scope = 'pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_messages,instagram_manage_comments';
+  // Added pages_manage_metadata to allow webhook subscriptions
+  const scope = 'pages_show_list,pages_read_engagement,pages_manage_metadata,instagram_basic,instagram_manage_messages,instagram_manage_comments';
 
   const authUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
 
