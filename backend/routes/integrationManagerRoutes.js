@@ -32,7 +32,7 @@ router.get('/', requireAuth, async (req, res) => {
             createdAt: int.createdAt,
             settings: int.settings,
             logs: int.logs || [],
-            // Don't expose sensitive credentials directly
+            credentials: int.credentials || {}, // Included for API tab display
             hasCredentials: !!(int.credentials && (int.credentials.accessToken || int.credentials.botToken || int.credentials.phoneNumberId)),
             hasTelegramToken: !!(int.credentials && int.credentials.botToken)
         }));
@@ -55,7 +55,10 @@ router.get('/:platform/settings', requireAuth, async (req, res) => {
         const integration = await Integration.findOne({ company: company._id, platform: req.params.platform });
         if (!integration) return res.status(404).json({ error: 'Integration not found' });
 
-        res.json({ settings: integration.settings || {} });
+        res.json({ 
+            settings: integration.settings || {},
+            credentials: integration.credentials || {}
+        });
     } catch (error) {
         console.error('Error fetching integration settings:', error);
         res.status(500).json({ error: 'Server error' });

@@ -56,9 +56,15 @@ const InstagramTab = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const settings = res.data.settings || {};
+            const credentials = res.data.credentials || {};
             setChatbotRules(settings.chatbotRules || []);
             setGlobalCommentRules(settings.globalCommentRules || []);
             setDmClosedFallback(settings.dmClosedFallback || '');
+            
+            // Populate API fields if available
+            if (credentials.pageId) setPageId(credentials.pageId);
+            if (credentials.igAccountId) setIgAccountId(credentials.igAccountId);
+            if (credentials.accessToken) setAccessToken(credentials.accessToken);
         } catch (e) {
             console.error('Error fetching Instagram settings:', e);
         } finally {
