@@ -506,6 +506,22 @@ export const handleInstagramWebhook = async (body) => {
                 String(int.credentials?.igAccountId) === String(receiverId),
             );
 
+            if (!integration && allIgIntegrations.length > 0) {
+              console.log(`[IG Webhook] ⚠️ No exact match for receiverId ${receiverId}, falling back to first active integration.`);
+              integration = allIgIntegrations[0];
+              // Save the igAccountId for future use
+              try {
+                if (integration.credentials) {
+                  integration.credentials.igAccountId = receiverId;
+                  integration.markModified('credentials');
+                  await integration.save();
+                  console.log(`[IG Webhook] 🔧 Saved igAccountId ${receiverId} to integration ${integration._id}`);
+                }
+              } catch (e) {
+                console.error('[IG Webhook] Failed to save fallback igAccountId:', e.message);
+              }
+            }
+
             if (!integration) {
                 console.error(`[IG Webhook] ❌ No active Instagram integration found for receiverId: ${receiverId}`);
                 continue;
