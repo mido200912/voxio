@@ -225,9 +225,12 @@ export async function transcribeAudio(buffer, fileName = "audio.ogg", mimeType =
             return result.text;
         } else {
             console.error("❌ Audio transcription API error:", result);
+            import('fs').then(fs => fs.writeFileSync('stt_error.log', JSON.stringify({type: 'api_error', result}, null, 2)));
+            return `[خطأ في معالجة الصوت: ${result?.error?.message || 'Unknown API Error'}]`;
         }
     } catch (e) {
         console.error("❌ Audio transcription failed:", e.message);
+        import('fs').then(fs => fs.writeFileSync('stt_error.log', JSON.stringify({type: 'exception', message: e.message, stack: e.stack}, null, 2)));
     }
     
     return "[رسالة صوتية غير واضحة]";
