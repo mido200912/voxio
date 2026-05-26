@@ -43,7 +43,8 @@ async function downloadWaAudioBuffer(mediaId, accessToken) {
       responseType: 'arraybuffer',
       headers: { Authorization: `Bearer ${accessToken}` }
     });
-    return Buffer.from(mediaRes.data, 'binary');
+    // Return the raw buffer directly to prevent file corruption
+    return Buffer.from(mediaRes.data);
   } catch (e) {
     console.error('Error downloading WA audio:', e.response?.data || e.message);
     return null;
