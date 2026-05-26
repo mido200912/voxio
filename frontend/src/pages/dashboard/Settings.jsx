@@ -278,6 +278,61 @@ const Settings = () => {
                     </div>
                 </motion.div>
 
+                {/* 🚀 Industry Templates */}
+                <motion.div className="settings-card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+                    <div className="card-header-glass">
+                        <i className="fas fa-magic"></i>
+                        <h3>{language === 'ar' ? 'قوالب الذكاء الاصطناعي الجاهزة' : 'Industry Templates'}</h3>
+                    </div>
+                    <div className="card-body">
+                        <p style={{ color: 'var(--dash-text-sec)', marginBottom: '15px' }}>
+                            {language === 'ar' ? 'اختر مجال عملك ليقوم الذكاء الاصطناعي بضبط إعداداته وطريقة رده تلقائياً ليناسب نشاطك.' : 'Choose your industry to automatically set up AI instructions and behavior.'}
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '15px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
+                            {[
+                                { id: 'real_estate', icon: 'fa-building', color: 'var(--color-text)', ar: 'عقارات', en: 'Real Estate' },
+                                { id: 'ecommerce', icon: 'fa-shopping-cart', color: 'var(--color-text)', ar: 'متجر إلكتروني', en: 'E-commerce' },
+                                { id: 'clinic', icon: 'fa-stethoscope', color: 'var(--color-text)', ar: 'عيادة طبية', en: 'Healthcare' },
+                                { id: 'restaurant', icon: 'fa-utensils', color: 'var(--color-text)', ar: 'مطعم أو مقهى', en: 'Restaurant & Cafe' },
+                                { id: 'travel', icon: 'fa-plane', color: 'var(--color-text)', ar: 'سياحة وسفر', en: 'Travel & Tourism' },
+                                { id: 'education', icon: 'fa-graduation-cap', color: 'var(--color-text)', ar: 'تعليم ودورات', en: 'Education' },
+                                { id: 'law_firm', icon: 'fa-balance-scale', color: 'var(--color-text)', ar: 'مكتب محاماة', en: 'Law Firm' },
+                                { id: 'fitness', icon: 'fa-dumbbell', color: 'var(--color-text)', ar: 'صالة رياضية (جيم)', en: 'Gym & Fitness' },
+                                { id: 'beauty_spa', icon: 'fa-spa', color: 'var(--color-text)', ar: 'صالون تجميل وسبا', en: 'Beauty & Spa' },
+                                { id: 'car_dealership', icon: 'fa-car', color: 'var(--color-text)', ar: 'معرض وتأجير سيارات', en: 'Car Dealership' },
+                                { id: 'it_software', icon: 'fa-laptop-code', color: 'var(--color-text)', ar: 'تكنولوجيا وبرمجيات', en: 'IT & Software' },
+                                { id: 'marketing', icon: 'fa-bullhorn', color: 'var(--color-text)', ar: 'وكالة تسويق', en: 'Marketing Agency' },
+                                { id: 'logistics', icon: 'fa-truck', color: 'var(--color-text)', ar: 'شحن وتوصيل', en: 'Logistics' },
+                                { id: 'home_services', icon: 'fa-tools', color: 'var(--color-text)', ar: 'خدمات منزلية وصيانة', en: 'Home Services' },
+                                { id: 'accounting', icon: 'fa-calculator', color: 'var(--color-text)', ar: 'محاسبة ومالية', en: 'Accounting' },
+                                { id: 'events', icon: 'fa-calendar-alt', color: 'var(--color-text)', ar: 'تنظيم فعاليات', en: 'Event Planning' },
+                                { id: 'photography', icon: 'fa-camera', color: 'var(--color-text)', ar: 'تصوير وإنتاج', en: 'Photography' },
+                                { id: 'furniture', icon: 'fa-couch', color: 'var(--color-text)', ar: 'أثاث وديكور داخلي', en: 'Furniture' },
+                                { id: 'fashion', icon: 'fa-tshirt', color: 'var(--color-text)', ar: 'أزياء وملابس', en: 'Fashion' },
+                                { id: 'insurance', icon: 'fa-shield-alt', color: 'var(--color-text)', ar: 'تأمين', en: 'Insurance' },
+                                { id: 'consulting', icon: 'fa-handshake', color: 'var(--color-text)', ar: 'استشارات', en: 'Consulting' },
+                                { id: 'cleaning', icon: 'fa-broom', color: 'var(--color-text)', ar: 'خدمات تنظيف', en: 'Cleaning Services' },
+                                { id: 'hotel', icon: 'fa-hotel', color: 'var(--color-text)', ar: 'فنادق وضيافة', en: 'Hotel & Hospitality' },
+                                { id: 'construction', icon: 'fa-hard-hat', color: 'var(--color-text)', ar: 'مقاولات وبناء', en: 'Construction' },
+                                { id: 'pharmacy', icon: 'fa-pills', color: 'var(--color-text)', ar: 'صيدلية', en: 'Pharmacy' },
+                                { id: 'auto_repair', icon: 'fa-wrench', color: 'var(--color-text)', ar: 'ورشة سيارات', en: 'Auto Repair' },
+                                { id: 'pets', icon: 'fa-paw', color: 'var(--color-text)', ar: 'متجر وعيادة حيوانات', en: 'Pet Shop & Care' }
+                            ].map(tpl => (
+                                <button key={tpl.id} className="dash-btn dash-btn-outline" onClick={async () => {
+                                    try {
+                                        await axios.post(`${BACKEND_URL}/company/apply-template`, { templateId: tpl.id }, { headers: { Authorization: `Bearer ${token}` } });
+                                        toast.success(language === 'ar' ? `تم تفعيل قالب ${tpl.ar}` : `${tpl.en} template applied`);
+                                        fetchCompanyData();
+                                    } catch(e) { toast.error('Error applying template'); }
+                                }} style={{ height: 'auto', padding: '15px', flexDirection: 'column', gap: '10px' }}>
+                                    <i className={`fas ${tpl.icon}`} style={{ fontSize: '2rem', color: tpl.color }}></i>
+                                    <span style={{ fontSize: '0.85rem', textAlign: 'center' }}>{language === 'ar' ? tpl.ar : tpl.en}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+
 
                 {/* General Settings */}
                 <motion.div className="settings-card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>

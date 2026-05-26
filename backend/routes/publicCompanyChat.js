@@ -217,11 +217,44 @@ router.post("/chat", async (req, res) => {
        return res.json({ success: true, company: company.name, reply: requestNameMsg });
     }
 
+    // 🛑 Check if user is in Human Handoff mode
+    if (company.humanHandoffEnabled && company.humanHandoffUsers && company.humanHandoffUsers.includes(userId)) {
+        await CompanyChat.create({ ...baseChatData, text: prompt, sender: 'user' });
+        // Don't reply, leave it to the human
+        return res.json({ success: true, company: company.name, reply: "..." }); // Or some pending message
+    }
+
     // Save User Question
     await CompanyChat.create({ ...baseChatData, text: prompt, sender: 'user' });
 
+    // 💳 Check AI Credits
+    if (company.aiCredits !== undefined && company.aiCredits <= 0) {
+        const reply = "نعتذر، الخدمة غير متاحة حالياً.";
+        await CompanyChat.create({ ...baseChatData, text: reply, sender: 'ai' });
+        return res.json({ success: true, company: company.name, reply });
+    }
+
+    // Deduct Credit
+    if (company.aiCredits !== undefined) {
+        company.aiCredits -= 1;
+        await company.save().catch(e => console.error("Failed to deduct credit:", e));
+    }
+
     // 🧠 Context
-    const context = await getCompanyAIContext(company);
+    let context = await getCompanyAIContext(company);
+
+    // 🧑‍💼 HUMAN HANDOFF INSTRUCTION
+    if (company.humanHandoffEnabled) {
+        context += `\n🧑‍💼 **التحويل البشري (HUMAN HANDOFF):**
+إذا طلب المستخدم صراحة التحدث مع موظف خدمة عملاء بشري أو أبدى انزعاجاً شديداً، يجب أن ترد فقط بهذه العبارة الدقيقة:
+[HUMAN_HANDOFF]`;
+    }
+
+    // 📈 LEAD GENERATION INSTRUCTIONS
+    context += `\n\n📈 **توليد العملاء المحتملين (LEAD GENERATION):**
+إذا قام العميل بتقديم بياناته الشخصية من تلقاء نفسه (الاسم، رقم الهاتف، أو البريد الإلكتروني) أثناء المحادثة للاستفسار، يجب عليك في نهاية رسالتك إضافة الكود التالي ليتم حفظ بياناته كعميل محتمل:
+[SAVE_LEAD: الاسم | رقم الهاتف | الإيميل]
+ضع الكلمة "غير متوفر" مكان أي معلومة ناقصة، وتأكد أن الكود في سطر منفصل في نهاية الرسالة ولا يظهر للعميل كجزء من الحديث.`;
 
     // 🕒 Memory
     const history = await getChatHistory(company._id, userId, 'web', 5);
@@ -230,7 +263,33 @@ router.post("/chat", async (req, res) => {
     // AI Response
     const fullQuestion = `${context}\n\n${historyContext}User Question:\n${prompt}`;
     const preferredModel = company.aiSettings?.model || null;
-    const reply = await fetchAiResponse(fullQuestion, "لم يتم الحصول على رد من الذكاء الاصطناعي.", preferredModel);
+    let reply = await fetchAiResponse(fullQuestion, "لم يتم الحصول على رد من الذكاء الاصطناعي.", preferredModel);
+
+    // 🧑‍💼 PARSE HUMAN HANDOFF TAG
+    if (reply.includes("[HUMAN_HANDOFF]")) {
+        if (!company.humanHandoffUsers) company.humanHandoffUsers = [];
+        if (!company.humanHandoffUsers.includes(userId)) {
+            company.humanHandoffUsers.push(userId);
+            await company.save().catch(e => console.error("Failed to save handoff status:", e));
+        }
+        reply = "تم تحويل محادثتك لموظف خدمة العملاء، وسيقوم بالرد عليك في أقرب وقت ممكن.";
+    }
+
+    // 📈 PARSE LEAD GENERATION TAG
+    const leadMatch = reply.match(/\[SAVE_LEAD:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\]/i);
+    if (leadMatch) {
+        const [fullMatch, leadName, leadPhone, leadEmail] = leadMatch;
+        if (!company.leads) company.leads = [];
+        company.leads.push({
+            name: leadName.trim(),
+            phone: leadPhone.trim(),
+            email: leadEmail.trim(),
+            source: platform === 'widget' ? 'widget' : 'web',
+            date: new Date()
+        });
+        await company.save().catch(e => console.error("Failed to save lead to DB:", e));
+        reply = reply.replace(fullMatch, "").trim();
+    }
 
     // Save AI Response
     await CompanyChat.create({ ...baseChatData, text: reply, sender: 'ai' });

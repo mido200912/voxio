@@ -181,3 +181,54 @@ export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallback
     
     return fallbackText;
 }
+
+/**
+ * Transcribe WhatsApp Voice Notes to Text (STT)
+ * Uses Groq Whisper API (preferred) or OpenAI Whisper API.
+ */
+export async function transcribeAudio(buffer, fileName = "audio.ogg", mimeType = "audio/ogg") {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY;
+
+    if (!openaiKey && !groqKey) {
+        return "[رسالة صوتية: عذراً، ميزة فك التشفير غير مفعلة لعدم توفر مفتاح OpenAI أو Groq]";
+    }
+
+    try {
+        const formData = new FormData();
+        const blob = new Blob([buffer], { type: mimeType });
+        formData.append("file", blob, fileName);
+        formData.append("model", groqKey ? "whisper-large-v3" : "whisper-1");
+
+        const apiUrl = groqKey 
+            ? "https://api.groq.com/openai/v1/audio/transcriptions"
+            : "https://api.openai.com/v1/audio/transcriptions";
+            
+        const apiKey = groqKey || openaiKey;
+
+        console.log(`🎙️ Sending STT Request to ${groqKey ? 'Groq' : 'OpenAI'}...`);
+        
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: formData,
+            // Native timeout via AbortSignal
+            signal: AbortSignal.timeout(30000)
+        });
+
+        const result = await response.json();
+        
+        if (response.ok && result.text) {
+            console.log(`✅ STT Transcription successful: ${result.text.substring(0, 30)}...`);
+            return result.text;
+        } else {
+            console.error("❌ Audio transcription API error:", result);
+        }
+    } catch (e) {
+        console.error("❌ Audio transcription failed:", e.message);
+    }
+    
+    return "[رسالة صوتية غير واضحة]";
+}

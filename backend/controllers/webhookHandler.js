@@ -2,7 +2,7 @@ import axios from "axios";
 import Integration from "../models/Integration.js";
 import Company from "../models/CompanyModel.js";
 import CompanyChat from "../models/CompanyChat.js";
-import { fetchAiResponse } from "../utils/corexHelper.js";
+import { fetchAiResponse, transcribeAudio } from "../utils/corexHelper.js";
 import {
   getChatHistory,
   formatHistoryForPrompt,
@@ -28,6 +28,24 @@ async function downloadWaMedia(mediaId, accessToken) {
     return `data:${mimeType};base64,${base64}`;
   } catch (e) {
     console.error('Error downloading WA media:', e.response?.data || e.message);
+    return null;
+  }
+}
+
+// ─── Helper: Download WhatsApp Audio Buffer ───────────────────────────────────
+async function downloadWaAudioBuffer(mediaId, accessToken) {
+  try {
+    const res = await axios.get(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const mediaUrl = res.data.url;
+    const mediaRes = await axios.get(mediaUrl, {
+      responseType: 'arraybuffer',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    return Buffer.from(mediaRes.data, 'binary');
+  } catch (e) {
+    console.error('Error downloading WA audio:', e.response?.data || e.message);
     return null;
   }
 }
@@ -173,6 +191,10 @@ export const handleWhatsAppMessage = async (body) => {
             if (message.type === 'image' && message.image?.id) {
                 mediaId = message.image.id;
                 messageText = message.image.caption || "";
+            } else if (message.type === 'audio' && message.audio?.id) {
+                // 🎙️ Voice Notes Support (Lead to STT)
+                mediaId = message.audio.id;
+                messageText = "[جاري معالجة الملاحظة الصوتية...]";
             } else if (message.type === 'sticker' && message.sticker?.id) {
                 mediaId = message.sticker.id;
             } else if (message.type === 'document' && message.document?.id) {
@@ -246,8 +268,34 @@ export const handleWhatsAppMessage = async (body) => {
 
               let base64Image = null;
               if (mediaId) {
-                  base64Image = await downloadWaMedia(mediaId, accessToken);
-                  if (base64Image && !messageText) messageText = "قام العميل بإرسال صورة/ملصق.";
+                  if (message.type === 'audio') {
+                      const audioBuffer = await downloadWaAudioBuffer(mediaId, accessToken);
+                      if (audioBuffer) {
+                          messageText = await transcribeAudio(audioBuffer);
+                      } else {
+                          messageText = "[فشل تحميل الرسالة الصوتية من واتساب]";
+                      }
+                  } else {
+                      base64Image = await downloadWaMedia(mediaId, accessToken);
+                      if (base64Image && !messageText) messageText = "قام العميل بإرسال صورة/ملصق.";
+                  }
+              }
+
+              // 🛑 Check if user is in Human Handoff mode
+              if (company.humanHandoffEnabled && company.humanHandoffUsers && company.humanHandoffUsers.includes(from)) {
+                  console.log(`[WhatsApp Webhook] User ${from} is in human handoff mode. Skipping AI.`);
+                  
+                  // Save user message to DB so the dashboard sees it
+                  await CompanyChat.create({
+                    company: company._id,
+                    user: from,
+                    text: messageText,
+                    sender: "user",
+                    platform: "whatsapp",
+                  }).catch((e) => console.error("DB Save Err:", e.message));
+                  
+                  // We just return here, leaving it for the human dashboard agent
+                  return;
               }
 
               // 🌍 Get Global AI Settings from Company
@@ -286,6 +334,13 @@ export const handleWhatsAppMessage = async (body) => {
 
               systemPrompt += `\n🌐 LANGUAGE: You MUST respond only in one of these languages: [${languages}]. Default to Arabic if the user speaks Arabic.`;
 
+              // 🧑‍💼 HUMAN HANDOFF INSTRUCTION
+              if (company.humanHandoffEnabled) {
+                  systemPrompt += `\n🧑‍💼 **التحويل البشري (HUMAN HANDOFF):**
+إذا طلب المستخدم صراحة التحدث مع موظف خدمة عملاء بشري أو أبدى انزعاجاً شديداً، يجب أن ترد فقط بهذه العبارة الدقيقة:
+[HUMAN_HANDOFF]`;
+              }
+
               // 🛒 ORDERING SYSTEM INSTRUCTIONS
               systemPrompt += `\n\n🛒 **نظام الطلبات (ORDERING SYSTEM):**
 1. إذا طلب العميل شراء منتج، اعرض عليه المنتجات المتاحة.
@@ -293,6 +348,12 @@ export const handleWhatsAppMessage = async (body) => {
 3. بمجرد أن يرسل العميل رقم الموبايل، قم بتأكيد الطلب له، وفي **نهاية رسالتك تماماً** يجب أن تكتب هذا الكود البرمجي (الذي سيقوم بحفظ الطلب في قاعدة بياناتنا):
 [SAVE_ORDER: أسم العميل | رقم الموبايل | أسم المنتج]
 تأكد أن تستبدل البيانات بما طلبه العميل. النظام الخاص بنا سيقرأ هذا الكود ولن يظهر للعميل.`;
+
+              // 📈 LEAD GENERATION INSTRUCTIONS
+              systemPrompt += `\n\n📈 **توليد العملاء المحتملين (LEAD GENERATION):**
+إذا قام العميل بتقديم بياناته الشخصية من تلقاء نفسه (الاسم، رقم الهاتف، أو البريد الإلكتروني) أثناء المحادثة للاستفسار، يجب عليك في نهاية رسالتك إضافة الكود التالي ليتم حفظ بياناته كعميل محتمل:
+[SAVE_LEAD: الاسم | رقم الهاتف | الإيميل]
+ضع الكلمة "غير متوفر" مكان أي معلومة ناقصة، وتأكد أن الكود في سطر منفصل في نهاية الرسالة ولا يظهر للعميل كجزء من الحديث.`;
 
               // Save user message to DB
               await CompanyChat.create({
@@ -320,12 +381,22 @@ export const handleWhatsAppMessage = async (body) => {
                 )
                 .catch((e) => console.warn("Read Status Err:", e.message));
 
-              let reply = await fetchAiResponse(
-                `${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`,
-                "عذراً، لا أستطيع الرد في الوقت الحالي.",
-                aiModel,
-                base64Image
-              );
+              // 💳 Check AI Credits
+              if (company.aiCredits !== undefined && company.aiCredits <= 0) {
+                  reply = "نعتذر، خدمة الرد الآلي متوقفة حالياً.";
+              } else {
+                  if (company.aiCredits !== undefined) {
+                      company.aiCredits -= 1;
+                      await company.save().catch(e => console.error("Failed to deduct credit:", e));
+                  }
+                  
+                  reply = await fetchAiResponse(
+                    `${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`,
+                    "عذراً، لا أستطيع الرد في الوقت الحالي.",
+                    aiModel,
+                    base64Image
+                  );
+              }
 
               if (reply === "AI_ERROR_RETRY_LATER") {
                 throw new Error(
@@ -350,6 +421,34 @@ export const handleWhatsAppMessage = async (body) => {
                   
                   // Remove the tag from the reply sent to the user
                   reply = reply.replace(fullMatch, "").trim();
+              }
+
+              // 📈 PARSE LEAD GENERATION TAG
+              const leadMatch = reply.match(/\[SAVE_LEAD:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\]/i);
+              if (leadMatch) {
+                  const [fullMatch, leadName, leadPhone, leadEmail] = leadMatch;
+                  
+                  if (!company.leads) company.leads = [];
+                  company.leads.push({
+                      name: leadName.trim(),
+                      phone: leadPhone.trim(),
+                      email: leadEmail.trim(),
+                      source: 'whatsapp',
+                      date: new Date()
+                  });
+                  await company.save().catch(e => console.error("Failed to save lead to DB:", e));
+                  
+                  reply = reply.replace(fullMatch, "").trim();
+              }
+
+              // 🧑‍💼 PARSE HUMAN HANDOFF TAG
+              if (reply.includes("[HUMAN_HANDOFF]")) {
+                  if (!company.humanHandoffUsers) company.humanHandoffUsers = [];
+                  if (!company.humanHandoffUsers.includes(from)) {
+                      company.humanHandoffUsers.push(from);
+                      await company.save().catch(e => console.error("Failed to save handoff status:", e));
+                  }
+                  reply = "تم تحويل محادثتك لموظف خدمة العملاء، وسيقوم بالرد عليك في أقرب وقت ممكن.";
               }
 
               // ✂️ WhatsApp Max Length is 4096. We trim at 4000 to be safe.

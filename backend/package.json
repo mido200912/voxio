@@ -6,6 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "start:core": "set \"SERVICE_TYPE=core\" && node server.js",
+    "start:webhook": "set \"SERVICE_TYPE=webhook\" && node server.js",
     "dev": "nodemon server.js",
     "lint": "eslint ."
   },

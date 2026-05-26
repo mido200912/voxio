@@ -132,21 +132,31 @@ const authLimiter = rateLimit({
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/google-login", authLimiter); // Also apply to Google login
 
-// ✅ Routes 
-app.use("/api/chat", chatRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/projects", projectRoutes);
-app.use("/api/company", companyRoutes);
-app.use("/api/public", publicCompanyChatRoutes);
-app.use("/api/integrations", integrationRoutes);
-app.use("/api/ai", uploadRoutes);
-app.use("/api/support-chat", chatHistoryRoutes);
-app.use("/api/integration-manager", integrationManagerRoutes);
-app.use("/api/voxio-chat", voxioChatRoutes);
-app.use("/api/chatbot-editor", chatbotEditorRoutes);
-app.use("/api/support", supportRoutes);
-app.use("/api/broadcast", broadcastRoutes);
-app.use("/api/widget-editor", widgetEditorRoutes);
+// ✅ Routes (Load Balanced based on SERVICE_TYPE)
+const serviceType = (process.env.SERVICE_TYPE || 'all').trim(); // can be 'core', 'webhook', or 'all'
+console.log(`🔧 SERVICE_TYPE: "${serviceType}"`);
+
+if (serviceType === 'core' || serviceType === 'all') {
+    // 🖥️ Core Dashboard API Routes
+    app.use("/api/auth", authRoutes);
+    app.use("/api/projects", projectRoutes);
+    app.use("/api/company", companyRoutes);
+    app.use("/api/public", publicCompanyChatRoutes);
+    app.use("/api/integration-manager", integrationManagerRoutes);
+    app.use("/api/chatbot-editor", chatbotEditorRoutes);
+    app.use("/api/widget-editor", widgetEditorRoutes);
+    app.use("/api/support", supportRoutes);
+    app.use("/api/ai", uploadRoutes); // Uploads are usually dashboard side
+    app.use("/api/support-chat", chatHistoryRoutes);
+    app.use("/api/broadcast", broadcastRoutes);
+}
+
+if (serviceType === 'webhook' || serviceType === 'all') {
+    // 🤖 Webhook & Chat Routes (Heavy AI processing)
+    app.use("/api/integrations", integrationRoutes); // Contains WhatsApp & IG Webhooks
+    app.use("/api/chat", chatRoutes); // Widget Chat
+    app.use("/api/voxio-chat", voxioChatRoutes);
+}
 
 // ✅ Route افتراضي
 app.get("/", (req, res) => {

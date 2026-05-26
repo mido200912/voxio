@@ -166,6 +166,9 @@ router.get("/view-website/:slug", async (req, res) => {
   <footer class="p-6 border-t border-gray-800 bg-gray-900/80 backdrop-blur-md pb-10">
     <div class="max-w-4xl mx-auto flex gap-4 w-full">
       <input type="text" id="voxio-chat-input" placeholder="Type your message here..." class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-5 py-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-white placeholder-gray-500">
+      <button id="voxio-mic-btn" class="bg-gray-700 hover:bg-gray-600 text-white rounded-xl px-4 py-4 font-bold transition-all flex items-center justify-center" title="Voice Input">
+        <i class="fas fa-microphone"></i>
+      </button>
       <button id="voxio-chat-send" class="bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-6 py-4 font-bold transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2">
         <span>Send</span> <i class="fas fa-paper-plane"></i>
       </button>
@@ -228,10 +231,40 @@ router.get("/view-website/:slug", async (req, res) => {
                 const typingEl = document.getElementById(typingId);
                 if (typingEl) typingEl.remove();
                 
+                let replyText = data.reply || "Error";
+                
+                // AI Copilot Navigation Logic
+                if (replyText.includes('[NAVIGATE:')) {
+                    const match = replyText.match(/\\[NAVIGATE: (.*?)\\]/);
+                    if (match && match[1]) {
+                        replyText = replyText.replace(match[0], '').trim();
+                        setTimeout(() => { window.location.href = match[1]; }, 1500);
+                    }
+                }
+                if (replyText.includes('[HIGHLIGHT:')) {
+                    const match = replyText.match(/\\[HIGHLIGHT: (.*?)\\]/);
+                    if (match && match[1]) {
+                        replyText = replyText.replace(match[0], '').trim();
+                        const el = document.querySelector(match[1]);
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            el.style.boxShadow = "0 0 0 4px #4f46e5";
+                            setTimeout(() => { el.style.boxShadow = "none"; }, 3000);
+                        }
+                    }
+                }
+                
                 const aiMsg = document.createElement('div');
                 aiMsg.className = "flex gap-4 max-w-3xl mb-4";
-                aiMsg.innerHTML = '<div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 text-white shadow-lg shadow-blue-500/20"><i class="fas fa-robot"></i></div><div class="bg-gray-800 p-4 rounded-2xl rounded-tl-none shadow-xl border border-gray-700/50 text-gray-200" style="white-space: pre-wrap;">' + (data.reply || "Error").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\\n/g, "<br>") + '</div>';
+                aiMsg.innerHTML = '<div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 text-white shadow-lg shadow-blue-500/20"><i class="fas fa-robot"></i></div><div class="bg-gray-800 p-4 rounded-2xl rounded-tl-none shadow-xl border border-gray-700/50 text-gray-200" style="white-space: pre-wrap;">' + replyText.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\\n/g, "<br>") + '</div>';
                 chatContainer.appendChild(aiMsg);
+                
+                // TTS: Read the response out loud
+                if ('speechSynthesis' in window) {
+                   const utterance = new SpeechSynthesisUtterance(replyText);
+                   utterance.lang = 'ar-SA';
+                   window.speechSynthesis.speak(utterance);
+                }
                 
             } catch(e) {
                 const typingEl = document.getElementById(typingId);
@@ -291,6 +324,42 @@ router.get("/view-website/:slug", async (req, res) => {
                 sendMessage();
             }
         });
+
+        // STT Logic
+        const micBtn = document.getElementById('voxio-mic-btn');
+        if (micBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ar-SA';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = function() {
+                micBtn.style.backgroundColor = '#ef4444';
+                micBtn.innerHTML = '<i class="fas fa-circle text-white animate-pulse"></i>';
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                inputField.value = transcript;
+                sendMessage();
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Speech recognition error", event.error);
+                micBtn.style.backgroundColor = '#374151';
+                micBtn.innerHTML = '<i class="fas fa-microphone text-white"></i>';
+            };
+
+            recognition.onend = function() {
+                micBtn.style.backgroundColor = '#374151';
+                micBtn.innerHTML = '<i class="fas fa-microphone text-white"></i>';
+            };
+
+            micBtn.addEventListener('click', () => {
+                recognition.start();
+            });
+        }
       });
     </script>
     `;
@@ -878,6 +947,37 @@ router.get("/requests", requireAuth, async (req, res) => {
 });
 
 /*-------------------------------
+  جلب وإدارة العملاء المحتملين (Leads)
+-------------------------------*/
+router.get("/leads", requireAuth, async (req, res) => {
+  try {
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+    res.json(company.leads || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete("/leads/:index", requireAuth, async (req, res) => {
+  try {
+    const { index } = req.params;
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    if (index < 0 || index >= company.leads.length)
+      return res.status(400).json({ error: "Invalid lead index" });
+
+    company.leads.splice(index, 1);
+    await company.save();
+
+    res.json({ success: true, leads: company.leads });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/*-------------------------------
   حذف طلب محدد
 -------------------------------*/
 router.delete("/requests/:index", requireAuth, async (req, res) => {
@@ -982,6 +1082,140 @@ router.post("/use-model", verifyApiKey, async (req, res) => {
   } catch (err) {
     console.error("use-model error:", err.message);
     res.status(500).json({ error: "خطأ أثناء تشغيل النموذج" });
+  }
+});
+
+/*-------------------------------
+  تطبيق قوالب الصناعة (Industry Templates)
+-------------------------------*/
+router.post("/apply-template", requireAuth, async (req, res) => {
+  try {
+    const { templateId } = req.body;
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    const templates = {
+      real_estate: {
+        industry: "Real Estate",
+        instructions: "نحن شركة عقارات رائدة. مهمتك مساعدة العملاء في العثور على عقارات مناسبة، والإجابة على استفساراتهم، وجمع أسمائهم وأرقام هواتفهم لحجز مواعيد للمعاينة."
+      },
+      ecommerce: {
+        industry: "E-commerce",
+        instructions: "نحن متجر إلكتروني. مهمتك مساعدة العملاء في تصفح المنتجات، معرفة الأسعار، وتأكيد طلبات الشراء وجمع تفاصيل التوصيل والاتصال."
+      },
+      clinic: {
+        industry: "Healthcare",
+        instructions: "نحن عيادة طبية متخصصة. مهمتك الإجابة على استفسارات المرضى حول المواعيد والأسعار وجمع أرقام هواتفهم لتأكيد الحجز."
+      },
+      restaurant: {
+        industry: "Restaurant & Cafe",
+        instructions: "نحن مطعم يقدم أشهى المأكولات. مهمتك مساعدة العملاء في التعرف على المنيو، حجز الطاولات، واستقبال طلبات التوصيل وتفاصيل التواصل."
+      },
+      travel: {
+        industry: "Travel & Tourism",
+        instructions: "نحن شركة سياحة وسفر. مهمتك مساعدة العملاء في معرفة العروض السياحية وتذاكر الطيران، وجمع بياناتهم لتأكيد الحجوزات."
+      },
+      education: {
+        industry: "Education & Courses",
+        instructions: "نحن مؤسسة تعليمية. مهمتك الرد على استفسارات الطلاب حول الدورات والكورسات، ومساعدتهم في التسجيل وجمع بيانات التواصل."
+      },
+      law_firm: {
+        industry: "Law Firm",
+        instructions: "نحن مكتب محاماة واستشارات قانونية. مهمتك الرد على استفسارات العملاء الأولية وتحديد مواعيد استشارات وجمع أرقامهم."
+      },
+      fitness: {
+        industry: "Gym & Fitness",
+        instructions: "نحن صالة رياضية (جيم). مهمتك الإجابة على الاستفسارات حول العضويات والأسعار وجداول التدريب وتشجيعهم على الاشتراك."
+      },
+      beauty_spa: {
+        industry: "Beauty Salon & Spa",
+        instructions: "نحن صالون تجميل وسبا. مهمتك مساعدة العملاء في معرفة خدماتنا والأسعار وحجز المواعيد."
+      },
+      car_dealership: {
+        industry: "Car Dealership & Rental",
+        instructions: "نحن معرض وتأجير سيارات. مهمتك مساعدة العملاء في التعرف على السيارات المتاحة، شروط التأجير، وتحديد مواعيد للمعاينة."
+      },
+      it_software: {
+        industry: "IT & Software",
+        instructions: "نحن شركة تكنولوجيا وبرمجيات. مهمتك الرد على أسئلة العملاء التقنية وجمع متطلبات مشاريعهم لتحديد اجتماعات للعمل."
+      },
+      marketing: {
+        industry: "Marketing Agency",
+        instructions: "نحن وكالة تسويق إعلاني. مهمتك فهم احتياجات العملاء التسويقية، عرض باقاتنا، وجمع تفاصيلهم ليتواصل معهم المبيعات."
+      },
+      logistics: {
+        industry: "Logistics & Delivery",
+        instructions: "نحن شركة شحن وتوصيل. مهمتك الرد على استفسارات الشحن وتتبع الطلبات ومواعيد التسليم."
+      },
+      home_services: {
+        industry: "Home Services & Maintenance",
+        instructions: "نحن شركة خدمات منزلية وصيانة. مهمتك فهم أعطال أو احتياجات العميل وتحديد موعد لزيارة الفني وجمع تفاصيل العنوان."
+      },
+      accounting: {
+        industry: "Accounting & Finance",
+        instructions: "نحن شركة محاسبة ومالية. مهمتك الرد على الاستفسارات الخاصة بتأسيس الشركات، الضرائب، وحجز استشارات."
+      },
+      events: {
+        industry: "Event Planning",
+        instructions: "نحن شركة تنظيم فعاليات وحفلات. مهمتك التعرف على نوع الفعالية ومساعدة العميل في معرفة باقاتنا وحجزها."
+      },
+      photography: {
+        industry: "Photography & Videography",
+        instructions: "نحن ستوديو تصوير وإنتاج. مهمتك عرض أعمالنا والإجابة على الأسئلة حول باقات التصوير وحجز جلسات."
+      },
+      furniture: {
+        industry: "Furniture & Interior Design",
+        instructions: "نحن شركة أثاث وديكور داخلي. مهمتك الرد على أسئلة العملاء حول المنتجات، القياسات، خدمات التصميم وطلب المعاينة."
+      },
+      fashion: {
+        industry: "Fashion & Clothing",
+        instructions: "نحن علامة تجارية للأزياء والملابس. مهمتك مساعدة العملاء في معرفة المقاسات، الألوان المتاحة، تفاصيل الشحن والطلبات."
+      },
+      insurance: {
+        industry: "Insurance",
+        instructions: "نحن شركة تأمين. مهمتك تزويد العملاء بمعلومات عن بوالص التأمين (صحي، سيارات، حياة) ومساعدتهم في الحصول على عروض أسعار."
+      },
+      consulting: {
+        industry: "Consulting",
+        instructions: "نحن شركة استشارات إدارية. مهمتك استيعاب تحديات العملاء المؤسسية وحجز مواعيد تقييم مبدئي مع خبرائنا."
+      },
+      cleaning: {
+        industry: "Cleaning Services",
+        instructions: "نحن شركة خدمات تنظيف. مهمتك تزويد العملاء بمعلومات عن خدمات التنظيف وأسعارها وتأكيد المواعيد للمنازل والشركات."
+      },
+      hotel: {
+        industry: "Hotel & Hospitality",
+        instructions: "نحن فندق ومكان إقامة. مهمتك مساعدة النزلاء في معرفة توافر الغرف، الأسعار، الخدمات الفندقية وتأكيد الحجوزات."
+      },
+      construction: {
+        industry: "Construction",
+        instructions: "نحن شركة مقاولات وبناء. مهمتك الرد على استفسارات المشاريع الإنشائية، التشطيبات، وجمع بيانات لتسعير المشاريع."
+      },
+      pharmacy: {
+        industry: "Pharmacy",
+        instructions: "نحن صيدلية. مهمتك الرد على توافر الأدوية والمستلزمات الطبية واستقبال الطلبات وتفاصيل التوصيل للمنازل."
+      },
+      auto_repair: {
+        industry: "Automotive Repair",
+        instructions: "نحن مركز صيانة سيارات. مهمتك الرد على مشاكل السيارات والأعطال وحجز مواعيد الصيانة وطلب تسعير التكلفة."
+      },
+      pets: {
+        industry: "Pet Shop & Care",
+        instructions: "نحن متجر وعيادة للحيوانات الأليفة. مهمتك مساعدة المربين في الحصول على طعام واحتياجات الحيوانات وحجز مواعيد العيادة البيطرية."
+      }
+    };
+
+    if (!templates[templateId]) {
+      return res.status(400).json({ error: "Invalid template" });
+    }
+
+    company.customInstructions = templates[templateId].instructions;
+    company.industry = templates[templateId].industry;
+    await company.save();
+    
+    res.json({ success: true, message: "Template applied successfully", customInstructions: company.customInstructions, industry: company.industry });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

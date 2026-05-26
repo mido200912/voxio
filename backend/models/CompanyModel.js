@@ -27,6 +27,10 @@ class CompanyModel extends FirestoreModel {
         model: 'inclusionai/ring-2.6-1t',
         languages: ['Arabic', 'English']
       },
+      aiCredits: 500,
+      humanHandoffEnabled: true,
+      humanHandoffUsers: [],
+      leads: [],
       ...data
     };
     return super.create(defaultData);

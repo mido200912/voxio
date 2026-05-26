@@ -158,7 +158,13 @@ const DashboardLayout = () => {
                         <li>
                             <Link to="/dashboard/orders" className={`nav-item ${isActive('/dashboard/orders')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-shopping-cart"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'الطلبات والعملاء' : 'Orders & Leads'}</span>}
+                                {isSidebarOpen && <span>{language === 'ar' ? 'الطلبات' : 'Orders'}</span>}
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/dashboard/leads" className={`nav-item ${isActive('/dashboard/leads')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-user-friends"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'العملاء المحتملين' : 'Leads'}</span>}
                             </Link>
                         </li>
                         <li>

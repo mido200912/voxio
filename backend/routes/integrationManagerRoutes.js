@@ -720,4 +720,35 @@ router.post('/verify-reveal-otp', requireAuth, async (req, res) => {
     }
 });
 
+// @route   POST /api/integration-manager/shopify/sync
+// @desc    Sync products from Shopify (Mock MVP)
+// @access  Private
+router.post('/shopify/sync', requireAuth, async (req, res) => {
+    try {
+        const { shopifyDomain, accessToken } = req.body;
+        const company = await Company.findOne({ owner: req.user._id });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        if (!shopifyDomain || !accessToken) {
+            return res.status(400).json({ error: 'Shopify Domain and Access Token are required' });
+        }
+
+        // MVP MOCK SYNC LOGIC
+        // In a real app, we'd fetch from: `https://${shopifyDomain}/admin/api/2024-01/products.json`
+        const mockProducts = "1. حذاء رياضي (50$)\n2. تيشيرت قطني (20$)\n3. حقيبة ظهر (35$)";
+        
+        let integration = await Integration.findOne({ company: company._id, platform: 'whatsapp' });
+        if (integration) {
+            if (!integration.settings) integration.settings = {};
+            integration.settings.products = mockProducts;
+            await integration.save();
+        }
+
+        res.json({ message: 'Shopify products synced successfully', products: mockProducts });
+    } catch (error) {
+        console.error('Shopify sync error:', error);
+        res.status(500).json({ error: 'Server error during Shopify sync' });
+    }
+});
+
 export default router;
