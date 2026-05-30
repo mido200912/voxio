@@ -64,6 +64,19 @@ async function ensureIndexes(model, collectionName) {
         { company: 1, platform: 1 },
         { background: true },
       );
+    } else if (collectionName === "leads") {
+      await model.collection.createIndex(
+        { company: 1, phone: 1 },
+        { background: true },
+      );
+      await model.collection.createIndex(
+        { company: 1, status: 1 },
+        { background: true },
+      );
+      await model.collection.createIndex(
+        { company: 1, createdAt: -1 },
+        { background: true },
+      );
     }
   } catch (e) {
     // Index creation is best-effort — don't crash on duplicate or permission errors

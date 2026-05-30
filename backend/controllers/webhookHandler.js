@@ -2,6 +2,7 @@ import axios from "axios";
 import Integration from "../models/Integration.js";
 import Company from "../models/CompanyModel.js";
 import CompanyChat from "../models/CompanyChat.js";
+import Lead from "../models/Lead.js";
 import { fetchAiResponse, transcribeAudio } from "../utils/corexHelper.js";
 import {
   getChatHistory,
@@ -451,16 +452,42 @@ export const handleWhatsAppMessage = async (body) => {
               const leadMatch = reply.match(/\[SAVE_LEAD:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\]/i);
               if (leadMatch) {
                   const [fullMatch, leadName, leadPhone, leadEmail] = leadMatch;
-                  
-                  if (!company.leads) company.leads = [];
-                  company.leads.push({
-                      name: leadName.trim(),
-                      phone: leadPhone.trim(),
-                      email: leadEmail.trim(),
-                      source: 'whatsapp',
-                      date: new Date()
-                  });
-                  await company.save().catch(e => console.error("Failed to save lead to DB:", e));
+                  const companyId = company._id.toString();
+
+                  try {
+                      // Dedup by phone per company
+                      if (leadPhone.trim()) {
+                          const existing = await Lead.findOne({ company: companyId, phone: leadPhone.trim() });
+                          if (existing) {
+                              existing.name = leadName.trim() || existing.name;
+                              existing.email = leadEmail.trim() || existing.email;
+                              existing.sourceData = { ...existing.sourceData, lastMessage: messageText, updatedFrom: 'whatsapp' };
+                              await existing.save().catch(e => console.error("Failed to update lead:", e));
+                          } else {
+                              await Lead.create({
+                                  company: companyId,
+                                  name: leadName.trim(),
+                                  phone: leadPhone.trim(),
+                                  email: leadEmail.trim(),
+                                  source: 'whatsapp',
+                                  sourceData: { messageText },
+                                  status: 'new'
+                              }).catch(e => console.error("Failed to create lead:", e));
+                          }
+                      } else {
+                          // No phone — create lead anyway with just name/email
+                          await Lead.create({
+                              company: companyId,
+                              name: leadName.trim(),
+                              email: leadEmail.trim(),
+                              source: 'whatsapp',
+                              sourceData: { messageText },
+                              status: 'new'
+                          }).catch(e => console.error("Failed to create lead:", e));
+                      }
+                  } catch (e) {
+                      console.error("Failed to save lead to DB:", e.message);
+                  }
                   
                   reply = reply.replace(fullMatch, "").trim();
               }

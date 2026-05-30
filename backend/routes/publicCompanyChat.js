@@ -2,6 +2,7 @@
 import express from "express";
 import axios from "axios";
 import Company from "../models/CompanyModel.js";
+import Lead from "../models/Lead.js";
 import { extractCorexReply, fetchAiResponse } from "../utils/corexHelper.js";
 import { getChatHistory, formatHistoryForPrompt } from "../utils/chatHistoryHelper.js";
 import { getCompanyAIContext } from "../utils/promptHelper.js";
@@ -279,15 +280,40 @@ router.post("/chat", async (req, res) => {
     const leadMatch = reply.match(/\[SAVE_LEAD:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\]/i);
     if (leadMatch) {
         const [fullMatch, leadName, leadPhone, leadEmail] = leadMatch;
-        if (!company.leads) company.leads = [];
-        company.leads.push({
-            name: leadName.trim(),
-            phone: leadPhone.trim(),
-            email: leadEmail.trim(),
-            source: platform === 'widget' ? 'widget' : 'web',
-            date: new Date()
-        });
-        await company.save().catch(e => console.error("Failed to save lead to DB:", e));
+        const companyId = company._id.toString();
+        const source = platform === 'widget' ? 'widget' : 'web';
+
+        try {
+            if (leadPhone.trim()) {
+                const existing = await Lead.findOne({ company: companyId, phone: leadPhone.trim() });
+                if (existing) {
+                    existing.name = leadName.trim() || existing.name;
+                    existing.email = leadEmail.trim() || existing.email;
+                    existing.sourceData = { ...existing.sourceData, lastMessage: prompt, updatedFrom: source };
+                    await existing.save().catch(e => console.error("Failed to update lead:", e));
+                } else {
+                    await Lead.create({
+                        company: companyId,
+                        name: leadName.trim(),
+                        phone: leadPhone.trim(),
+                        email: leadEmail.trim(),
+                        source,
+                        status: 'new'
+                    }).catch(e => console.error("Failed to create lead:", e));
+                }
+            } else {
+                await Lead.create({
+                    company: companyId,
+                    name: leadName.trim(),
+                    email: leadEmail.trim(),
+                    source,
+                    status: 'new'
+                }).catch(e => console.error("Failed to create lead:", e));
+            }
+        } catch (e) {
+            console.error("Failed to save lead to DB:", e.message);
+        }
+
         reply = reply.replace(fullMatch, "").trim();
     }
 

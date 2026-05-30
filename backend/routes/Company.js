@@ -3,6 +3,7 @@ import axios from "axios";
 import crypto from "crypto";
 import Company from "../models/CompanyModel.js";
 import CompanyChat from "../models/CompanyChat.js";
+import Lead from "../models/Lead.js";
 import { requireAuth } from "../middleware/auth.js";
 import { verifyApiKey } from "../middleware/verifyApiKey.js";
 import { extractCorexReply, fetchAiResponse, fetchDesignerAiResponse } from "../utils/corexHelper.js";
@@ -953,25 +954,123 @@ router.get("/leads", requireAuth, async (req, res) => {
   try {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
-    res.json(company.leads || []);
+
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
+    const search = (req.query.search || '').trim();
+    const statusFilter = req.query.status || '';
+
+    const companyId = company._id.toString();
+    const query = { company: companyId };
+    if (statusFilter) query.status = statusFilter;
+
+    let leads = await Lead.find(query);
+    
+    // Filter by search term (client-side since FirestoreModel doesn't support text search)
+    if (search) {
+      const lower = search.toLowerCase();
+      leads = leads.filter(l =>
+        (l.name || '').toLowerCase().includes(lower) ||
+        (l.phone || '').toLowerCase().includes(lower) ||
+        (l.email || '').toLowerCase().includes(lower)
+      );
+    }
+
+    // Sort by newest first
+    leads.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    const total = leads.length;
+    const paginatedLeads = leads.slice(skip, skip + limit);
+
+    res.json({
+      leads: paginatedLeads,
+      total,
+      page,
+      pages: Math.ceil(total / limit) || 1
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.delete("/leads/:index", requireAuth, async (req, res) => {
+router.post("/leads", requireAuth, async (req, res) => {
   try {
-    const { index } = req.params;
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    if (index < 0 || index >= company.leads.length)
-      return res.status(400).json({ error: "Invalid lead index" });
+    const { name, phone, email, source, notes, tags } = req.body;
+    if (!name && !phone && !email) {
+      return res.status(400).json({ error: "Provide at least name, phone, or email" });
+    }
 
-    company.leads.splice(index, 1);
-    await company.save();
+    const companyId = company._id.toString();
 
-    res.json({ success: true, leads: company.leads });
+    // Dedup by phone
+    if (phone) {
+      const existing = await Lead.findOne({ company: companyId, phone });
+      if (existing) {
+        existing.name = name || existing.name;
+        existing.email = email || existing.email;
+        existing.notes = notes || existing.notes;
+        if (tags) existing.tags = tags;
+        await existing.save();
+        return res.json({ success: true, lead: existing, updated: true });
+      }
+    }
+
+    const lead = await Lead.create({
+      company: companyId,
+      name: name || '',
+      phone: phone || '',
+      email: email || '',
+      source: source || 'manual',
+      notes: notes || '',
+      tags: tags || [],
+      status: 'new'
+    });
+
+    res.json({ success: true, lead, updated: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put("/leads/:id", requireAuth, async (req, res) => {
+  try {
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) return res.status(404).json({ error: "Lead not found" });
+    if (lead.company !== company._id.toString()) return res.status(403).json({ error: "Unauthorized" });
+
+    const { name, phone, email, status, notes, tags } = req.body;
+    if (name !== undefined) lead.name = name;
+    if (phone !== undefined) lead.phone = phone;
+    if (email !== undefined) lead.email = email;
+    if (status !== undefined) lead.status = status;
+    if (notes !== undefined) lead.notes = notes;
+    if (tags !== undefined) lead.tags = tags;
+
+    await lead.save();
+    res.json({ success: true, lead });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete("/leads/:id", requireAuth, async (req, res) => {
+  try {
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) return res.status(404).json({ error: "Lead not found" });
+    if (lead.company !== company._id.toString()) return res.status(403).json({ error: "Unauthorized" });
+
+    await Lead.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

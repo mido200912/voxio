@@ -30,7 +30,6 @@ class CompanyModel extends FirestoreModel {
       aiCredits: 500,
       humanHandoffEnabled: true,
       humanHandoffUsers: [],
-      leads: [],
       ...data
     };
     return super.create(defaultData);

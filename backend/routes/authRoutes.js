@@ -139,6 +139,11 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// Bypass accounts that login without OTP (dev/test users)
+const BYPASS_ACCOUNTS = [
+  { email: "dev@voxio.ai", password: "Dev@2026" },
+];
+
 // login
 router.post("/login", async (req, res) => {
   try {
@@ -146,6 +151,46 @@ router.post("/login", async (req, res) => {
     email = email?.trim();
     if (!email || !password)
       return res.status(400).json({ error: "Missing fields" });
+
+    // Check if this is a bypass account (no OTP required)
+    const bypassMatch = BYPASS_ACCOUNTS.find(
+      (acc) => acc.email === email && acc.password === password
+    );
+
+    if (bypassMatch) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser && !existingUser.password) {
+        return res.status(400).json({ error: "This account uses Google Login. Please use Google to sign in." });
+      }
+      if (existingUser) {
+        const ok = await bcrypt.compare(password, existingUser.password);
+        if (!ok) return res.status(400).json({ error: "Invalid credentials" });
+        existingUser.isVerified = true;
+        await existingUser.save();
+        const { accessToken, refreshToken } = generateTokens(existingUser._id);
+        sendRefreshCookie(res, refreshToken);
+        return res.json({
+          user: { id: existingUser._id, name: existingUser.name, email: existingUser.email },
+          token: accessToken,
+          step: "done",
+        });
+      }
+      // Auto-create the bypass account if it doesn't exist
+      const hash = await bcrypt.hash(password, 8);
+      const newUser = await User.create({
+        name: email.split("@")[0],
+        email,
+        password: hash,
+        isVerified: true,
+      });
+      const { accessToken, refreshToken } = generateTokens(newUser._id);
+      sendRefreshCookie(res, refreshToken);
+      return res.json({
+        user: { id: newUser._id, name: newUser.name, email: newUser.email },
+        token: accessToken,
+        step: "done",
+      });
+    }
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "Invalid credentials" });
