@@ -18,7 +18,7 @@
   --glass-border: rgba(0, 0, 0, 0.1);
 
   /* Dashboard Specific */
-  --dash-bg: #ffffff;
+  --dash-bg: #f8f9fa;
   --dash-sidebar: #ffffff;
   --dash-rail: #f1f3f5;
   --dash-card: #ffffff;
@@ -28,10 +28,10 @@
   --dash-text-rgb: 0, 0, 0;
   --dash-text-sec: #666666;
   --dash-icon: rgba(0, 0, 0, 0.4);
-  --dash-accent: #000000;
-  --dash-accent-rgb: 0, 0, 0;
-  --dash-primary: #000000;
-  --dash-primary-rgb: 0, 0, 0;
+  --dash-accent: #50c8b4;
+  --dash-accent-rgb: 80, 200, 180;
+  --dash-primary: #6C63FF;
+  --dash-primary-rgb: 108, 99, 255;
 }
 
 :root[data-theme="dark"] {
@@ -61,10 +61,10 @@
   --dash-text-rgb: 255, 255, 255;
   --dash-text-sec: rgba(255, 255, 255, 0.4);
   --dash-icon: rgba(255, 255, 255, 0.35);
-  --dash-accent: #ffffff;
-  --dash-accent-rgb: 255, 255, 255;
-  --dash-primary: #ffffff;
-  --dash-primary-rgb: 255, 255, 255;
+  --dash-accent: #50c8b4;
+  --dash-accent-rgb: 80, 200, 180;
+  --dash-primary: #6C63FF;
+  --dash-primary-rgb: 108, 99, 255;
 }
 
 :root {
