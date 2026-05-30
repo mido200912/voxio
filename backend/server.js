@@ -286,6 +286,43 @@ app.get('/widget/:apiKey', (req, res) => {
     res.redirect(`${frontendUrl}/widget/${req.params.apiKey}`);
 });
 
+// 🎙️ Test endpoint for audio transcription
+import { transcribeAudio } from "./utils/corexHelper.js";
+app.post('/api/test/transcribe', (req, res, next) => {
+    const ct = req.get('content-type') || '';
+    if (!ct.startsWith('audio/')) {
+        return res.status(400).json({ error: 'Content-Type must be audio/*, got: ' + ct });
+    }
+    next();
+}, express.raw({ type: 'audio/*', limit: '25mb' }), async (req, res) => {
+    if (!req.body || !Buffer.isBuffer(req.body) || req.body.length === 0) {
+        console.error('[Test STT] Empty body received');
+        return res.status(400).json({ text: '[رسالة صوتية: الملف فارغ]' });
+    }
+    const rawContentType = req.get('content-type') || 'audio/ogg';
+    const cleanMime = rawContentType.split(';')[0].trim();
+    const extMap = {
+        'audio/ogg': 'ogg', 'audio/oga': 'oga',
+        'audio/mpeg': 'mp3', 'audio/mp3': 'mp3',
+        'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a',
+        'audio/wav': 'wav', 'audio/x-wav': 'wav',
+        'audio/webm': 'webm', 'audio/flac': 'flac'
+    };
+    const ext = extMap[cleanMime] || cleanMime.split('/').pop() || 'ogg';
+    const fileName = 'audio.' + ext;
+    console.log(`[Test STT] Received ${req.body.length} bytes, type: "${rawContentType}" → clean: "${cleanMime}", file: "${fileName}"`);
+    try {
+        const result = await transcribeAudio(req.body, fileName, cleanMime);
+        res.json({ text: result });
+    } catch (e) {
+        console.error('[Test STT] Error:', e.message);
+        res.status(500).json({ text: '[رسالة صوتية: خطأ في المعالجة: ' + e.message + ']' });
+    }
+});
+app.get('/test-stt', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'test-stt.html'));
+});
+
 app.get('/api/ping', (req, res) => {
     res.json({ message: "pong" });
 });

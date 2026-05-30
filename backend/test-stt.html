@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اختبار التعرف على الصوت</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: #0a0a0a;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+}
+.container {
+    max-width: 520px;
+    width: 100%;
+}
+h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.5px;
+}
+.sub {
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+.card {
+    background: #141414;
+    border: 1px solid #222;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+.card-title {
+    font-size: 0.85rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+}
+.upload-area {
+    border: 2px dashed #333;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+.upload-area:hover, .upload-area.dragover {
+    border-color: #666;
+    background: #1a1a1a;
+}
+.upload-area p { color: #888; font-size: 0.9rem; }
+.upload-area small { color: #555; font-size: 0.8rem; display: block; margin-top: 0.5rem; }
+.file-info {
+    display: none;
+    background: #1a1a1a;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #aaa;
+    word-break: break-all;
+}
+.file-info.show { display: flex; justify-content: space-between; align-items: center; }
+.file-info .remove {
+    color: #ff4444;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+}
+.record-btn {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 12px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #222;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.record-btn:hover { background: #333; }
+.record-btn.recording {
+    background: #cc2222;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(204, 34, 34, 0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(204, 34, 34, 0); }
+}
+.record-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.send-btn {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 12px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #fff;
+    color: #000;
+    margin-top: 1rem;
+}
+.send-btn:hover { background: #ddd; }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.result {
+    display: none;
+    margin-top: 1rem;
+}
+.result.show { display: block; }
+.result-box {
+    background: #0d0d0d;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 1.25rem;
+    min-height: 80px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.result-box.error { border-color: #442222; color: #ff6666; }
+.result-box.success { border-color: #224422; color: #6f6; }
+.timer {
+    font-size: 1.4rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    margin: 0.5rem 0;
+    color: #888;
+}
+.timer.active { color: #ff4444; }
+.spinner {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin: 0 auto;
+}
+.spinner.show { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.badge {
+    display: inline-block;
+    background: #222;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 0.5rem;
+}
+.warning {
+    background: #221100;
+    border: 1px solid #553300;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: #ffaa44;
+    font-size: 0.9rem;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🎙️ اختبار الصوت</h1>
+    <p class="sub">جرّب التعرف على الصوت عبر Groq Whisper</p>
+
+    <div id="fileWarning" class="warning" style="display:none">
+        ⚠️ يجب فتح هذه الصفحة عن طريق السيرفر:<br>
+        <strong>http://localhost:5000/test-stt</strong>
+    </div>
+
+    <div class="card">
+        <div class="card-title">تسجيل مباشر</div>
+        <button class="record-btn" id="recordBtn">
+            <span id="recordIcon">⏺</span>
+            <span id="recordText">ابدأ التسجيل</span>
+        </button>
+        <div class="timer" id="timer">00:00</div>
+        <div id="micStatus" style="text-align:center;font-size:0.8rem;color:#666;margin-top:0.5rem;"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">أو رفع ملف</div>
+        <div id="uploadArea" class="upload-area">
+            <span style="font-size:2.5rem;color:#555;display:block;margin-bottom:0.75rem;">📂</span>
+            <p>اضغط لاختيار ملف صوتي</p>
+            <small>OGG, MP3, WAV, M4A — حد أقصى 25MB</small>
+            <input type="file" id="fileInput" accept="audio/*" style="display:none">
+        </div>
+        <div class="file-info" id="fileInfo">
+            <span id="fileName"></span>
+            <span class="remove" id="removeFileBtn">✕</span>
+        </div>
+    </div>
+
+    <button class="send-btn" id="sendBtn" disabled>
+        <span id="sendText">إرسال للتعرف على الصوت</span>
+        <span class="spinner" id="sendSpinner"></span>
+    </button>
+
+    <div class="result" id="result">
+        <div class="card-title">نتيجة التعرف</div>
+        <div class="result-box" id="resultText"></div>
+        <div class="badge" id="resultBadge"></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    if (window.location.protocol === 'file:') {
+        document.getElementById('fileWarning').style.display = 'block';
+    }
+
+    const API_URL = '/api/test/transcribe';
+
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioBlob = null;
+    let recordedBlob = null;
+    let isRecording = false;
+    let timerInterval = null;
+    let seconds = 0;
+
+    const recordBtn = document.getElementById('recordBtn');
+    const recordIcon = document.getElementById('recordIcon');
+    const recordText = document.getElementById('recordText');
+    const timer = document.getElementById('timer');
+    const micStatus = document.getElementById('micStatus');
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const sendText = document.getElementById('sendText');
+    const sendSpinner = document.getElementById('sendSpinner');
+    const result = document.getElementById('result');
+    const resultText = document.getElementById('resultText');
+    const resultBadge = document.getElementById('resultBadge');
+
+    // ── Record ──
+    recordBtn.addEventListener('click', async () => {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            await startRecording();
+        }
+    });
+
+    async function startRecording() {
+        try {
+            micStatus.textContent = '🔄 طلب إذن الميكروفون...';
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            micStatus.textContent = '✅ تم الوصول إلى الميكروفون';
+
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : MediaRecorder.isTypeSupported('audio/webm')
+                ? 'audio/webm'
+                : MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+                ? 'audio/ogg;codecs=opus'
+                : 'audio/mp4';
+
+            mediaRecorder = new MediaRecorder(stream, { mimeType });
+            audioChunks = [];
+            recordedBlob = null;
+
+            mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                recordedBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                stream.getTracks().forEach(t => t.stop());
+                enableSend();
+                clearFileSelection();
+                recordIcon.textContent = '✅';
+                recordText.textContent = 'تم التسجيل (' + formatTime(seconds) + ')';
+                micStatus.textContent = '✅ تم تسجيل ' + (recordedBlob.size / 1024).toFixed(1) + ' KB';
+            };
+
+            mediaRecorder.start(250);
+            isRecording = true;
+            seconds = 0;
+            startTimer();
+            recordBtn.classList.add('recording');
+            recordIcon.textContent = '⏹';
+            recordText.textContent = 'إيقاف التسجيل';
+            disableSend();
+            micStatus.textContent = '🔴 جاري التسجيل...';
+
+        } catch (e) {
+            micStatus.textContent = '❌ خطأ: ' + e.message;
+        }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        isRecording = false;
+        stopTimer();
+        recordBtn.classList.remove('recording');
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            seconds++;
+            timer.textContent = formatTime(seconds);
+            timer.classList.add('active');
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        timer.classList.remove('active');
+    }
+
+    function formatTime(s) {
+        const m = String(Math.floor(s / 60)).padStart(2, '0');
+        const sec = String(s % 60).padStart(2, '0');
+        return m + ':' + sec;
+    }
+
+    // ── File Upload ──
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) handleFile(file);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+        recordedBlob = null;
+        if (isRecording) stopRecording();
+        audioBlob = file;
+        fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+        fileInfo.classList.add('show');
+        enableSend();
+        recordIcon.textContent = '⏺';
+        recordText.textContent = 'ابدأ التسجيل';
+        micStatus.textContent = '';
+    }
+
+    function clearFileSelection() {
+        audioBlob = null;
+        fileInput.value = '';
+        fileInfo.classList.remove('show');
+    }
+
+    removeFileBtn.addEventListener('click', clearFileSelection);
+
+    // ── Send ──
+    function enableSend() { sendBtn.disabled = false; }
+    function disableSend() { sendBtn.disabled = true; }
+
+    sendBtn.addEventListener('click', sendAudio);
+
+    async function sendAudio() {
+        const blob = recordedBlob || audioBlob;
+        if (!blob) return;
+
+        sendBtn.disabled = true;
+        sendText.textContent = 'جارٍ المعالجة...';
+        sendSpinner.classList.add('show');
+        result.classList.remove('show');
+
+        try {
+            const contentType = blob.type || 'audio/ogg';
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': contentType },
+                body: blob
+            });
+
+            if (!res.ok) {
+                const errorBody = await res.text();
+                throw new Error('HTTP ' + res.status + ': ' + errorBody.substring(0, 200));
+            }
+
+            const data = await res.json();
+            result.classList.add('show');
+
+            if (data.text && !data.text.startsWith('[رسالة صوتية')) {
+                resultText.className = 'result-box success';
+                resultBadge.textContent = '✅ تم التعرف بنجاح';
+            } else {
+                resultText.className = 'result-box error';
+                resultBadge.textContent = '❌ فشل التعرف';
+            }
+            resultText.textContent = data.text || 'لا يوجد رد';
+        } catch (e) {
+            result.classList.add('show');
+            resultText.className = 'result-box error';
+            resultText.textContent = 'خطأ: ' + e.message;
+            resultBadge.textContent = '❌ فشل الاتصال';
+        } finally {
+            sendBtn.disabled = false;
+            sendText.textContent = 'إرسال للتعرف على الصوت';
+            sendSpinner.classList.remove('show');
+        }
+    }
+})();
+</script>
+</body>
+</html>

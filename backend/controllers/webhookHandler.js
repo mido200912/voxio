@@ -36,13 +36,15 @@ async function downloadWaMedia(mediaId, accessToken) {
 async function downloadWaAudioBuffer(mediaId, accessToken) {
   try {
     console.log(`[Audio] Downloading media info for ID: ${mediaId}...`);
-    const res = await axios.get(`https://graph.facebook.com/v20.0/${mediaId}`, {
+    const res = await axios.get(`https://graph.facebook.com/v21.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     const mediaUrl = res.data.url;
-    const mimeType = res.data.mime_type || 'audio/ogg';
+    const rawMime = res.data.mime_type || 'audio/ogg';
+    // Strip any codecs parameters from mime type (e.g., "audio/ogg; codecs=opus" → "audio/ogg")
+    const mimeType = rawMime.split(';')[0].trim();
     const fileSize = res.data.file_size || 'unknown';
-    console.log(`[Audio] URL obtained. MIME: ${mimeType}, Size: ${fileSize}`);
+    console.log(`[Audio] URL obtained. Raw MIME: "${rawMime}" → Cleaned: "${mimeType}", Size: ${fileSize}`);
 
     const mediaRes = await axios.get(mediaUrl, {
       responseType: 'arraybuffer',
@@ -52,12 +54,16 @@ async function downloadWaAudioBuffer(mediaId, accessToken) {
     console.log(`[Audio] Downloaded ${(buffer.length / 1024).toFixed(1)} KB successfully.`);
     return { buffer, mimeType };
   } catch (e) {
-    console.error('[Audio] Download failed:', e.response?.data?.error?.message || e.message);
+    const errMsg = e.response?.data?.error?.message || e.message;
+    console.error('[Audio] Download failed:', errMsg);
     if (e.response?.status === 400) {
       console.error('[Audio] Bad request — media ID may be expired or invalid.');
     }
     if (e.response?.status === 401) {
       console.error('[Audio] Unauthorized — access token may be invalid or expired.');
+    }
+    if (e.response?.status === 404) {
+      console.error('[Audio] Not found — media ID invalid or wrong API version.');
     }
     return null;
   }
@@ -396,8 +402,8 @@ export const handleWhatsAppMessage = async (body) => {
                 )
                 .catch((e) => console.warn("Read Status Err:", e.message));
 
-              // 🎙️ Handle transcription failures directly — don't send error text to AI
-              if (messageText.startsWith("[رسالة صوتية")) {
+              // 🎙️ Handle transcription/download failures directly — don't send error text to AI
+              if (messageText.includes("[رسالة صوتية") || messageText.includes("[فشل تحميل الرسالة الصوتية")) {
                   reply = messageText;
               } else if (company.aiCredits !== undefined && company.aiCredits <= 0) {
                   reply = "نعتذر، خدمة الرد الآلي متوقفة حالياً.";

@@ -200,13 +200,27 @@ export async function transcribeAudio(buffer, fileName = "audio.ogg", mimeType =
         : "https://api.openai.com/v1/audio/transcriptions";
     const apiKey = groqKey || openaiKey;
 
+    // Strip codecs params from mime type (e.g., "audio/ogg; codecs=opus" → "audio/ogg")
+    const cleanMime = mimeType.split(';')[0].trim();
+    // Use proper file extension based on mime type
+    const extMap = {
+        'audio/ogg': 'ogg', 'audio/oga': 'oga',
+        'audio/mpeg': 'mp3', 'audio/mp3': 'mp3',
+        'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a',
+        'audio/wav': 'wav', 'audio/x-wav': 'wav',
+        'audio/webm': 'webm', 'audio/flac': 'flac',
+        'audio/amr': 'amr', 'audio/3gpp': '3gp'
+    };
+    const ext = extMap[cleanMime] || fileName.split('.').pop() || 'ogg';
+    const safeFileName = 'audio.' + ext;
+
     console.log(`🎙️ [STT] Sending to ${groqKey ? 'Groq' : 'OpenAI'} Whisper...`);
-    console.log(`🎙️ [STT] File size: ${(buffer.length / 1024).toFixed(1)} KB, Type: ${mimeType}`);
+    console.log(`🎙️ [STT] File size: ${(buffer.length / 1024).toFixed(1)} KB, MIME: "${mimeType}" → clean: "${cleanMime}", file: "${safeFileName}"`);
 
     try {
         const formData = new FormData();
-        const blob = new Blob([buffer], { type: mimeType });
-        formData.append("file", blob, fileName);
+        const blob = new Blob([buffer], { type: cleanMime });
+        formData.append("file", blob, safeFileName);
         formData.append("model", "whisper-large-v3");
         formData.append("language", "ar");
         formData.append("temperature", "0");
