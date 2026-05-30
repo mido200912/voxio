@@ -94,15 +94,7 @@ const Integrations = () => {
             descKey: 'messengerDesc',
             available: false
         },
-        {
-            id: 'tiktok',
-            name: 'TikTok',
-            icon: 'tiktok',
-            color: '#000000',
-            descKey: 'tiktokDesc',
-            available: false
-        }
-    ]);
+        ]);
 
     const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const token = secureStorage.getItem('token');
@@ -187,13 +179,6 @@ const Integrations = () => {
             }
             else if (integration.id === 'whatsapp') {
                 setShowWhatsappModal(true);
-            }
-            else if (integration.id === 'tiktok') {
-                const companyRes = await axios.get(`${BACKEND_URL}/company`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const companyId = companyRes.data._id;
-                window.location.href = `${BACKEND_URL}/integrations/tiktok/login?companyId=${companyId}`;
             }
             else if (integration.id === 'shopify') {
                 const shopUrl = prompt(t.dashboard.integrationsPage.shopifyPrompt);

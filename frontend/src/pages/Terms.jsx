@@ -13,7 +13,7 @@ const Terms = () => {
             <p>These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and VOXIO ("we", "us", or "our"), concerning your access to and use of the VOXIO website and application as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site"). You agree that by accessing the Site, you have read, understood, and agree to be bound by all of these Terms of Service.</p>
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>2. Use of the Services</h2>
-            <p>Our platform allows you to create AI-powered chatbots and integrate them with various communication platforms, including but not limited to TikTok, Meta platforms, and e-commerce services like Shopify. By using these integrations, you agree to comply strictly with the Terms of Service and Developer Policies of those respective platforms.</p>
+            <p>Our platform allows you to create AI-powered chatbots and integrate them with various communication platforms, including but not limited to Meta platforms (Facebook, Instagram, WhatsApp), and e-commerce services like Shopify. By using these integrations, you agree to comply strictly with the Terms of Service and Developer Policies of those respective platforms.</p>
             <ul style={{ marginLeft: '20px', paddingLeft: '10px', listStyleType: 'disc' }}>
                 <li>You agree not to use our services for spam, harassment, or distributing malware.</li>
                 <li>You are entirely responsible for the data and files you upload to train the AI on your account.</li>
@@ -21,7 +21,7 @@ const Terms = () => {
             </ul>
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>3. User Data and Privacy</h2>
-            <p>We care about data privacy and security. By using the Site, you agree to be bound by our Privacy Policy incorporated into these Terms of Service. Processing of any personal data through third-party integrations (such as TikTok interactions) is done strictly according to our Privacy Policy and the policies of those third-party providers. If you delete your account, you will lose access to all your data immediately.</p>
+            <p>We care about data privacy and security. By using the Site, you agree to be bound by our Privacy Policy incorporated into these Terms of Service. Processing of any personal data through third-party integrations is done strictly according to our Privacy Policy and the policies of those third-party providers. If you delete your account, you will lose access to all your data immediately.</p>
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>4. Intellectual Property Rights</h2>
             <p>Unless otherwise indicated, the Site is our proprietary property and all source code, databases, functionality, software, website designs, audio, video, text, photographs, and graphics on the Site and the trademarks, service marks, and logos contained therein are owned or controlled by us or licensed to us, and are protected by copyright and trademark laws.</p>

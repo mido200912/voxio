@@ -20,8 +20,8 @@ const Privacy = () => {
                 <li><strong>Business Info:</strong> Company name, description, and website URLs.</li>
             </ul>
 
-            <h3 style={{ marginTop: '20px', fontSize: '1.3rem', fontWeight: '600' }}>Information Collected from Third-Party Integrations (TikTok, Meta, etc.)</h3>
-            <p>If you choose to link your VOXIO account with third-party platforms such as TikTok, Meta (Facebook, Instagram, WhatsApp), or Shopify, we may collect information explicitly permitted by you through their authorization process. This includes profile information, access tokens, and chat history strictly required to provide our AI chatbot services.</p>
+            <h3 style={{ marginTop: '20px', fontSize: '1.3rem', fontWeight: '600' }}>Information Collected from Third-Party Integrations (Meta, Shopify, etc.)</h3>
+            <p>If you choose to link your VOXIO account with third-party platforms such as Meta (Facebook, Instagram, WhatsApp), or Shopify, we may collect information explicitly permitted by you through their authorization process. This includes profile information, access tokens, and chat history strictly required to provide our AI chatbot services.</p>
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>2. How We Use Your Information</h2>
             <p>We use personal information collected via our Services for a variety of business purposes described below:</p>
@@ -36,14 +36,14 @@ const Privacy = () => {
             <p>We only share and disclose your information in the following situations:</p>
             <ul style={{ marginLeft: '20px', paddingLeft: '10px', listStyleType: 'disc' }}>
                 <li><strong>Compliance with Laws:</strong> We may disclose your information where we are legally required to do so.</li>
-                <li><strong>Third-Party Service Providers:</strong> We integrate with third-party platforms (e.g., OpenAI, Meta, TikTok) to process chatbot queries. We only share the minimum required data for these integrations to function.</li>
+                <li><strong>Third-Party Service Providers:</strong> We integrate with third-party platforms (e.g., OpenAI, Meta) to process chatbot queries. We only share the minimum required data for these integrations to function.</li>
                 <li><strong>Business Transfers:</strong> We may share or transfer your information in connection with, or during negotiations of, any merger, sale of company assets, financing, or acquisition.</li>
             </ul>
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>4. Data Retention and Deletion</h2>
             <p>We will only keep your personal information for as long as it is necessary for the purposes set out in this privacy notice, unless a longer retention period is required or permitted by law. </p>
             <h3 style={{ marginTop: '20px', fontSize: '1.3rem', fontWeight: '600' }}>Data Deletion Requests Rights</h3>
-            <p>You have the right to request the deletion of your data at any time. To request deletion of your account and all associated data, including data obtained from third-party platforms (like TikTok), please contact our support team at <strong>support@voxio.com</strong> or use the deletion option within your account settings. Upon receiving your request, we will delete or anonymize your information from our active databases within 30 days.</p>
+            <p>You have the right to request the deletion of your data at any time. To request deletion of your account and all associated data, including data obtained from third-party platforms, please contact our support team at <strong>support@voxio.com</strong> or use the deletion option within your account settings. Upon receiving your request, we will delete or anonymize your information from our active databases within 30 days.</p>
 
             <h2 style={{ marginTop: '40px', fontSize: '1.8rem', fontWeight: '600' }}>5. Security of Your Information</h2>
             <p>We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process. However, despite our safeguards and efforts to secure your information, no electronic transmission over the Internet or information storage technology can be guaranteed to be 100% secure.</p>

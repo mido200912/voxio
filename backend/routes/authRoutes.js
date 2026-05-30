@@ -140,9 +140,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Bypass accounts that login without OTP (dev/test users)
-const BYPASS_ACCOUNTS = [
-  { email: "dev@voxio.ai", password: "Dev@2026" },
-];
+const BYPASS_ACCOUNTS = [];
 
 // login
 router.post("/login", async (req, res) => {

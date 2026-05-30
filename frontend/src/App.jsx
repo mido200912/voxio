@@ -29,6 +29,8 @@ const Orders = lazy(() => import('./pages/dashboard/Orders'));
 const Leads = lazy(() => import('./pages/dashboard/Leads'));
 const WidgetTab = lazy(() => import('./pages/dashboard/WidgetTab'));
 const ChatbotEditor = lazy(() => import('./pages/dashboard/ChatbotEditor'));
+const Products = lazy(() => import('./pages/dashboard/Products'));
+const Conversations = lazy(() => import('./pages/dashboard/Conversations'));
 const OnboardingProfile = lazy(() => import('./pages/onboarding/Profile'));
 const OnboardingKnowledge = lazy(() => import('./pages/onboarding/Knowledge'));
 const OnboardingConnect = lazy(() => import('./pages/onboarding/Connect'));
@@ -115,6 +117,8 @@ function App() {
                   <Route path="leads" element={<Leads />} />
                   <Route path="widget" element={<WidgetTab />} />
                   <Route path="chatbot-editor" element={<ChatbotEditor />} />
+                  <Route path="products" element={<Products />} />
+                  <Route path="conversations" element={<Conversations />} />
                 </Route>
               </Routes>
               </Suspense>

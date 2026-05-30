@@ -7,9 +7,7 @@ import {
     metaWebhook,
     shopifyWebhook,
     getWidgetScript,
-    metaDataDeletion,
-    tiktokLogin,
-    tiktokCallback
+    metaDataDeletion
 } from '../controllers/integrationController.js';
 import { handleTelegramWebhook } from '../controllers/webhookHandler.js';
 
@@ -31,12 +29,6 @@ router.get('/meta/data-deletion', metaDataDeletion);
 router.get('/shopify/login', shopifyLogin);
 // @route GET /api/integrations/shopify/callback
 router.get('/shopify/callback', shopifyCallback);
-
-// 📱 TikTok Auth
-// @route GET /api/integrations/tiktok/login
-router.get('/tiktok/login', tiktokLogin);
-// @route GET /api/integrations/tiktok/callback
-router.get('/tiktok/callback', tiktokCallback);
 
 // 🔔 Webhooks (التحقق من التوقيع والأمان يتم في الـ Controller)
 // @route POST /api/integrations/webhooks/meta (استلام البيانات)

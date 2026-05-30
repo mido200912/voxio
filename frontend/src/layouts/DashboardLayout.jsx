@@ -168,6 +168,18 @@ const DashboardLayout = () => {
                             </Link>
                         </li>
                         <li>
+                            <Link to="/dashboard/products" className={`nav-item ${isActive('/dashboard/products')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-box"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'المنتجات' : 'Products'}</span>}
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/dashboard/conversations" className={`nav-item ${isActive('/dashboard/conversations')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-comments"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'المحادثات والردود' : 'Conversations'}</span>}
+                            </Link>
+                        </li>
+                        <li>
                             <Link to="/dashboard/ai-training" className={`nav-item ${isActive('/dashboard/ai-training')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-brain"></i>
                                 {isSidebarOpen && <span>{t.dashboard.training}</span>}

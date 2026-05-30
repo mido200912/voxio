@@ -1,6 +1,7 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import Integration from '../models/Integration.js';
+import ShopifyService from '../services/shopifyService.js';
 import { handleWhatsAppMessage, handleInstagramWebhook } from './webhookHandler.js';
 
 // Helper to get base URL
@@ -338,9 +339,53 @@ const shopifyCallback = async (req, res) => {
       await shopifyIntegration.save();
     }
 
-    // 💡 يجب هنا تسجيل Webhooks اللازمة (orders/create, products/update, إلخ)
+    // Register webhooks for order and product events
+    try {
+      const shopify = new ShopifyService(shop, access_token);
+      const baseUrl = process.env.BASE_URL || 'https://dba7260ec6cd.ngrok-free.app';
+      await shopify.registerWebhook('orders/create', `${baseUrl}/api/integrations/webhooks/shopify`);
+      await shopify.registerWebhook('orders/updated', `${baseUrl}/api/integrations/webhooks/shopify`);
+      await shopify.registerWebhook('products/create', `${baseUrl}/api/integrations/webhooks/shopify`);
+      await shopify.registerWebhook('products/update', `${baseUrl}/api/integrations/webhooks/shopify`);
+      console.log(`[Shopify] Webhooks registered for ${shop}`);
+    } catch (webhookErr) {
+      console.error('[Shopify] Failed to register webhooks:', webhookErr.message);
+    }
 
-    res.redirect('http://localhost:3000/dashboard?status=success&platform=shopify');
+    // Sync initial products
+    try {
+      const shopify = new ShopifyService(shop, access_token);
+      const { products } = await shopify.getProducts();
+      const Product = (await import('../models/Product.js')).default;
+      for (const sp of products) {
+        const sku = sp.variants?.[0]?.sku || `shopify_${sp.id}`;
+        const existing = await Product.findOne({ company: companyId, sku });
+        const productData = {
+          company: companyId,
+          name: sp.title,
+          description: sp.body_html?.replace(/<[^>]*>/g, '') || '',
+          price: parseFloat(sp.variants?.[0]?.price || 0),
+          currency: 'USD',
+          images: sp.images?.map(i => i.src) || [],
+          category: sp.product_type || '',
+          sku,
+          inventory: sp.variants?.[0]?.inventory_quantity || 0,
+          platforms: ['shopify'],
+          metadata: { shopifyId: sp.id }
+        };
+        if (existing) {
+          Object.assign(existing, productData);
+          await existing.save();
+        } else {
+          await Product.create(productData);
+        }
+      }
+      console.log(`[Shopify] Synced ${products.length} products for ${shop}`);
+    } catch (syncErr) {
+      console.error('[Shopify] Failed to sync products:', syncErr.message);
+    }
+
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?status=success&platform=shopify`);
 
   } catch (err) {
     console.error('Shopify Auth Error:', err.response?.data || err.message);
@@ -351,7 +396,6 @@ const shopifyCallback = async (req, res) => {
 // @desc    Handle Shopify Webhooks
 const shopifyWebhook = async (req, res) => {
   try {
-    // الحل الأمني: التحقق من HMAC لضمان أمان الـ Webhook
     if (!verifyShopifyWebhook(req)) {
       console.warn('Shopify Webhook verification failed (HMAC mismatch).');
       return res.sendStatus(403);
@@ -359,92 +403,27 @@ const shopifyWebhook = async (req, res) => {
 
     const shopUrl = req.headers['x-shopify-shop-domain'];
     const topic = req.headers['x-shopify-topic'];
-    const body = JSON.parse(req.body.toString('utf8')); // التحويل من Raw Buffer إلى JSON
+    const body = JSON.parse(req.body.toString('utf8'));
 
-    // يجب استخدام shopUrl لاسترجاع Integration ومعرفة إلى أي شركة ينتمي.
+    console.log(`[Shopify Webhook] Received [${topic}] from ${shopUrl}`);
 
-    console.log(`Received Shopify webhook [${topic}] from ${shopUrl}:`, body);
+    switch (topic) {
+      case 'orders/create':
+      case 'orders/updated':
+        await ShopifyService.processOrderWebhook(shopUrl, body);
+        break;
+      case 'products/create':
+      case 'products/update':
+        await ShopifyService.processProductWebhook(shopUrl, body);
+        break;
+      default:
+        console.log(`[Shopify Webhook] Unhandled topic: ${topic}`);
+    }
 
     res.sendStatus(200);
   } catch (error) {
     console.error('Shopify Webhook Error:', error);
-    res.sendStatus(500);
-  }
-};
-
-// ----------------------------------------------------------------------
-// 🎵 TikTok Integrations
-// ----------------------------------------------------------------------
-
-// @desc    Initiate TikTok OAuth
-const tiktokLogin = (req, res) => {
-  const { companyId } = req.query;
-  if (!companyId) return res.status(400).send('Company ID required');
-
-  const clientKey = process.env.TIKTOK_CLIENT_KEY;
-  if (!clientKey) return res.status(400).send('TikTok Client Key is missing in environment variables. Please add TIKTOK_CLIENT_KEY.');
-
-  const redirectUri = `${BASE_URL}/api/integrations/tiktok/callback`;
-
-  // CSRF state token
-  const nonce = generateNonce(companyId);
-  const state = Object.keys(NONCES_STORE).find(key => NONCES_STORE[key] === nonce) ? `${companyId}:${nonce}` : `${companyId}:${nonce}`;
-
-  const scope = 'user.info.basic'; // You can add more scopes like message.send
-
-  const authUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${clientKey}&scope=${scope}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
-
-  res.redirect(authUrl);
-};
-
-// @desc    Handle TikTok OAuth Callback
-const tiktokCallback = async (req, res) => {
-  const { code, state, error } = req.query;
-
-  if (error) return res.status(400).send(`TikTok Auth Error: ${error}`);
-
-  const [companyId, nonce] = state ? state.split(':') : [null, null];
-
-  if (!code || !companyId || !nonce) return res.status(400).send('Missing required parameters.');
-
-  if (!verifyNonce(companyId, nonce)) return res.status(403).send('Invalid state nonce. CSRF suspected.');
-
-  try {
-    const tokenUrl = 'https://open.tiktokapis.com/v2/oauth/token/';
-
-    const params = new URLSearchParams();
-    params.append('client_key', process.env.TIKTOK_CLIENT_KEY);
-    params.append('client_secret', process.env.TIKTOK_CLIENT_SECRET);
-    params.append('code', code);
-    params.append('grant_type', 'authorization_code');
-    params.append('redirect_uri', `${BASE_URL}/api/integrations/tiktok/callback`);
-
-    // Exchange code for token
-    const { data } = await axios.post(tokenUrl, params.toString(), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
-
-    const { access_token, refresh_token, open_id } = data;
-
-    // Save Integration
-    let tiktokIntegration = await Integration.findOne({ company: companyId, platform: 'tiktok' });
-    if (!tiktokIntegration) {
-      await Integration.create({
-        company: companyId, platform: 'tiktok',
-        credentials: { accessToken: access_token, refreshToken: refresh_token, openId: open_id },
-        isActive: true
-      });
-    } else {
-      tiktokIntegration.credentials = { accessToken: access_token, refreshToken: refresh_token, openId: open_id };
-      tiktokIntegration.isActive = true;
-      await tiktokIntegration.save();
-    }
-
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?status=success&platform=tiktok`);
-
-  } catch (err) {
-    console.error('TikTok Auth Error:', err.response?.data || err.message);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?status=error&platform=tiktok`);
+    res.sendStatus(200);
   }
 };
 
@@ -640,7 +619,5 @@ export {
   metaWebhook,
   shopifyWebhook,
   getWidgetScript,
-  metaDataDeletion,
-  tiktokLogin,
-  tiktokCallback
+  metaDataDeletion
 };

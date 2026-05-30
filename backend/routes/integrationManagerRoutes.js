@@ -721,33 +721,67 @@ router.post('/verify-reveal-otp', requireAuth, async (req, res) => {
 });
 
 // @route   POST /api/integration-manager/shopify/sync
-// @desc    Sync products from Shopify (Mock MVP)
+// @desc    Sync products from Shopify (Real API)
 // @access  Private
 router.post('/shopify/sync', requireAuth, async (req, res) => {
     try {
-        const { shopifyDomain, accessToken } = req.body;
         const company = await Company.findOne({ owner: req.user._id });
         if (!company) return res.status(404).json({ error: 'Company not found' });
 
-        if (!shopifyDomain || !accessToken) {
-            return res.status(400).json({ error: 'Shopify Domain and Access Token are required' });
+        const integration = await Integration.findOne({ company: company._id, platform: 'shopify' });
+        if (!integration) return res.status(404).json({ error: 'No Shopify integration found. Connect Shopify first.' });
+
+        const { shopUrl, accessToken } = integration.credentials || {};
+        if (!shopUrl || !accessToken) {
+            return res.status(400).json({ error: 'Shopify credentials missing. Reconnect Shopify.' });
         }
 
-        // MVP MOCK SYNC LOGIC
-        // In a real app, we'd fetch from: `https://${shopifyDomain}/admin/api/2024-01/products.json`
-        const mockProducts = "1. حذاء رياضي (50$)\n2. تيشيرت قطني (20$)\n3. حقيبة ظهر (35$)";
+        const ShopifyService = (await import('../services/shopifyService.js')).default;
+        const shopify = new ShopifyService(shopUrl, accessToken);
+        const { products } = await shopify.getProducts();
         
-        let integration = await Integration.findOne({ company: company._id, platform: 'whatsapp' });
-        if (integration) {
-            if (!integration.settings) integration.settings = {};
-            integration.settings.products = mockProducts;
-            await integration.save();
+        const Product = (await import('../models/Product.js')).default;
+        let syncedCount = 0;
+
+        for (const sp of products) {
+            const sku = sp.variants?.[0]?.sku || `shopify_${sp.id}`;
+            const existing = await Product.findOne({ company: company._id, sku });
+            const productData = {
+                company: company._id,
+                name: sp.title,
+                description: sp.body_html?.replace(/<[^>]*>/g, '') || '',
+                price: parseFloat(sp.variants?.[0]?.price || 0),
+                currency: 'USD',
+                images: sp.images?.map(i => i.src) || [],
+                category: sp.product_type || '',
+                sku,
+                inventory: sp.variants?.[0]?.inventory_quantity || 0,
+                platforms: ['shopify'],
+                metadata: { shopifyId: sp.id }
+            };
+
+            if (existing) {
+                Object.assign(existing, productData);
+                await existing.save();
+            } else {
+                await Product.create(productData);
+            }
+            syncedCount++;
         }
 
-        res.json({ message: 'Shopify products synced successfully', products: mockProducts });
+        // Also update the WhatsApp integration with a text summary of products
+        let waIntegration = await Integration.findOne({ company: company._id, platform: 'whatsapp' });
+        if (waIntegration) {
+            const productSummary = products.map(p => `- ${p.title} (${p.variants?.[0]?.price || 0}$)`).join('\n');
+            if (!waIntegration.settings) waIntegration.settings = {};
+            waIntegration.settings.products = productSummary;
+            await waIntegration.save();
+        }
+
+        res.json({ message: `Synced ${syncedCount} products from Shopify`, count: syncedCount });
     } catch (error) {
         console.error('Shopify sync error:', error);
-        res.status(500).json({ error: 'Server error during Shopify sync' });
+        res.status(500).json({ error: 'Server error during Shopify sync: ' + (error.response?.data || error.message) });
     }
 });
 

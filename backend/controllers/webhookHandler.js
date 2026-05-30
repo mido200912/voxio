@@ -9,6 +9,7 @@ import {
   formatHistoryForPrompt,
 } from "../utils/chatHistoryHelper.js";
 import { getCompanyAIContext } from "../utils/promptHelper.js";
+import NotificationService from "../services/notificationService.js";
 
 // تتبع الرسائل المعالجة لمنع التكرار
 const processedMessages = new Set();
@@ -303,21 +304,39 @@ export const handleWhatsAppMessage = async (body) => {
                   }
               }
 
-              // 🛑 Check if user is in Human Handoff mode
-              if (company.humanHandoffEnabled && company.humanHandoffUsers && company.humanHandoffUsers.includes(from)) {
-                  console.log(`[WhatsApp Webhook] User ${from} is in human handoff mode. Skipping AI.`);
-                  
-                  // Save user message to DB so the dashboard sees it
+              // 🛑 Check if user is in Human Handoff mode or AI is disabled for this conversation
+              const skipAi = async () => {
                   await CompanyChat.create({
                     company: company._id,
                     user: from,
                     text: messageText,
                     sender: "user",
                     platform: "whatsapp",
+                    aiEnabled: false,
+                    handoffRequested: true,
                   }).catch((e) => console.error("DB Save Err:", e.message));
-                  
-                  // We just return here, leaving it for the human dashboard agent
                   return;
+              };
+
+              // Check per-conversation aiEnabled flag on the latest chat
+              const latestChat = await CompanyChat.Model.findOne({
+                company: company._id,
+                user: from,
+                platform: "whatsapp",
+              }).sort({ createdAt: -1 }).lean();
+
+              if (latestChat && latestChat.aiEnabled === false) {
+                  console.log(`[WhatsApp Webhook] AI disabled for user ${from}. Skipping AI.`);
+                  return skipAi();
+              }
+
+              // Legacy global humanHandoffUsers check
+              if (company.humanHandoffEnabled && company.humanHandoffUsers) {
+                  const matchesHandoff = company.humanHandoffUsers.some(u => u === from || u === `whatsapp:${from}`);
+                  if (matchesHandoff) {
+                      console.log(`[WhatsApp Webhook] User ${from} is in human handoff mode. Skipping AI.`);
+                      return skipAi();
+                  }
               }
 
               // 🌍 Get Global AI Settings from Company
@@ -386,6 +405,9 @@ export const handleWhatsAppMessage = async (body) => {
                 platform: "whatsapp",
               }).catch((e) => console.error("DB Save Err:", e.message));
 
+              // Send notification about new incoming message
+              NotificationService.notifyNewMessage(company._id, from, "whatsapp", messageText).catch(() => {});
+
               console.log(
                 `[WhatsApp Webhook] Fetching AI response using Model: ${aiModel}...`,
               );
@@ -435,14 +457,23 @@ export const handleWhatsAppMessage = async (body) => {
                   const [fullMatch, customerName, phone, productName] = orderMatch;
                   
                   // Save to Database
-                  company.requests.push({
+                  const orderEntry = {
                       customerName: `${customerName.trim()} (${phone.trim()})`,
                       product: productName.trim(),
                       message: `📦 طلب جديد من واتساب!\nالمنتج: ${productName.trim()}\nالعميل: ${customerName.trim()}\nرقم الموبايل: ${phone.trim()}`,
                       source: 'whatsapp',
                       date: new Date()
-                  });
+                  };
+                  company.requests.push(orderEntry);
                   await company.save().catch(e => console.error("Failed to save order to DB:", e));
+
+                  // Notify about new order
+                  NotificationService.notifyNewOrder(company._id, {
+                      customerName: customerName.trim(),
+                      items: [{ name: productName.trim() }],
+                      totalPrice: 0,
+                      orderId: `wa_${Date.now()}`
+                  }).catch(() => {});
                   
                   // Remove the tag from the reply sent to the user
                   reply = reply.replace(fullMatch, "").trim();
@@ -492,14 +523,22 @@ export const handleWhatsAppMessage = async (body) => {
                   reply = reply.replace(fullMatch, "").trim();
               }
 
-              // 🧑‍💼 PARSE HUMAN HANDOFF TAG
+                  // 🧑‍💼 PARSE HUMAN HANDOFF TAG
               if (reply.includes("[HUMAN_HANDOFF]")) {
                   if (!company.humanHandoffUsers) company.humanHandoffUsers = [];
-                  if (!company.humanHandoffUsers.includes(from)) {
+                  const handoffKey = `whatsapp:${from}`;
+                  if (!company.humanHandoffUsers.includes(from) && !company.humanHandoffUsers.includes(handoffKey)) {
                       company.humanHandoffUsers.push(from);
                       await company.save().catch(e => console.error("Failed to save handoff status:", e));
                   }
                   reply = "تم تحويل محادثتك لموظف خدمة العملاء، وسيقوم بالرد عليك في أقرب وقت ممكن.";
+                  // Mark the AI chat as aiEnabled=false so subsequent messages also skip AI
+                  await CompanyChat.Model.updateMany(
+                      { company: company._id, user: from, platform: "whatsapp" },
+                      { $set: { aiEnabled: false, handoffRequested: true } }
+                  ).catch(e => console.error("Failed to set aiEnabled=false:", e));
+                  // Notify owner about handoff
+                  NotificationService.notifyHumanHandoff(company._id, from, "whatsapp").catch(() => {});
               }
 
               // ✂️ WhatsApp Max Length is 4096. We trim at 4000 to be safe.
@@ -536,6 +575,9 @@ export const handleWhatsAppMessage = async (body) => {
                 sender: "ai",
                 platform: "whatsapp",
               });
+
+              // Notify that AI replied
+              NotificationService.notifyAiReply(company._id, from, "whatsapp").catch(() => {});
             } catch (msgError) {
               console.error(
                 `❌ WhatsApp Message Error:`,
@@ -1201,7 +1243,11 @@ export const handleTelegramWebhook = async (req, res) => {
     const companyDoc = await Company.findById(companyId);
     const context = await getCompanyAIContext(companyDoc, integration);
 
-    await saveChatMsg(companyId, userId, text, "user");
+      await saveChatMsg(companyId, userId, text, "user");
+
+    // Send notification for new incoming Telegram message
+    NotificationService.notifyNewMessage(companyId, user || userId, "telegram", text).catch(() => {});
+
     const history = await getChatHistory(companyId, userId, "telegram", 5);
     const historyContext = formatHistoryForPrompt(history);
     const reply = await fetchAiResponse(
@@ -1211,6 +1257,9 @@ export const handleTelegramWebhook = async (req, res) => {
     );
     await tgSend(botToken, chatId, reply);
     await saveChatMsg(companyId, userId, reply, "ai");
+
+    // Notify that AI replied
+    NotificationService.notifyAiReply(companyId, user || userId, "telegram").catch(() => {});
 
     res.sendStatus(200);
   } catch (error) {

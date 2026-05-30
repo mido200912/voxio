@@ -1,4 +1,15 @@
 import { FirestoreModel } from "../config/firestoreModel.js";
 
-const User = new FirestoreModel("users");
+class UserModel extends FirestoreModel {
+  async create(data) {
+    const defaultData = {
+      isVerified: false,
+      fcmToken: null,
+      ...data
+    };
+    return super.create(defaultData);
+  }
+}
+
+const User = new UserModel("users");
 export default User;

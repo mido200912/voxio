@@ -25,6 +25,11 @@ import chatbotEditorRoutes from "./routes/chatbotEditorRoutes.js";
 import widgetEditorRoutes from "./routes/widgetEditorRoutes.js";
 import supportRoutes from "./routes/supportRoutes.js";
 import broadcastRoutes from "./routes/broadcastRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
+import handoffRoutes from "./routes/handoffRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import navigationRoutes from "./routes/navigationRoutes.js";
 
 const app = express();
 
@@ -149,6 +154,11 @@ if (serviceType === 'core' || serviceType === 'all') {
     app.use("/api/ai", uploadRoutes); // Uploads are usually dashboard side
     app.use("/api/support-chat", chatHistoryRoutes);
     app.use("/api/broadcast", broadcastRoutes);
+    app.use("/api/products", productRoutes);
+    app.use("/api/analytics", analyticsRoutes);
+    app.use("/api/handoff", handoffRoutes);
+    app.use("/api/notifications", notificationRoutes);
+    app.use("/api/navigate", navigationRoutes);
 }
 
 if (serviceType === 'webhook' || serviceType === 'all') {

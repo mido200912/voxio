@@ -45,9 +45,18 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
     // 🚀 1. Try OpenRouter FIRST
     if (openRouterApiKey) {
         let modelsToTry = [targetModelSelection];
-        if (!modelsToTry.includes("openrouter/free")) {
-            // Add a chain of reliable free models
-            modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");
+
+        // When an image is provided, use only vision-capable models
+        if (base64Image) {
+            modelsToTry = [
+                "openai/gpt-4o-mini:free",
+                "google/gemini-2.0-flash:free",
+                "openai/gpt-4o:free",
+            ];
+        } else {
+            if (!modelsToTry.includes("openrouter/free")) {
+                modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");
+            }
         }
 
         for (let targetModel of modelsToTry) {
