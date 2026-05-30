@@ -201,7 +201,8 @@ export async function transcribeAudio(buffer, fileName = "audio.ogg", mimeType =
         formData.append("file", Buffer.from(buffer), fileName);
         formData.append("model", groqKey ? "whisper-large-v3" : "whisper-1");
         formData.append("language", "ar");
-        formData.append("response_format", "json");
+        formData.append("temperature", "0");
+        formData.append("response_format", "verbose_json");
 
         const apiUrl = groqKey 
             ? "https://api.groq.com/openai/v1/audio/transcriptions"
