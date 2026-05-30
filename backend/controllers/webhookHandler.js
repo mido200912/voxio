@@ -403,6 +403,7 @@ export const handleWhatsAppMessage = async (body) => {
                 .catch((e) => console.warn("Read Status Err:", e.message));
 
               // 🎙️ Handle transcription/download failures directly — don't send error text to AI
+              let reply = "";
               if (messageText.includes("[رسالة صوتية") || messageText.includes("[فشل تحميل الرسالة الصوتية")) {
                   reply = messageText;
               } else if (company.aiCredits !== undefined && company.aiCredits <= 0) {
