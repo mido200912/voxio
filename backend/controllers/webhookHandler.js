@@ -396,8 +396,10 @@ export const handleWhatsAppMessage = async (body) => {
                 )
                 .catch((e) => console.warn("Read Status Err:", e.message));
 
-              // 💳 Check AI Credits
-              if (company.aiCredits !== undefined && company.aiCredits <= 0) {
+              // 🎙️ Handle transcription failures directly — don't send error text to AI
+              if (messageText.startsWith("[رسالة صوتية")) {
+                  reply = messageText;
+              } else if (company.aiCredits !== undefined && company.aiCredits <= 0) {
                   reply = "نعتذر، خدمة الرد الآلي متوقفة حالياً.";
               } else {
                   if (company.aiCredits !== undefined) {
