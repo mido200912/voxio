@@ -43,11 +43,16 @@
 
 .integration-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
 }
 
 .integration-card:hover::after {
     opacity: 1;
+}
+
+.integration-card:hover .integration-logo {
+    transform: scale(1.15) rotate(-5deg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
 .integration-card.coming-soon {
@@ -80,10 +85,7 @@
     color: var(--color-text);
 }
 
-.integration-card:hover .integration-logo {
-    transform: scale(1.12);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
+
 
 .integration-card h3 {
     font-size: 1.1rem;

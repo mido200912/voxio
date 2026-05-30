@@ -35,18 +35,30 @@ async function downloadWaMedia(mediaId, accessToken) {
 // ─── Helper: Download WhatsApp Audio Buffer ───────────────────────────────────
 async function downloadWaAudioBuffer(mediaId, accessToken) {
   try {
+    console.log(`[Audio] Downloading media info for ID: ${mediaId}...`);
     const res = await axios.get(`https://graph.facebook.com/v20.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     const mediaUrl = res.data.url;
+    const mimeType = res.data.mime_type || 'audio/ogg';
+    const fileSize = res.data.file_size || 'unknown';
+    console.log(`[Audio] URL obtained. MIME: ${mimeType}, Size: ${fileSize}`);
+
     const mediaRes = await axios.get(mediaUrl, {
       responseType: 'arraybuffer',
       headers: { Authorization: `Bearer ${accessToken}` }
     });
-    // Return the raw buffer directly to prevent file corruption
-    return Buffer.from(mediaRes.data);
+    const buffer = Buffer.from(mediaRes.data);
+    console.log(`[Audio] Downloaded ${(buffer.length / 1024).toFixed(1)} KB successfully.`);
+    return { buffer, mimeType };
   } catch (e) {
-    console.error('Error downloading WA audio:', e.response?.data || e.message);
+    console.error('[Audio] Download failed:', e.response?.data?.error?.message || e.message);
+    if (e.response?.status === 400) {
+      console.error('[Audio] Bad request — media ID may be expired or invalid.');
+    }
+    if (e.response?.status === 401) {
+      console.error('[Audio] Unauthorized — access token may be invalid or expired.');
+    }
     return null;
   }
 }
@@ -270,9 +282,11 @@ export const handleWhatsAppMessage = async (body) => {
               let base64Image = null;
               if (mediaId) {
                   if (message.type === 'audio') {
-                      const audioBuffer = await downloadWaAudioBuffer(mediaId, accessToken);
-                      if (audioBuffer) {
-                          messageText = await transcribeAudio(audioBuffer);
+                      const audioResult = await downloadWaAudioBuffer(mediaId, accessToken);
+                      if (audioResult) {
+                          console.log(`[Audio] Transcribing with MIME: ${audioResult.mimeType}...`);
+                          messageText = await transcribeAudio(audioResult.buffer, 'audio.ogg', audioResult.mimeType);
+                          console.log(`[Audio] Transcription result: "${messageText.substring(0, 80)}..."`);
                       } else {
                           messageText = "[فشل تحميل الرسالة الصوتية من واتساب]";
                       }

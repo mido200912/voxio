@@ -8,16 +8,17 @@
     right: 0;
     z-index: var(--z-navbar);
     padding: 1.25rem 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    background: transparent;
 }
 
 .navbar.scrolled {
     padding: 0.75rem 0;
-    background: var(--glass-bg);
+    background: rgba(var(--color-bg-rgb), 0.8);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border-bottom: 1px solid var(--glass-border);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 40px rgba(0, 0, 0, 0.06);
 }
 
 .navbar.scrolled::after {

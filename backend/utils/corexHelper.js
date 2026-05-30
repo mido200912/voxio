@@ -1,4 +1,5 @@
 import axios from 'axios';
+import FormData from 'form-data';
 
 /**
  * Helper for CoreSys API
@@ -191,14 +192,16 @@ export async function transcribeAudio(buffer, fileName = "audio.ogg", mimeType =
     const groqKey = process.env.GROQ_API_KEY;
 
     if (!openaiKey && !groqKey) {
-        return "[رسالة صوتية: عذراً، ميزة فك التشفير غير مفعلة لعدم توفر مفتاح OpenAI أو Groq]";
+        console.error("[STT] No API keys configured for transcription (OPENAI_API_KEY or GROQ_API_KEY)");
+        return "[رسالة صوتية: عذراً، ميزة فك التشفير غير مفعلة لعدم توفر مفتاح API]";
     }
 
     try {
         const formData = new FormData();
-        const blob = new Blob([buffer], { type: mimeType });
-        formData.append("file", blob, fileName);
+        formData.append("file", Buffer.from(buffer), fileName);
         formData.append("model", groqKey ? "whisper-large-v3" : "whisper-1");
+        formData.append("language", "ar");
+        formData.append("response_format", "json");
 
         const apiUrl = groqKey 
             ? "https://api.groq.com/openai/v1/audio/transcriptions"
@@ -206,32 +209,41 @@ export async function transcribeAudio(buffer, fileName = "audio.ogg", mimeType =
             
         const apiKey = groqKey || openaiKey;
 
-        console.log(`🎙️ Sending STT Request to ${groqKey ? 'Groq' : 'OpenAI'}...`);
-        
-        const response = await fetch(apiUrl, {
-            method: "POST",
+        console.log(`🎙️ [STT] Sending to ${groqKey ? 'Groq' : 'OpenAI'} Whisper...`);
+        console.log(`🎙️ [STT] File size: ${(buffer.length / 1024).toFixed(1)} KB, Type: ${mimeType}`);
+
+        const response = await axios.post(apiUrl, formData, {
             headers: {
-                "Authorization": `Bearer ${apiKey}`
+                "Authorization": `Bearer ${apiKey}`,
+                ...formData.getHeaders()
             },
-            body: formData,
-            // Native timeout via AbortSignal
-            signal: AbortSignal.timeout(30000)
+            timeout: 30000,
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity
         });
 
-        const result = await response.json();
-        
-        if (response.ok && result.text) {
-            console.log(`✅ STT Transcription successful: ${result.text.substring(0, 30)}...`);
-            return result.text;
+        const result = response.data;
+
+        if (result.text) {
+            const transcribed = result.text.trim();
+            console.log(`✅ [STT] Success (${transcribed.length} chars): "${transcribed.substring(0, 60)}..."`);
+            return transcribed;
         } else {
-            console.error("❌ Audio transcription API error:", result);
-            import('fs').then(fs => fs.writeFileSync('stt_error.log', JSON.stringify({type: 'api_error', result}, null, 2)));
-            return `[خطأ في معالجة الصوت: ${result?.error?.message || 'Unknown API Error'}]`;
+            console.error("❌ [STT] API returned no text:", JSON.stringify(result));
+            return "[رسالة صوتية: لم يتم التعرف على نص واضح]";
         }
     } catch (e) {
-        console.error("❌ Audio transcription failed:", e.message);
-        import('fs').then(fs => fs.writeFileSync('stt_error.log', JSON.stringify({type: 'exception', message: e.message, stack: e.stack}, null, 2)));
+        console.error("❌ [STT] Transcription failed:", e.message);
+        if (e.response?.data) {
+            console.error("[STT] API Error Response:", JSON.stringify(e.response.data));
+        }
+        if (e.response?.status === 413) {
+            return "[رسالة صوتية: الملف كبير جداً]";
+        }
+        if (e.code === 'ECONNABORTED') {
+            return "[رسالة صوتية: انتهت مهلة المعالجة]";
+        }
     }
-    
+
     return "[رسالة صوتية غير واضحة]";
 }

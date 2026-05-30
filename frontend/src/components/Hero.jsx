@@ -52,6 +52,13 @@ const Hero = () => {
 
             {/* Floating grid lines */}
             <div className="hero-grid-overlay" />
+            <div className="hero-beam" />
+
+            {/* Noise texture */}
+            <div className="hero-noise" />
+
+            {/* Smooth transition to next section */}
+            <div className="hero-transition" />
 
             <div className="hero-container">
                 {/* ── Left Content ── */}

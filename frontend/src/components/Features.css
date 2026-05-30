@@ -15,7 +15,7 @@
     transform: translateX(-50%);
     width: 1px;
     height: 80px;
-    background: linear-gradient(to bottom, transparent, var(--color-border), transparent);
+    background: linear-gradient(to bottom, transparent, rgba(128,128,128,0.3), transparent);
 }
 
 .features-bg-gradient {
@@ -44,7 +44,7 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
 }
 
@@ -57,17 +57,36 @@
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--color-text), transparent);
     opacity: 0;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.5s ease;
+}
+
+.feature-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 1px;
+    background: linear-gradient(135deg, transparent 40%, rgba(var(--color-text-rgb), 0.06) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
 }
 
 .feature-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
     border-color: rgba(var(--color-text-rgb), 0.18);
 }
 
 .feature-card:hover::before {
     opacity: 0.4;
+}
+.feature-card:hover::after {
+    opacity: 1;
 }
 
 .feature-card.featured {
@@ -99,14 +118,14 @@
     background: rgba(var(--color-text-rgb), 0.06);
     border-radius: 16px;
     margin-bottom: 1.5rem;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .feature-card:hover .feature-icon {
     background: var(--color-text);
     color: var(--color-bg);
-    transform: scale(1.08);
-    box-shadow: 0 8px 24px rgba(var(--color-text-rgb), 0.15);
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 12px 32px rgba(var(--color-text-rgb), 0.2);
 }
 
 .feature-icon i {

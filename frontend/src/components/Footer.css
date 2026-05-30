@@ -76,7 +76,7 @@
 
 .footer-section ul li a:hover {
     color: var(--color-text);
-    transform: translateX(4px);
+    transform: translateX(6px);
 }
 
 /* Footer Bottom */
