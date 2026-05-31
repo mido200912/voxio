@@ -68,7 +68,7 @@ const Integrations = () => {
             icon: 'telegram',
             color: '#26A5E4',
             descKey: 'telegramDesc',
-            available: false
+            available: true
         },
         {
             id: 'shopify',
@@ -76,7 +76,7 @@ const Integrations = () => {
             icon: 'shopify',
             color: '#96bf48',
             descKey: 'shopifyDesc',
-            available: false
+            available: true
         },
         {
             id: 'instagram',
@@ -84,7 +84,7 @@ const Integrations = () => {
             icon: 'instagram',
             color: '#e4405f',
             descKey: 'instagramDesc',
-            available: false
+            available: true
         },
         {
             id: 'facebook',

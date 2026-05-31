@@ -15,13 +15,12 @@
 
 /* ─── Attention Badge ─── */
 .conv-attention-badge {
-  background: #ef444420;
-  color: #ef4444;
+  background: var(--dash-border);
+  color: var(--dash-text-sec);
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid #ef444430;
 }
 
 /* ─── Sidebar ─── */
@@ -66,8 +65,8 @@
 .conv-tab:hover { color: var(--dash-text); }
 
 .conv-tab.active {
-  background: var(--dash-primary);
-  color: white;
+  background: var(--dash-text);
+  color: var(--dash-bg);
 }
 
 .conv-tab-count {
@@ -81,8 +80,12 @@
 }
 
 .conv-tab.active .conv-tab-count {
+  background: rgba(0,0,0,0.2);
+  color: inherit;
+}
+
+[data-theme="dark"] .conv-tab.active .conv-tab-count {
   background: rgba(255,255,255,0.2);
-  color: white;
 }
 
 /* ─── Conversation List ─── */
@@ -109,18 +112,17 @@
 }
 
 .conv-item.selected {
-  border-color: var(--dash-primary);
-  background: color-mix(in srgb, var(--dash-primary) 8%, var(--dash-card));
+  border-color: var(--dash-text);
+  background: var(--dash-card);
 }
 
 .conv-item.needs-attention {
-  border-color: #f59e0b;
-  background: #f59e0b08;
+  border-style: dashed;
 }
 
 .conv-item.manual-mode {
-  border-color: #3b82f6;
-  background: #3b82f608;
+  border-color: var(--dash-border);
+  border-style: solid;
 }
 
 .conv-item-top {
@@ -285,8 +287,8 @@
 
 .conv-msg.from-user {
   align-self: flex-end;
-  background: var(--dash-primary);
-  color: white;
+  background: var(--dash-text);
+  color: var(--dash-bg);
   border-bottom-right-radius: 4px;
 }
 
@@ -309,9 +311,11 @@
 
 .conv-msg.from-agent {
   align-self: flex-start;
-  background: #22c55e15;
-  border: 1px solid #22c55e30;
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
   border-bottom-left-radius: 4px;
+  border-color: var(--dash-text);
+  border-style: dashed;
 }
 
 [dir="rtl"] .conv-msg.from-agent {
@@ -329,9 +333,9 @@
   opacity: 0.7;
 }
 
-.conv-msg.from-user .conv-msg-sender { color: rgba(255,255,255,0.8); }
+.conv-msg.from-user .conv-msg-sender { color: inherit; opacity: 0.8; }
 .conv-msg.from-ai .conv-msg-sender { color: var(--dash-text-sec); }
-.conv-msg.from-agent .conv-msg-sender { color: #22c55e; }
+.conv-msg.from-agent .conv-msg-sender { color: var(--dash-text); opacity: 0.8; }
 
 .conv-msg-text {
   font-size: 14px;
@@ -346,7 +350,7 @@
   opacity: 0.6;
 }
 
-.conv-msg.from-user .conv-msg-time { color: rgba(255,255,255,0.7); }
+.conv-msg.from-user .conv-msg-time { opacity: 0.7; }
 .conv-msg.from-ai .conv-msg-time,
 .conv-msg.from-agent .conv-msg-time { color: var(--dash-text-sec); }
 
@@ -375,7 +379,7 @@
 
 .conv-reply textarea:focus {
   outline: none;
-  border-color: var(--dash-primary);
+  border-color: var(--dash-text);
 }
 
 .conv-reply button {
@@ -405,8 +409,8 @@
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #f59e0b20;
-  color: #f59e0b;
+  background: var(--dash-border);
+  color: var(--dash-text-sec);
 }
 
 .badge-ai {
@@ -417,13 +421,13 @@
 }
 
 .badge-ai.on {
-  background: #22c55e20;
-  color: #22c55e;
+  background: var(--dash-text);
+  color: var(--dash-bg);
 }
 
 .badge-ai.off {
-  background: #ef444420;
-  color: #ef4444;
+  background: var(--dash-border);
+  color: var(--dash-text-sec);
 }
 
 /* ─── Responsive ─── */

@@ -16,7 +16,7 @@
 }
 
 .product-card-dash:hover {
-  border-color: var(--dash-text-sec);
+  border-color: var(--dash-text);
   transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(0,0,0,0.06);
 }
@@ -90,7 +90,7 @@
 .product-card-price {
   font-size: 20px;
   font-weight: 800;
-  color: #22c55e;
+  color: var(--dash-text);
 }
 
 .product-card-desc {
@@ -131,7 +131,7 @@
 
 .search-box input:focus {
   outline: none;
-  border-color: var(--dash-text-sec);
+  border-color: var(--dash-text);
 }
 
 /* ─── Product Form Modal ─── */
@@ -301,11 +301,11 @@
 .platform-toggle input { display: none; }
 
 .platform-toggle.active {
-  background: var(--dash-primary);
-  border-color: var(--dash-primary);
-  color: white;
+  background: var(--dash-text);
+  border-color: var(--dash-text);
+  color: var(--dash-bg);
 }
 
 .platform-toggle:hover:not(.active) {
-  border-color: var(--dash-text-sec);
+  border-color: var(--dash-text);
 }
