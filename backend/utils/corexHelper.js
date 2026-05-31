@@ -34,28 +34,28 @@ export function extractCorexReply(data, fallback = "لم أتمكن من الر�
  * Unified AI Request Handler
  * Tries CoreSys first, falls back to OpenRouter if API limits are hit or server fails.
  */
-export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.", preferredModel = null, base64Image = null) {
+export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.", preferredModel = null, base64Media = null) {
     let reply = null;
     const truncatedQuestion = fullQuestion.length > 12000 ? fullQuestion.substring(0, 12000) + "..." : fullQuestion;
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
 
-    // Use a default free model if none is specified so we don't default to the unreliable CoreSys
-    const targetModelSelection = preferredModel || "inclusionai/ring-2.6-1t:free";
+    // Use owl-alpha as default model for customer replies
+    const targetModelSelection = preferredModel || "openrouter/owl-alpha";
 
     // 🚀 1. Try OpenRouter FIRST
     if (openRouterApiKey) {
         let modelsToTry = [targetModelSelection];
 
-        // When an image is provided, use only vision-capable models
-        if (base64Image) {
+        // When media (image, video, sticker) is provided, use only vision/multimodal models
+        if (base64Media) {
             modelsToTry = [
-                "openai/gpt-4o-mini:free",
                 "google/gemini-2.0-flash:free",
+                "openai/gpt-4o-mini:free",
                 "openai/gpt-4o:free",
             ];
         } else {
             if (!modelsToTry.includes("openrouter/free")) {
-                modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");
+                modelsToTry.push("openrouter/owl-alpha", "openrouter/free", "google/gemma-4-31b-it:free");
             }
         }
 
@@ -64,10 +64,10 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                 console.log(`🤖 AI: Requesting OpenRouter (${targetModel})...`);
                 
                 let contentPayload = truncatedQuestion;
-                if (base64Image) {
+                if (base64Media) {
                     contentPayload = [
                         { type: "text", text: truncatedQuestion },
-                        { type: "image_url", image_url: { url: base64Image } }
+                        { type: "image_url", image_url: { url: base64Media } }
                     ];
                 }
 

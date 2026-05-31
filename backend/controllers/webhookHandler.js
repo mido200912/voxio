@@ -175,6 +175,36 @@ async function saveChatMsg(
   });
 }
 
+// ─── Download Telegram Media ─────────────────────────────────────────────────
+async function downloadTgMedia(botToken, fileId) {
+    try {
+        const fileInfo = await axios.get(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+        const filePath = fileInfo.data?.result?.file_path;
+        if (!filePath) return null;
+
+        const downloadUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+        const response = await axios.get(downloadUrl, { responseType: 'arraybuffer' });
+        
+        const buffer = Buffer.from(response.data, 'binary');
+        
+        let mimeType = "application/octet-stream";
+        if (filePath.endsWith('.ogg')) mimeType = "audio/ogg";
+        else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) mimeType = "image/jpeg";
+        else if (filePath.endsWith('.png')) mimeType = "image/png";
+        else if (filePath.endsWith('.webp')) mimeType = "image/webp";
+        else if (filePath.endsWith('.mp4')) mimeType = "video/mp4";
+        
+        return {
+            buffer,
+            mimeType,
+            base64DataUri: `data:${mimeType};base64,${buffer.toString('base64')}`
+        };
+    } catch (error) {
+        console.error("❌ Error downloading TG media:", error.message);
+        return null;
+    }
+}
+
 /**
  * WhatsApp Webhook Handler
  */
@@ -212,6 +242,9 @@ export const handleWhatsAppMessage = async (body) => {
             if (message.type === 'image' && message.image?.id) {
                 mediaId = message.image.id;
                 messageText = message.image.caption || "";
+            } else if (message.type === 'video' && message.video?.id) {
+                mediaId = message.video.id;
+                messageText = message.video.caption || "";
             } else if (message.type === 'audio' && message.audio?.id) {
                 // 🎙️ Voice Notes Support (Lead to STT)
                 mediaId = message.audio.id;
@@ -287,7 +320,7 @@ export const handleWhatsAppMessage = async (body) => {
               }
               const accessToken = integration.credentials.accessToken;
 
-              let base64Image = null;
+              let base64Media = null;
               if (mediaId) {
                   if (message.type === 'audio') {
                       const audioResult = await downloadWaAudioBuffer(mediaId, accessToken);
@@ -299,8 +332,10 @@ export const handleWhatsAppMessage = async (body) => {
                           messageText = "[فشل تحميل الرسالة الصوتية من واتساب]";
                       }
                   } else {
-                      base64Image = await downloadWaMedia(mediaId, accessToken);
-                      if (base64Image && !messageText) messageText = "قام العميل بإرسال صورة/ملصق.";
+                      base64Media = await downloadWaMedia(mediaId, accessToken);
+                      if (base64Media && !messageText) {
+                          messageText = message.type === 'video' ? "قام العميل بإرسال فيديو." : "قام العميل بإرسال صورة/ملصق.";
+                      }
                   }
               }
 
@@ -441,7 +476,7 @@ export const handleWhatsAppMessage = async (body) => {
                     `${systemPrompt}\n\n${historyContext}User Question:\n${messageText}`,
                     "عذراً، لا أستطيع الرد في الوقت الحالي.",
                     aiModel,
-                    base64Image
+                    base64Media
                   );
               }
 
@@ -1089,7 +1124,7 @@ export const handleTelegramWebhook = async (req, res) => {
     if (!body.message) return res.sendStatus(200);
 
     const chatId = body.message.chat.id;
-    const text = body.message.text || "";
+    let text = body.message.text || body.message.caption || "";
     const user =
       body.message.from?.username ||
       body.message.from?.first_name ||
@@ -1113,6 +1148,40 @@ export const handleTelegramWebhook = async (req, res) => {
     if (!integration) return res.sendStatus(200);
 
     const botToken = integration.credentials.botToken;
+
+    let base64Media = null;
+    let mediaFileId = null;
+    let isAudio = false;
+
+    if (body.message.photo) {
+        mediaFileId = body.message.photo[body.message.photo.length - 1].file_id;
+    } else if (body.message.video) {
+        mediaFileId = body.message.video.file_id;
+    } else if (body.message.sticker) {
+        mediaFileId = body.message.sticker.file_id;
+    } else if (body.message.voice) {
+        mediaFileId = body.message.voice.file_id;
+        isAudio = true;
+    } else if (body.message.audio) {
+        mediaFileId = body.message.audio.file_id;
+        isAudio = true;
+    }
+
+    if (mediaFileId) {
+        const mediaResult = await downloadTgMedia(botToken, mediaFileId);
+        if (mediaResult) {
+            if (isAudio) {
+                console.log(`[Telegram Audio] Transcribing with MIME: ${mediaResult.mimeType}...`);
+                text = await transcribeAudio(mediaResult.buffer, 'audio.ogg', mediaResult.mimeType);
+                console.log(`[Telegram Audio] Transcription result: "${text.substring(0, 80)}..."`);
+            } else {
+                base64Media = mediaResult.base64DataUri;
+                if (!text) text = body.message.video ? "قام العميل بإرسال فيديو." : "قام العميل بإرسال صورة/ملصق.";
+            }
+        } else if (isAudio) {
+            text = "[فشل تحميل الرسالة الصوتية من تليجرام]";
+        }
+    }
 
     // ── CHECK: Order Session (Waiting for phone) ────────────────────────
     if (orderSessions[chatId]) {
@@ -1220,6 +1289,7 @@ export const handleTelegramWebhook = async (req, res) => {
           `${context}\n\n${historyContext}User Question:\n${text}`,
           "عذراً لم أتمكن من الرد.",
           companyDoc.aiSettings?.model,
+          base64Media
         );
         await tgSend(botToken, chatId, reply);
         await saveChatMsg(companyId, userId, reply, "ai");
@@ -1254,6 +1324,7 @@ export const handleTelegramWebhook = async (req, res) => {
       `${context}\n\n${historyContext}User Question:\n${text}`,
       "عذراً لم أتمكن من الرد.",
       companyDoc.aiSettings?.model,
+      base64Media
     );
     await tgSend(botToken, chatId, reply);
     await saveChatMsg(companyId, userId, reply, "ai");
