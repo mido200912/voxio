@@ -282,14 +282,24 @@ const metaWebhook = async (req, res) => {
 // 🛍️ Shopify Integrations
 // ----------------------------------------------------------------------
 
-// @desc    Initiate Shopify OAuth
+// @desc    Initiate Shopify OAuth
 const shopifyLogin = (req, res) => {
   const { shop, companyId } = req.query;
   if (!shop || !companyId) return res.status(400).send('Shop URL and Company ID required');
 
   const apiKey = process.env.SHOPIFY_API_KEY;
-  const scopes = 'read_products,read_orders';
+  const scopes = 'read_products,read_orders,read_analytics,read_app_proxy,read_checkouts,read_fulfillments,read_inventory';
   const redirectUri = `${BASE_URL}/api/integrations/shopify/callback`;
+
+  console.log(`[Shopify OAuth] Initiating login for shop: ${shop}, company: ${companyId}`);
+  console.log(`[Shopify OAuth] API Key: ${apiKey ? apiKey.substring(0, 8) + '...' : 'MISSING'}`);
+  console.log(`[Shopify OAuth] Redirect URI: ${redirectUri}`);
+  console.log(`[Shopify OAuth] BASE_URL: ${BASE_URL}`);
+
+  if (!apiKey) {
+    console.error('[Shopify OAuth] SHOPIFY_API_KEY is missing from .env!');
+    return res.status(500).send('Shopify API key not configured. Please contact support.');
+  }
 
   // الحل الأمني: استخدام Nonce
   const nonce = generateNonce(companyId);
@@ -298,23 +308,47 @@ const shopifyLogin = (req, res) => {
   // تنظيف رابط المتجر من https:// أو / في النهاية
   const sanitizedShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-  const authUrl = `https://${sanitizedShop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${redirectUri}&state=${state}`;
+  const authUrl = `https://${sanitizedShop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
 
+  console.log(`[Shopify OAuth] Redirecting to: ${authUrl}`);
   res.redirect(authUrl);
 };
 
-// @desc    Handle Shopify OAuth Callback
+// @desc    Handle Shopify OAuth Callback
 const shopifyCallback = async (req, res) => {
-  const { shop, code, state } = req.query;
+  const { shop, code, state, error, error_description } = req.query;
+
+  // Log all callback parameters for debugging
+  console.log(`[Shopify Callback] Received callback`);
+  console.log(`[Shopify Callback] shop: ${shop}`);
+  console.log(`[Shopify Callback] code: ${code ? code.substring(0, 10) + '...' : 'MISSING'}`);
+  console.log(`[Shopify Callback] state: ${state}`);
+  console.log(`[Shopify Callback] error: ${error}`);
+  console.log(`[Shopify Callback] error_description: ${error_description}`);
+
+  // Handle OAuth errors from Shopify
+  if (error) {
+    console.error(`[Shopify Callback] OAuth error from Shopify: ${error} - ${error_description}`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/dashboard/integrations?status=error&platform=shopify&error=${encodeURIComponent(error_description || error)}`);
+  }
 
   const [companyId, nonce] = state ? state.split(':') : [null, null];
 
-  if (!shop || !code || !companyId || !nonce) return res.status(400).send('Missing required parameters.');
+  if (!shop || !code || !companyId || !nonce) {
+    console.error(`[Shopify Callback] Missing required parameters: shop=${shop}, code=${!!code}, companyId=${companyId}, nonce=${!!nonce}`);
+    return res.status(400).send('Missing required parameters. Please try connecting again.');
+  }
 
   // التحقق من Nonce (CSRF Protection)
-  if (!verifyNonce(companyId, nonce)) return res.status(403).send('Invalid state nonce. CSRF suspected.');
+  if (!verifyNonce(companyId, nonce)) {
+    console.error(`[Shopify Callback] Nonce verification failed for company: ${companyId}`);
+    return res.status(403).send('Invalid state nonce. CSRF suspected. Please try again.');
+  }
 
   try {
+    console.log(`[Shopify Callback] Exchanging code for access token...`);
+    
     // Exchange code for Permanent Access Token
     const tokenUrl = `https://${shop}/admin/oauth/access_token`;
     const { data } = await axios.post(tokenUrl, {
@@ -324,19 +358,22 @@ const shopifyCallback = async (req, res) => {
     });
 
     const { access_token } = data; // 🔑 رمز وصول دائم
+    console.log(`[Shopify Callback] ✅ Access token received for shop: ${shop}`);
 
     // Save Integration
     let shopifyIntegration = await Integration.findOne({ company: companyId, platform: 'shopify' });
-    if (!shopifyIntegration) {
+    if (shopifyIntegration) {
+      shopifyIntegration.credentials = { shopUrl: shop, accessToken: access_token };
+      shopifyIntegration.isActive = true;
+      await shopifyIntegration.save();
+      console.log(`[Shopify Callback] Updated existing integration for company: ${companyId}`);
+    } else {
       await Integration.create({
         company: companyId, platform: 'shopify',
         credentials: { shopUrl: shop, accessToken: access_token },
         isActive: true
       });
-    } else {
-      shopifyIntegration.credentials = { shopUrl: shop, accessToken: access_token };
-      shopifyIntegration.isActive = true;
-      await shopifyIntegration.save();
+      console.log(`[Shopify Callback] Created new integration for company: ${companyId}`);
     }
 
     // Register webhooks for order and product events
@@ -385,11 +422,13 @@ const shopifyCallback = async (req, res) => {
       console.error('[Shopify] Failed to sync products:', syncErr.message);
     }
 
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?status=success&platform=shopify`);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard/integrations?status=success&platform=shopify`);
 
   } catch (err) {
-    console.error('Shopify Auth Error:', err.response?.data || err.message);
-    res.redirect('http://localhost:3000/dashboard?status=error&platform=shopify');
+    console.error('[Shopify Callback] ❌ Auth Error:', err.response?.data || err.message);
+    console.error('[Shopify Callback] Error stack:', err.stack);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/dashboard/integrations?status=error&platform=shopify&error=${encodeURIComponent(err.message)}`);
   }
 };
 
