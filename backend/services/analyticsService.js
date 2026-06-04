@@ -2,9 +2,26 @@ import CompanyChat from "../models/CompanyChat.js";
 import Company from "../models/CompanyModel.js";
 import Lead from "../models/Lead.js";
 
+const getQuery = (companyId, days) => {
+  const query = { company: companyId };
+  if (days && days !== 'all') {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - parseInt(days));
+    query.createdAt = { $gte: cutoff };
+  }
+  return query;
+};
+
+const filterOrders = (orders, days) => {
+  if (!days || days === 'all') return orders;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - parseInt(days));
+  return orders.filter(o => new Date(o.date || o.createdAt || Date.now()) >= cutoff);
+};
+
 class AnalyticsService {
-  static async getDashboardAnalytics(companyId) {
-    const allChats = await CompanyChat.find({ company: companyId });
+  static async getDashboardAnalytics(companyId, days) {
+    const allChats = await CompanyChat.find(getQuery(companyId, days));
     const userMessages = allChats.filter(c => c.sender === "user");
     const aiMessages = allChats.filter(c => c.sender === "ai");
     const agentMessages = allChats.filter(c => c.sender === "agent");
@@ -25,8 +42,13 @@ class AnalyticsService {
         .map(c => c.user)
     ).size;
 
-    const leads = await Lead.find({ company: companyId });
+    const leads = await Lead.find(getQuery(companyId, days));
     const newLeads = leads.filter(l => l.status === "new").length;
+
+    const company = await Company.findById(companyId);
+    const orders = filterOrders(company?.requests || [], days);
+    const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.totalPrice) || 0), 0);
+    const totalOrders = orders.length;
 
     const recentActivity = [...allChats]
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
@@ -47,19 +69,30 @@ class AnalyticsService {
       aiResolutionRate,
       activeUsers,
       newLeads,
+      totalOrders,
+      totalRevenue,
       recentActivity,
     };
   }
 
   static async getTimeSeriesData(companyId, days = 30) {
-    const allChats = await CompanyChat.find({ company: companyId });
+    const allChats = await CompanyChat.find(getQuery(companyId, days));
     const dateMap = {};
 
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const key = d.toISOString().split("T")[0];
-      dateMap[key] = { date: key, messages: 0, conversations: new Set(), ai: 0, user: 0 };
+      dateMap[key] = { date: key, messages: 0, conversations: new Set(), ai: 0, user: 0, revenue: 0 };
+    }
+
+    const company = await Company.findById(companyId);
+    const orders = filterOrders(company?.requests || [], days);
+    for (const order of orders) {
+      const key = new Date(order.date || order.createdAt || Date.now()).toISOString().split("T")[0];
+      if (dateMap[key]) {
+        dateMap[key].revenue += parseFloat(order.totalPrice) || 0;
+      }
     }
 
     for (const chat of allChats) {
@@ -73,13 +106,17 @@ class AnalyticsService {
     }
 
     return Object.values(dateMap).map(d => ({
-      ...d,
+      date: d.date,
+      messages: d.messages,
       conversations: d.conversations.size,
+      ai: d.ai,
+      user: d.user,
+      revenue: Math.round(d.revenue * 100) / 100,
     }));
   }
 
-  static async getPlatformDistribution(companyId) {
-    const chats = await CompanyChat.find({ company: companyId });
+  static async getPlatformDistribution(companyId, days) {
+    const chats = await CompanyChat.find(getQuery(companyId, days));
     const platformCount = {};
 
     for (const chat of chats) {
@@ -94,8 +131,8 @@ class AnalyticsService {
     }));
   }
 
-  static async getHourlyHeatmap(companyId) {
-    const chats = await CompanyChat.find({ company: companyId });
+  static async getHourlyHeatmap(companyId, days) {
+    const chats = await CompanyChat.find(getQuery(companyId, days));
     const hourlyData = Array.from({ length: 24 }, (_, hour) => ({
       hour,
       label: `${hour}:00`,
@@ -116,8 +153,8 @@ class AnalyticsService {
     return hourlyData;
   }
 
-  static async getMessageLengthAnalysis(companyId) {
-    const chats = await CompanyChat.find({ company: companyId });
+  static async getMessageLengthAnalysis(companyId, days) {
+    const chats = await CompanyChat.find(getQuery(companyId, days));
     const userLengths = chats.filter(c => c.sender === "user").map(c => (c.text || "").length);
     const aiLengths = chats.filter(c => c.sender === "ai").map(c => (c.text || "").length);
 
@@ -131,14 +168,15 @@ class AnalyticsService {
     };
   }
 
-  static async getResponseTimeAnalysis(companyId) {
-    const chats = await CompanyChat.find({ company: companyId });
+  static async getResponseTimeAnalysis(companyId, days) {
+    const chatsRaw = await CompanyChat.find(getQuery(companyId, days));
+    const chats = chatsRaw.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
     const responseTimes = [];
 
     for (let i = 1; i < chats.length; i++) {
       const prev = chats[i - 1];
       const curr = chats[i];
-      if (prev.sender === "user" && curr.sender === "ai") {
+      if (prev.user === curr.user && prev.platform === curr.platform && prev.sender === "user" && curr.sender === "ai") {
         const timeDiff = new Date(curr.createdAt) - new Date(prev.createdAt);
         if (timeDiff > 0 && timeDiff < 300000) {
           responseTimes.push(timeDiff);
@@ -159,8 +197,44 @@ class AnalyticsService {
     };
   }
 
-  static async getLeadAnalytics(companyId) {
-    const leads = await Lead.find({ company: companyId });
+  static async getRevenueAnalytics(companyId, days) {
+    const company = await Company.findById(companyId);
+    const orders = filterOrders(company?.requests || [], days);
+
+    const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.totalPrice) || 0), 0);
+    const totalOrders = orders.length;
+    const avgOrderValue = totalOrders > 0 ? Math.round((totalRevenue / totalOrders) * 100) / 100 : 0;
+
+    const sourceMap = {};
+    for (const order of orders) {
+      const src = order.source || "unknown";
+      sourceMap[src] = (sourceMap[src] || 0) + (parseFloat(order.totalPrice) || 0);
+    }
+
+    const statusMap = {};
+    for (const order of orders) {
+      const st = order.status || "pending";
+      statusMap[st] = (statusMap[st] || 0) + 1;
+    }
+
+    const dailyRevenue = {};
+    for (const order of orders) {
+      const key = new Date(order.date || order.createdAt || Date.now()).toISOString().split("T")[0];
+      dailyRevenue[key] = (dailyRevenue[key] || 0) + (parseFloat(order.totalPrice) || 0);
+    }
+
+    return {
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      totalOrders,
+      avgOrderValue,
+      bySource: Object.entries(sourceMap).map(([source, revenue]) => ({ source, revenue: Math.round(revenue * 100) / 100 })),
+      byStatus: Object.entries(statusMap).map(([status, count]) => ({ status, count })),
+      dailyRevenue: Object.entries(dailyRevenue).map(([date, revenue]) => ({ date, revenue: Math.round(revenue * 100) / 100 })).sort((a, b) => a.date.localeCompare(b.date)),
+    };
+  }
+
+  static async getLeadAnalytics(companyId, days) {
+    const leads = await Lead.find(getQuery(companyId, days));
     const sourceMap = {};
     const statusMap = {};
 
@@ -178,15 +252,16 @@ class AnalyticsService {
     };
   }
 
-  static async getComprehensiveReport(companyId) {
-    const [dashboard, timeSeries, platforms, hourly, messages, responseTime, leads] = await Promise.all([
-      AnalyticsService.getDashboardAnalytics(companyId),
-      AnalyticsService.getTimeSeriesData(companyId),
-      AnalyticsService.getPlatformDistribution(companyId),
-      AnalyticsService.getHourlyHeatmap(companyId),
-      AnalyticsService.getMessageLengthAnalysis(companyId),
-      AnalyticsService.getResponseTimeAnalysis(companyId),
-      AnalyticsService.getLeadAnalytics(companyId),
+  static async getComprehensiveReport(companyId, days) {
+    const [dashboard, timeSeries, platforms, hourly, messages, responseTime, leads, revenue] = await Promise.all([
+      AnalyticsService.getDashboardAnalytics(companyId, days),
+      AnalyticsService.getTimeSeriesData(companyId, days),
+      AnalyticsService.getPlatformDistribution(companyId, days),
+      AnalyticsService.getHourlyHeatmap(companyId, days),
+      AnalyticsService.getMessageLengthAnalysis(companyId, days),
+      AnalyticsService.getResponseTimeAnalysis(companyId, days),
+      AnalyticsService.getLeadAnalytics(companyId, days),
+      AnalyticsService.getRevenueAnalytics(companyId, days),
     ]);
 
     return {
@@ -197,6 +272,7 @@ class AnalyticsService {
       messages,
       responseTime,
       leads,
+      revenue,
       generatedAt: new Date().toISOString(),
     };
   }

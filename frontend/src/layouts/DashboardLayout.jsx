@@ -40,12 +40,18 @@ const DashboardLayout = () => {
                 const res = await axios.get(`${BACKEND_URL}/integration-manager`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setActiveIntegrations(res.data.filter(i => i.isActive).map(i => i.platform));
+                const platforms = res.data.map(i => i.platform.toLowerCase());
+                console.log('[Sidebar] Connected platforms:', platforms);
+                setActiveIntegrations(platforms);
             } catch (err) {
                 console.error('Failed to fetch sidebar data:', err);
             }
         };
         fetchIntegrations();
+
+        // ⚡ Listen for custom event to refetch integrations dynamically
+        window.addEventListener('integrationsUpdated', fetchIntegrations);
+        return () => window.removeEventListener('integrationsUpdated', fetchIntegrations);
     }, [location.pathname]);
 
     useEffect(() => {
@@ -180,6 +186,18 @@ const DashboardLayout = () => {
                             </Link>
                         </li>
                         <li>
+                            <Link to="/dashboard/analytics" className={`nav-item ${isActive('/dashboard/analytics')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-chart-line"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'التحليلات' : 'Analytics'}</span>}
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/dashboard/team" className={`nav-item ${isActive('/dashboard/team')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-users"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'الفريق' : 'Team'}</span>}
+                            </Link>
+                        </li>
+                        <li>
                             <Link to="/dashboard/ai-training" className={`nav-item ${isActive('/dashboard/ai-training')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-brain"></i>
                                 {isSidebarOpen && <span>{t.dashboard.training}</span>}
@@ -208,34 +226,40 @@ const DashboardLayout = () => {
                                 {isSidebarOpen && <span>{language === 'ar' ? 'ودجت الموقع' : 'Website Widget'}</span>}
                             </Link>
                         </li>
-                        <li>
-                            <Link to="/dashboard/telegram" className={`nav-item nav-item-telegram ${isActive('/dashboard/telegram')}`} onClick={handleNavItemClick}>
-                                <i className="fab fa-telegram-plane"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'تليجرام' : 'Telegram'}</span>}
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to="/dashboard/website-chat" className={`nav-item ${isActive('/dashboard/website-chat')}`} onClick={handleNavItemClick}>
-                                <i className="fas fa-globe"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'موقع الويب (URL)' : 'Website (URL)'}</span>}
-                            </Link>
-                        </li>
-                        {activeIntegrations.includes('whatsapp') && (
+                        {activeIntegrations.includes('whatsapp') === true ? (
                         <li>
                             <Link to="/dashboard/whatsapp" className={`nav-item nav-item-whatsapp ${isActive('/dashboard/whatsapp')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-whatsapp"></i>
                                 {isSidebarOpen && <span>{language === 'ar' ? 'واتساب' : 'WhatsApp'}</span>}
                             </Link>
                         </li>
-                        )}
-                        {activeIntegrations.includes('instagram') && (
+                        ) : null}
+                        {activeIntegrations.includes('instagram') === true ? (
                         <li>
                             <Link to="/dashboard/instagram" className={`nav-item nav-item-instagram ${isActive('/dashboard/instagram')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-instagram"></i>
                                 {isSidebarOpen && <span>{language === 'ar' ? 'إنستاجرام' : 'Instagram'}</span>}
                             </Link>
                         </li>
-                        )}
+                        ) : null}
+                        {activeIntegrations.includes('telegram') === true ? (
+                        <li>
+                            <Link to="/dashboard/telegram" className={`nav-item nav-item-telegram ${isActive('/dashboard/telegram')}`} onClick={handleNavItemClick}>
+                                <i className="fab fa-telegram-plane"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'تليجرام' : 'Telegram'}</span>}
+                            </Link>
+                        </li>
+                        ) : null}
+                        {activeIntegrations.includes('website') === true ? (
+                        <li>
+                            <Link to="/dashboard/website-chat" className={`nav-item ${isActive('/dashboard/website-chat')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-globe"></i>
+                                {isSidebarOpen && <span>{language === 'ar' ? 'موقع الويب (URL)' : 'Website (URL)'}</span>}
+                            </Link>
+                        </li>
+                        ) : null}
+
+
                         <li>
                             <Link to="/dashboard/settings" className={`nav-item ${isActive('/dashboard/settings')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-cog"></i>

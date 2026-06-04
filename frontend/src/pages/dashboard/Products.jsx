@@ -30,6 +30,7 @@ const Products = () => {
   const [search, setSearch] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [syncLoading, setSyncLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const token = secureStorage.getItem('token');
@@ -115,6 +116,28 @@ const Products = () => {
 
   const removeImage = (idx) => {
     setForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await axios.post(`${BACKEND_URL}/products/upload-image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
+      });
+      if (res.data.imageUrl) {
+        setForm(prev => ({ ...prev, images: [...prev.images, res.data.imageUrl] }));
+        toast(isArabic ? 'تم رفع الصورة' : 'Image uploaded', 'success');
+      }
+    } catch (err) {
+      toast(err.response?.data?.error || 'Upload failed', 'error');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   };
 
   const handleSync = async () => {
@@ -219,6 +242,10 @@ const Products = () => {
                     <div className="image-url-row">
                       <input className="dash-input" placeholder={isArabic ? 'رابط الصورة...' : 'Image URL...'} value={imageUrl} onChange={e => setImageUrl(e.target.value)} />
                       <button type="button" className="dash-btn dash-btn-outline" onClick={addImage}>{isArabic ? 'إضافة' : 'Add'}</button>
+                      <label className="dash-btn dash-btn-outline" style={{ cursor: 'pointer', margin: 0 }}>
+                        {uploading ? '⏳' : '📁'} {isArabic ? 'رفع ملف' : 'Upload'}
+                        <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
+                      </label>
                     </div>
                     {form.images.length > 0 && (
                       <div className="image-previews">

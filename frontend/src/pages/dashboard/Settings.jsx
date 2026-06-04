@@ -260,6 +260,41 @@ const Settings = () => {
                             </div>
                         </div>
 
+                        <div style={{ marginTop: '16px' }}>
+                            <label style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--dash-text-sec)', marginBottom: 8, display: 'block' }}>
+                                {language === 'ar' ? 'شخصية الرد (AI Persona)' : 'AI Response Persona'}
+                            </label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
+                                {[
+                                    { id: 'professional', ar: 'رسمي', en: 'Professional', icon: 'fas fa-briefcase' },
+                                    { id: 'friendly', ar: 'ودود', en: 'Friendly', icon: 'fas fa-smile' },
+                                    { id: 'casual', ar: 'عادي', en: 'Casual', icon: 'fas fa-hand-peace' },
+                                    { id: 'enthusiastic', ar: 'متحمس', en: 'Enthusiastic', icon: 'fas fa-fire' },
+                                    { id: 'minimal', ar: 'مختصر', en: 'Minimal', icon: 'fas fa-compress-alt' },
+                                    { id: 'expert', ar: 'خبير', en: 'Expert', icon: 'fas fa-graduation-cap' },
+                                    { id: 'empathetic', ar: 'متعاطف', en: 'Empathetic', icon: 'fas fa-heart' },
+                                ].map(p => (
+                                    <div key={p.id}
+                                        onClick={() => setCompanyData({...companyData, aiSettings: {...companyData.aiSettings, persona: p.id}})}
+                                        style={{
+                                            padding: '10px 12px',
+                                            borderRadius: 10,
+                                            border: `1px solid ${(companyData.aiSettings?.persona || 'professional') === p.id ? 'var(--dash-text)' : 'var(--dash-border)'}`,
+                                            background: (companyData.aiSettings?.persona || 'professional') === p.id ? 'var(--dash-text)' : 'transparent',
+                                            color: (companyData.aiSettings?.persona || 'professional') === p.id ? 'var(--dash-bg)' : 'var(--dash-text)',
+                                            cursor: 'pointer',
+                                            textAlign: 'center',
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            transition: 'all 0.2s',
+                                        }}>
+                                        <i className={p.icon} style={{ fontSize: 16, marginBottom: 4, display: 'block' }}></i>
+                                        {language === 'ar' ? p.ar : p.en}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="form-group" style={{ marginTop: '10px' }}>
                             <label>{language === 'ar' ? 'اللغات المدعومة للمساعد الذكي' : 'AI Supported Languages'}</label>
                             <div className="languages-chip-container">

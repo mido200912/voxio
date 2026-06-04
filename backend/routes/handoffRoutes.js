@@ -5,6 +5,7 @@ import CompanyChat from "../models/CompanyChat.js";
 import Integration from "../models/Integration.js";
 import axios from "axios";
 import NotificationService from "../services/notificationService.js";
+import AILearningService from "../services/aiLearningService.js";
 
 const router = express.Router();
 
@@ -147,6 +148,19 @@ router.post("/reply", requireAuth, async (req, res) => {
       // Widget chats don't need external API calls
       console.log(`[Agent Reply] Sent to ${userId} via ${platform}: ${message}`);
     }
+
+    // 📝 Learn from this human reply for future AI improvements
+    try {
+      const lastUserMsg = await CompanyChat.Model.findOne({
+        company: company._id,
+        user: userId,
+        platform,
+        sender: "user",
+      }).sort({ createdAt: -1 }).lean();
+      if (lastUserMsg?.text) {
+        AILearningService.learnFromAgentReply(company._id, userId, platform, lastUserMsg.text, message).catch(() => {});
+      }
+    } catch (e) { /* learning failure is non-critical */ }
 
     res.json({ success: true, message: "Reply sent" });
   } catch (err) {

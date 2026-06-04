@@ -12,7 +12,8 @@ router.get("/dashboard", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const data = await AnalyticsService.getDashboardAnalytics(company._id);
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getDashboardAnalytics(company._id, days);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -41,7 +42,8 @@ router.get("/platforms", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const data = await AnalyticsService.getPlatformDistribution(company._id);
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getPlatformDistribution(company._id, days);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -55,7 +57,8 @@ router.get("/hourly", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const data = await AnalyticsService.getHourlyHeatmap(company._id);
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getHourlyHeatmap(company._id, days);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -69,7 +72,8 @@ router.get("/response-time", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const data = await AnalyticsService.getResponseTimeAnalysis(company._id);
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getResponseTimeAnalysis(company._id, days);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -83,7 +87,23 @@ router.get("/leads", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const data = await AnalyticsService.getLeadAnalytics(company._id);
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getLeadAnalytics(company._id, days);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// @route   GET /api/analytics/revenue
+// @desc    Get revenue analytics
+router.get("/revenue", requireAuth, async (req, res) => {
+  try {
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getRevenueAnalytics(company._id, days);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -97,7 +117,8 @@ router.get("/comprehensive", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const data = await AnalyticsService.getComprehensiveReport(company._id);
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getComprehensiveReport(company._id, days);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });

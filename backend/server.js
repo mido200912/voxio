@@ -30,6 +30,16 @@ import analyticsRoutes from "./routes/analyticsRoutes.js";
 import handoffRoutes from "./routes/handoffRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import navigationRoutes from "./routes/navigationRoutes.js";
+import learningRoutes from "./routes/learningRoutes.js";
+import ratingRoutes from "./routes/ratingRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import auditRoutes from "./routes/auditRoutes.js";
+import gdprRoutes from "./routes/gdprRoutes.js";
+import proactiveRoutes from "./routes/proactiveRoutes.js";
+import summaryRoutes from "./routes/summaryRoutes.js";
+import productUploadRoutes from "./routes/productUploadRoutes.js";
+import recommendationRoutes from "./routes/recommendationRoutes.js";
+import teamRoutes from "./routes/teamRoutes.js";
 
 const app = express();
 
@@ -159,6 +169,16 @@ if (serviceType === 'core' || serviceType === 'all') {
     app.use("/api/handoff", handoffRoutes);
     app.use("/api/notifications", notificationRoutes);
     app.use("/api/navigate", navigationRoutes);
+    app.use("/api/learning", learningRoutes);
+    app.use("/api/ratings", ratingRoutes);
+    app.use("/api/bookings", bookingRoutes);
+    app.use("/api/audit", auditRoutes);
+    app.use("/api/gdpr", gdprRoutes);
+    app.use("/api/proactive", proactiveRoutes);
+    app.use("/api/summaries", summaryRoutes);
+    app.use("/api/products", productUploadRoutes);
+    app.use("/api/recommendations", recommendationRoutes);
+    app.use("/api/team", teamRoutes);
 }
 
 if (serviceType === 'webhook' || serviceType === 'all') {

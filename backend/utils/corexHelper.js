@@ -74,13 +74,13 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                 const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
                     model: targetModel, 
                     messages: [{ role: "user", content: contentPayload }],
-                    max_tokens: 2000
+                    max_tokens: base64Media ? 4000 : 2000
                 }, {
                     headers: {
                         "Authorization": `Bearer ${openRouterApiKey}`,
                         "Content-Type": "application/json"
                     },
-                    timeout: 45000
+                    timeout: base64Media ? 120000 : 45000
                 });
                 
                 if (fallbackResponse.data?.choices?.length > 0) {

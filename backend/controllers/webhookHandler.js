@@ -10,6 +10,9 @@ import {
 } from "../utils/chatHistoryHelper.js";
 import { getCompanyAIContext } from "../utils/promptHelper.js";
 import NotificationService from "../services/notificationService.js";
+import AILearningService from "../services/aiLearningService.js";
+import PersonaService from "../services/personaService.js";
+import ProductRecommendationService from "../services/recommendationService.js";
 
 // تتبع الرسائل المعالجة لمنع التكرار
 const processedMessages = new Set();
@@ -334,7 +337,7 @@ export const handleWhatsAppMessage = async (body) => {
                   } else {
                       base64Media = await downloadWaMedia(mediaId, accessToken);
                       if (base64Media && !messageText) {
-                          messageText = message.type === 'video' ? "قام العميل بإرسال فيديو." : "قام العميل بإرسال صورة/ملصق.";
+                          messageText = message.type === 'video' ? "العميل أرسل فيديو. قم بتحليل محتوى الفيديو والرد على العميل." : "العميل أرسل صورة. قم بتحليل محتوى الصورة والرد على العميل.";
                       }
                   }
               }
@@ -408,6 +411,8 @@ export const handleWhatsAppMessage = async (body) => {
                 systemPrompt += `\n🌍 GENERAL MODE: You are a helpful assistant for this company. Answer company questions using the info above, but you are also free to help the user with any other general questions they might have.`;
               }
 
+              systemPrompt += `\n📷 MEDIA HANDLING: When a customer sends an image or video, you MUST analyze its content and respond helpfully regarding the company's products/services. Analyzing images/videos is part of your job.`;
+
               systemPrompt += `\n🌐 LANGUAGE: You MUST respond only in one of these languages: [${languages}]. Default to Arabic if the user speaks Arabic.`;
 
               // 🧑‍💼 HUMAN HANDOFF INSTRUCTION
@@ -416,6 +421,27 @@ export const handleWhatsAppMessage = async (body) => {
 إذا طلب المستخدم صراحة التحدث مع موظف خدمة عملاء بشري أو أبدى انزعاجاً شديداً، يجب أن ترد فقط بهذه العبارة الدقيقة:
 [HUMAN_HANDOFF]`;
               }
+
+              // 📝 AI Learning Context - learned from human agent replies
+              try {
+                const learningContext = await AILearningService.generateLearningContext(company._id);
+                if (learningContext) systemPrompt += learningContext;
+              } catch (e) {
+                console.error("[Webhook] Learning context error:", e.message);
+              }
+
+              // 🛍️ Product Recommendations
+              try {
+                const recommendations = await ProductRecommendationService.getRecommendations(
+                  company._id, messageText, 3
+                );
+                if (recommendations.length > 0) {
+                  const productList = recommendations.map((p, i) =>
+                    `${i + 1}. ${p.name} - ${p.price} ${p.currency || 'USD'}${p.description ? ' (' + p.description.substring(0, 60) + ')' : ''}`
+                  ).join('\n');
+                  systemPrompt += `\n\n🛍️ **المنتجات الموصى بها لهذا العميل:**\n${productList}\nيمكنك تقديم هذه المنتجات للعميل إذا كان يبحث عن منتجات مشابهة.`;
+                }
+              } catch (e) { /* non-critical */ }
 
               // 🛒 ORDERING SYSTEM INSTRUCTIONS
               systemPrompt += `\n\n🛒 **نظام الطلبات (ORDERING SYSTEM):**
@@ -430,6 +456,10 @@ export const handleWhatsAppMessage = async (body) => {
 إذا قام العميل بتقديم بياناته الشخصية من تلقاء نفسه (الاسم، رقم الهاتف، أو البريد الإلكتروني) أثناء المحادثة للاستفسار، يجب عليك في نهاية رسالتك إضافة الكود التالي ليتم حفظ بياناته كعميل محتمل:
 [SAVE_LEAD: الاسم | رقم الهاتف | الإيميل]
 ضع الكلمة "غير متوفر" مكان أي معلومة ناقصة، وتأكد أن الكود في سطر منفصل في نهاية الرسالة ولا يظهر للعميل كجزء من الحديث.`;
+
+              // 🎭 AI Persona Style
+              const personaId = company.aiSettings?.persona || "professional";
+              systemPrompt += PersonaService.getPersonaPromptSuffix(personaId);
 
               // Save user message to DB
               await CompanyChat.create({
@@ -1176,7 +1206,7 @@ export const handleTelegramWebhook = async (req, res) => {
                 console.log(`[Telegram Audio] Transcription result: "${text.substring(0, 80)}..."`);
             } else {
                 base64Media = mediaResult.base64DataUri;
-                if (!text) text = body.message.video ? "قام العميل بإرسال فيديو." : "قام العميل بإرسال صورة/ملصق.";
+                if (!text) text = body.message.video ? "العميل أرسل فيديو. قم بتحليل محتوى الفيديو والرد على العميل." : "العميل أرسل صورة. قم بتحليل محتوى الصورة والرد على العميل.";
             }
         } else if (isAudio) {
             text = "[فشل تحميل الرسالة الصوتية من تليجرام]";

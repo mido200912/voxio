@@ -125,6 +125,7 @@ const Integrations = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setIntegrations(res.data);
+            window.dispatchEvent(new Event('integrationsUpdated'));
         } catch (error) {
             console.error('Error fetching integrations:', error);
         } finally {

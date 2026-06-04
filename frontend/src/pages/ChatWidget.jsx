@@ -162,6 +162,8 @@ const ChatWidget = ({ apiKeyProp }) => {
     };
 
     // ─── STT (Speech-to-Text) ─────────────────────────────────────────────────
+    const originalInputRef = useRef('');
+
     const startListening = useCallback(() => {
         if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
             alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.');
@@ -171,18 +173,23 @@ const ChatWidget = ({ apiKeyProp }) => {
         const recognition = new SpeechRecognition();
         recognitionRef.current = recognition;
         recognition.lang = 'ar-SA';
-        recognition.continuous = false;
-        recognition.interimResults = false;
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        originalInputRef.current = input; // Save existing input
 
         recognition.onstart = () => setIsListening(true);
         recognition.onend = () => setIsListening(false);
         recognition.onerror = () => setIsListening(false);
         recognition.onresult = (e) => {
-            const transcript = e.results[0][0].transcript;
-            sendMessage(transcript);
+            let currentTranscript = '';
+            for (let i = 0; i < e.results.length; ++i) {
+                currentTranscript += e.results[i][0].transcript;
+            }
+            setInput(originalInputRef.current + (originalInputRef.current ? ' ' : '') + currentTranscript);
         };
         recognition.start();
-    }, [sendMessage]);
+    }, [input]);
 
     const stopListening = useCallback(() => {
         recognitionRef.current?.stop();
