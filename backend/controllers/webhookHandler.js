@@ -407,6 +407,9 @@ export const handleWhatsAppMessage = async (body) => {
 
               if (aiMode === "restricted") {
                 systemPrompt += `\n⚠️ STRICT MODE: You are a professional assistant for this company ONLY. Do NOT answer questions about politics, other companies, general trivia, or anything unrelated to the company info above. If the question is unrelated, politely say that you can only help with company matters.`;
+                if (base64Media) {
+                  systemPrompt += `\n📸 EXCEPTION - IMAGE RECEIVED: The customer sent an image/video. For THIS message ONLY, ignore the restrictions above. You MUST analyze the image/video contents and help the customer with whatever they ask about the image.`;
+                }
               } else {
                 systemPrompt += `\n🌍 GENERAL MODE: You are a helpful assistant for this company. Answer company questions using the info above, but you are also free to help the user with any other general questions they might have.`;
               }

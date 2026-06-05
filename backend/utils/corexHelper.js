@@ -80,7 +80,7 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                         "Authorization": `Bearer ${openRouterApiKey}`,
                         "Content-Type": "application/json"
                     },
-                    timeout: base64Media ? 120000 : 45000
+                    timeout: base64Media ? 300000 : 45000
                 });
                 
                 if (fallbackResponse.data?.choices?.length > 0) {
@@ -104,22 +104,24 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
         }
     }
 
-    // ⚙️ 2. CoreSys Fallback (Or primary if no preferred model chosen)
-    try {
-        const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-        const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
+    // ⚙️ 2. CoreSys Fallback — SKIP if media is present (CoreSys doesn't support images)
+    if (!base64Media) {
+        try {
+            const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
+            const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
 
-        const payload = { key: aiApiKey, act: 'chat', a: truncatedQuestion };
-        console.log(`🤖 AI: Requesting CoreSys (Key: ${aiApiKey.substring(0, 5)}...)`);
-        
-        const aiResponse = await axios.post(apiUrl, 
-            new URLSearchParams(payload).toString(),
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 30000 }
-        );
-        
-        reply = extractCorexReply(aiResponse.data, null);
-    } catch (error) {
-        console.error(`❌ CoreSys failed:`, error.message);
+            const payload = { key: aiApiKey, act: 'chat', a: truncatedQuestion };
+            console.log(`🤖 AI: Requesting CoreSys (Key: ${aiApiKey.substring(0, 5)}...)`);
+            
+            const aiResponse = await axios.post(apiUrl, 
+                new URLSearchParams(payload).toString(),
+                { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 30000 }
+            );
+            
+            reply = extractCorexReply(aiResponse.data, null);
+        } catch (error) {
+            console.error(`❌ CoreSys failed:`, error.message);
+        }
     }
 
     return reply || fallbackText;

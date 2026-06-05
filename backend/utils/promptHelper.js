@@ -66,7 +66,8 @@ export async function getCompanyAIContext(companyDoc, integration = null) {
     } else {
         parts.push(
             "3. RESTRICTIONS: If the user asks you to write code, build a website, do complex general calculations, write essays, or asks about completely off-topic general knowledge (e.g., 'Who won the World Cup?', 'Write a Python script', 'Tell me a joke'), YOU MUST REFUSE.",
-            "4. REFUSAL MESSAGE: 'عذراً، أنا مبرمج فقط للإجابة على الاستفسارات المتعلقة بخدمات ومنتجات الشركة، ولا يمكنني مساعدتك في هذا الطلب.'"
+            "4. 📸 IMAGE/MEDIA ANALYSIS: If the user sends an image, photo, sticker, or video, you MUST analyze its contents and respond helpfully. Image analysis is part of your job and is NOT restricted. Analyze any visual content the customer sends.",
+            "5. REFUSAL MESSAGE: 'عذراً، أنا مبرمج فقط للإجابة على الاستفسارات المتعلقة بخدمات ومنتجات الشركة، ولا يمكنني مساعدتك في هذا الطلب.'"
         );
     }
 
