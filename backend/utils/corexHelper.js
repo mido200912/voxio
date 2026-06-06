@@ -27,6 +27,7 @@ export function extractCorexReply(data, fallback = "لم أتمكن من الر�
  */
 export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.", preferredModel = null, base64Media = null, systemPrompt = null) {
     let reply = null;
+    let lastError = null;
     const truncatedQuestion = fullQuestion.length > 12000 ? fullQuestion.substring(0, 12000) + "..." : fullQuestion;
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
 
@@ -97,7 +98,9 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                     console.warn(`⚠️ OpenRouter choices array empty for ${targetModel}, trying next...`);
                 }
             } catch (fallbackError) {
-                console.error(`❌ OpenRouter failed for ${targetModel}:`, fallbackError.response?.data?.error?.message || fallbackError.message);
+                const errMsg = fallbackError.response?.data?.error?.message || fallbackError.message;
+                console.error(`❌ OpenRouter failed for ${targetModel}:`, errMsg);
+                lastError = errMsg;
             }
         }
     }
@@ -122,8 +125,9 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
         }
     }
 
-    if (!reply && base64Media) {
-        console.error(`❌ All vision models failed for media input. No suitable model available.`);
+    if (!reply && lastError) {
+        console.error(`❌ All vision models failed. Last error: ${lastError}`);
+        return `⚠️ Error: ${lastError}`;
     }
     return reply || fallbackText;
 }
