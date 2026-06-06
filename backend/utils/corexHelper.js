@@ -135,7 +135,7 @@ export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallback
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
     
     if (openRouterApiKey) {
-        let targetModel = preferredModel || "openrouter/owl-alpha";
+        let targetModel = preferredModel || "openrouter/pareto-code";
         let modelsToTry = [targetModel];
         if (!modelsToTry.includes("openrouter/free")) {
             modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");
