@@ -46,17 +46,10 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
     if (openRouterApiKey) {
         let modelsToTry = [targetModelSelection];
 
-        // When media (image, video, sticker) is provided, use only vision/multimodal models
+        // When media (image, video, sticker) is provided, use vision model
         if (base64Media) {
-            modelsToTry = [
-                "google/gemini-2.0-flash:free",
-                "openai/gpt-4o-mini:free",
-                "openai/gpt-4o:free",
-            ];
-        } else {
-            if (!modelsToTry.includes("openrouter/free")) {
-                modelsToTry.push("openrouter/owl-alpha", "openrouter/free", "google/gemma-4-31b-it:free");
-            }
+            console.log(`📸 Media input detected, size: ${(base64Media.length / 1024).toFixed(0)}KB`);
+            modelsToTry = ["moonshotai/kimi-k2.6:free"];
         }
 
         for (let targetModel of modelsToTry) {
@@ -124,6 +117,9 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
         }
     }
 
+    if (!reply && base64Media) {
+        console.error(`❌ All vision models failed for media input. No suitable model available.`);
+    }
     return reply || fallbackText;
 }
 
