@@ -31,14 +31,11 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
     const truncatedQuestion = fullQuestion.length > 12000 ? fullQuestion.substring(0, 12000) + "..." : fullQuestion;
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
 
-    // Default model
-    const targetModelSelection = preferredModel || "openrouter/owl-alpha";
-
     // 🚀 1. Try OpenRouter FIRST
     if (openRouterApiKey) {
-        let modelsToTry = [targetModelSelection];
+        let modelsToTry;
 
-        // 📸 لو فيه صورة، نضع كل موديلات الـ Vision المجانية بالترتيب كـ Fallback لحمايتك من السقوط
+        // 📸 For images: use vision models
         if (base64Media) {
             console.log(`📸 Media input detected, size: ${(base64Media.length / 1024).toFixed(0)}KB`);
             modelsToTry = [
@@ -46,12 +43,13 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                 "google/gemini-2.5-flash:free",
                 "qwen/qwen2.5-vl-7b-instruct:free"
             ];
-            
-            // التأكد من أن البايس 64 يبدأ بـ data URI المعتمد لدى الموديلات
+
             if (typeof base64Media === 'string' && !base64Media.startsWith('data:')) {
-                // افتراض أنها jpeg إذا لم يذكر، يمكنك تعديلها ديناميكياً بحسب المدخلات
                 base64Media = `data:image/jpeg;base64,${base64Media}`;
             }
+        } else {
+            // For text: use owl-alpha only, ignore preferredModel
+            modelsToTry = ["openrouter/owl-alpha"];
         }
 
         for (let targetModel of modelsToTry) {
@@ -66,7 +64,6 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                     ];
                 }
 
-                // بناء هيكل الرسائل بشكل صحيح وفصل الـ system prompt إن وجد
                 const messages = [];
                 if (systemPrompt) {
                     messages.push({ role: "system", content: systemPrompt });
@@ -82,7 +79,7 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                         "Authorization": `Bearer ${openRouterApiKey}`,
                         "Content-Type": "application/json"
                     },
-                    timeout: base64Media ? 90000 : 45000 // 90 ثانية كافية جداً، 300 ثانية (5 دقائق) رقم ضخم قد يعلق السيرفر
+                    timeout: base64Media ? 90000 : 45000
                 });
                 
                 if (fallbackResponse.data?.choices?.length > 0) {
@@ -91,12 +88,9 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                         reply = content;
                         console.log(`✅ AI: Response from OpenRouter successful (${targetModel}).`);
                         return reply; 
-                    } else {
-                        console.warn(`⚠️ OpenRouter returned empty content for ${targetModel}, trying next...`);
                     }
-                } else {
-                    console.warn(`⚠️ OpenRouter choices array empty for ${targetModel}, trying next...`);
                 }
+                console.warn(`⚠️ OpenRouter returned empty for ${targetModel}`);
             } catch (fallbackError) {
                 const errMsg = fallbackError.response?.data?.error?.message || fallbackError.message;
                 console.error(`❌ OpenRouter failed for ${targetModel}:`, errMsg);
@@ -105,28 +99,8 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
         }
     }
 
-    // ⚙️ 2. CoreSys Fallback — SKIP if media is present
-    if (!base64Media) {
-        try {
-            const apiUrl = process.env.COREX_API_URL || "https://dev-c7z.pantheonsite.io/CoreSys/chat.php";
-            const aiApiKey = process.env.COREX_API_KEY || "AITHORV1_6F85B401ED";
-
-            const payload = { key: aiApiKey, act: 'chat', a: truncatedQuestion };
-            console.log(`🤖 AI: Requesting CoreSys (Key: ${aiApiKey.substring(0, 5)}...)`);
-            
-            const aiResponse = await axios.post(apiUrl, 
-                new URLSearchParams(payload).toString(),
-                { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 30000 }
-            );
-            
-            reply = extractCorexReply(aiResponse.data, null);
-        } catch (error) {
-            console.error(`❌ CoreSys failed:`, error.message);
-        }
-    }
-
-    if (!reply && lastError) {
-        console.error(`❌ All vision models failed. Last error: ${lastError}`);
+    if (lastError) {
+        console.error(`❌ All models failed. Last error: ${lastError}`);
         return `⚠️ Error: ${lastError}`;
     }
     return reply || fallbackText;
