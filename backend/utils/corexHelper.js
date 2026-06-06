@@ -1,293 +1,339 @@
 import axios from 'axios';
 
-/**
- * Helper for CoreSys API
- */
-export function extractCorexReply(data, fallback = "لم أتمكن من الرد حالياً.") {
-  if (!data) return fallback;
+// ──────────────────────────────────────────────
+//  CONSTANTS & CONFIG
+// ──────────────────────────────────────────────
+const OPENROUTER_BASE = "https://openrouter.ai/api/v1/chat/completions";
 
-  const isSuccess = data.status === 'success' || data.success === true || data.status === 'ok';
-  if (!isSuccess) return fallback;
+const MODELS = {
+  vision:   "openrouter/free",          // تحليل الصور
+  text:     "openrouter/owl-alpha",     // الردود النصية
+  designer: "openrouter/pareto-code",  // تصميم المواقع
+  fallbacks: [
+    "openrouter/free",
+    "google/gemma-4-31b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
+  ],
+};
 
-  let raw = data.response || data.reply || data.text || data.message;
-  if (!raw) return fallback;
+const TIMEOUTS = {
+  vision: 30_000,
+  text:   45_000,
+  design: 60_000,
+};
 
-  if (typeof raw === 'string' && raw.trim().startsWith('{')) {
+// Simple in-memory cache (يتنظف تلقائياً بعد 10 دقايق)
+const _cache = new Map();
+const CACHE_TTL = 10 * 60 * 1000;
+
+function cacheGet(key) {
+  const entry = _cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { _cache.delete(key); return null; }
+  return entry.value;
+}
+function cacheSet(key, value) {
+  _cache.set(key, { value, ts: Date.now() });
+}
+
+// ──────────────────────────────────────────────
+//  CORE HTTP HELPER  (مع retry تلقائي)
+// ──────────────────────────────────────────────
+async function openRouterRequest(payload, timeoutMs = TIMEOUTS.text, retries = 2) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY غير موجود");
+
+  const headers = {
+    "Authorization": `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+    "HTTP-Referer": process.env.APP_URL || "https://app.local",
+    "X-Title": "AI Assistant",
+  };
+
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const parsed = JSON.parse(raw);
-      raw = parsed.response || parsed.reply || parsed.text || parsed.message || raw;
-    } catch (_) { }
+      const res = await axios.post(OPENROUTER_BASE, payload, { headers, timeout: timeoutMs });
+      const content = res.data?.choices?.[0]?.message?.content;
+      if (content) return content;
+      throw new Error("الرد فارغ من النموذج");
+    } catch (err) {
+      lastErr = err;
+      const isRetryable = err.code === 'ECONNRESET' || err.code === 'ECONNABORTED'
+        || (err.response?.status >= 500);
+      if (!isRetryable || attempt === retries) break;
+      const delay = 1000 * (attempt + 1); // 1s, 2s
+      console.warn(`⚠️ Attempt ${attempt + 1} failed (${err.message}), retrying in ${delay}ms…`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
+// ──────────────────────────────────────────────
+//  IMAGE ANALYSIS  (شرح تفصيلي احترافي)
+// ──────────────────────────────────────────────
+const VISION_PROMPT = `أنت محلل صور خبير. قم بوصف هذه الصورة بشكل **تفصيلي واحترافي** باللغة العربية وفق النقاط التالية:
+
+1. **المحتوى العام**: ما الذي تصوره الصورة بشكل عام؟
+2. **الأشخاص** (إن وجدوا): العدد، الجنس التقريبي، الملابس، التعبيرات، أوضاع الجسد، أي نص ظاهر على الملابس.
+3. **الأشياء والعناصر**: كل عنصر مرئي مع وصفه الدقيق (اللون، الحجم، الموضع).
+4. **النصوص والكتابات**: استخرج أي نص أو لوحة أو شعار ظاهر في الصورة حرفياً.
+5. **الخلفية والمكان**: هل هو داخلي أم خارجي؟ طبيعي أم اصطناعي؟ وصف الألوان والإضاءة.
+6. **الجودة الفنية**: زاوية التصوير، جودة الصورة، الإضاءة، العمق.
+7. **الانطباع العام**: ما الشعور أو الرسالة التي تنقلها الصورة؟
+
+كن دقيقاً ومفصلاً قدر الإمكان — هذا الوصف سيُستخدم للإجابة عن أسئلة الصورة.`;
+
+async function analyzeImage(base64Media) {
+  // ضمان صيغة data URI
+  if (!base64Media.startsWith('data:')) {
+    base64Media = `data:image/jpeg;base64,${base64Media}`;
   }
 
-  return raw || fallback;
+  console.log(`📸 [Vision] بدء تحليل الصورة (${(base64Media.length / 1024).toFixed(0)} KB)…`);
+
+  const description = await openRouterRequest({
+    model: MODELS.vision,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "text", text: VISION_PROMPT },
+        { type: "image_url", image_url: { url: base64Media, detail: "high" } },
+      ],
+    }],
+    max_tokens: 1500,
+    temperature: 0.2,
+  }, TIMEOUTS.vision);
+
+  console.log(`✅ [Vision] تم التحليل (${description.length} حرف)`);
+  return description;
 }
 
+// ──────────────────────────────────────────────
+//  SYSTEM PROMPT  (ذكاء وأسلوب أفضل)
+// ──────────────────────────────────────────────
+const DEFAULT_SYSTEM_PROMPT = `أنت مساعد ذكي ومتخصص، تتميز بـ:
+- الردود الدقيقة والمفيدة مع أمثلة عملية عند الحاجة.
+- أسلوب واضح ومباشر بدون حشو أو تكرار.
+- استخدام العربية الفصحى المبسطة والمفهومة.
+- إذا كان السؤال عن صورة، استند إلى وصفها الدقيق واذكر التفاصيل المرتبطة بالسؤال مباشرة.
+- لا تذكر أنك نموذج لغوي أو تعتذر دون داعٍ — فقط أجب بثقة واحترافية.`;
+
+// ──────────────────────────────────────────────
+//  MAIN: fetchAiResponse
+// ──────────────────────────────────────────────
 /**
- * Unified AI Request Handler (Fixed & Enhanced)
+ * @param {string}  fullQuestion   - السؤال الكامل
+ * @param {string}  fallbackText   - رد احتياطي
+ * @param {string}  preferredModel - نموذج مفضل (اختياري)
+ * @param {string}  base64Media    - صورة base64 (اختياري)
+ * @param {string}  systemPrompt   - system prompt مخصص (اختياري)
  */
-export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتمكن من الرد حالياً.", preferredModel = null, base64Media = null, systemPrompt = null) {
-    let reply = null;
-    let lastError = null;
-    const truncatedQuestion = fullQuestion.length > 12000 ? fullQuestion.substring(0, 12000) + "..." : fullQuestion;
-    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-
-    // 🚀 1. Try OpenRouter FIRST
-    if (openRouterApiKey) {
-        if (base64Media) {
-            console.log(`📸 Media input detected, size: ${(base64Media.length / 1024).toFixed(0)}KB`);
-
-            if (typeof base64Media === 'string' && !base64Media.startsWith('data:')) {
-                base64Media = `data:image/jpeg;base64,${base64Media}`;
-            }
-
-            // Step 1: Use openrouter/free to analyze the image
-            try {
-                console.log(`🤖 AI: Step 1 - Analyzing image with openrouter/free...`);
-                const visionResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-                    model: "openrouter/free",
-                    messages: [
-                        { role: "user", content: [
-                            { type: "text", text: "قم بوصف ما في هذه الصورة بالتفصيل باللغة العربية. صف كل ما تراه في الصورة." },
-                            { type: "image_url", image_url: { url: base64Media } }
-                        ]}
-                    ],
-                    max_tokens: 1000
-                }, {
-                    headers: {
-                        "Authorization": `Bearer ${openRouterApiKey}`,
-                        "Content-Type": "application/json"
-                    },
-                    timeout: 30000
-                });
-
-                let imageDescription = "";
-                if (visionResponse.data?.choices?.length > 0) {
-                    imageDescription = visionResponse.data.choices[0].message?.content || "";
-                    console.log(`✅ AI: Image analysis complete (${imageDescription.length} chars)`);
-                }
-
-                if (!imageDescription) {
-                    console.warn(`⚠️ Image analysis returned empty, proceeding without description`);
-                }
-
-                // Step 2: Send question + image description to openrouter/owl-alpha
-                console.log(`🤖 AI: Step 2 - Sending to openrouter/owl-alpha for final response...`);
-                const augmentedQuestion = imageDescription
-                    ? `${truncatedQuestion}\n\n[وصف الصورة: ${imageDescription}]`
-                    : truncatedQuestion;
-
-                const messages = [];
-                if (systemPrompt) {
-                    messages.push({ role: "system", content: systemPrompt });
-                }
-                messages.push({ role: "user", content: augmentedQuestion });
-
-                const textResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-                    model: "openrouter/owl-alpha",
-                    messages: messages,
-                    max_tokens: 2000
-                }, {
-                    headers: {
-                        "Authorization": `Bearer ${openRouterApiKey}`,
-                        "Content-Type": "application/json"
-                    },
-                    timeout: 45000
-                });
-
-                if (textResponse.data?.choices?.length > 0) {
-                    const content = textResponse.data.choices[0].message?.content;
-                    if (content) {
-                        console.log(`✅ AI: Final response from openrouter/owl-alpha successful.`);
-                        return content;
-                    }
-                }
-                console.warn(`⚠️ openrouter/owl-alpha returned empty`);
-                lastError = "openrouter/owl-alpha returned empty response";
-            } catch (err) {
-                const errMsg = err.response?.data?.error?.message || err.message;
-                console.error(`❌ Two-step image analysis failed:`, errMsg);
-                lastError = errMsg;
-            }
-        } else {
-            // Text-only: directly use openrouter/owl-alpha
-            try {
-                console.log(`🤖 AI: Requesting OpenRouter (openrouter/owl-alpha)...`);
-
-                const messages = [];
-                if (systemPrompt) {
-                    messages.push({ role: "system", content: systemPrompt });
-                }
-                messages.push({ role: "user", content: truncatedQuestion });
-
-                const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-                    model: "openrouter/owl-alpha",
-                    messages: messages,
-                    max_tokens: 2000
-                }, {
-                    headers: {
-                        "Authorization": `Bearer ${openRouterApiKey}`,
-                        "Content-Type": "application/json"
-                    },
-                    timeout: 45000
-                });
-
-                if (response.data?.choices?.length > 0) {
-                    const content = response.data.choices[0].message?.content;
-                    if (content) {
-                        reply = content;
-                        console.log(`✅ AI: Response from openrouter/owl-alpha successful.`);
-                        return reply;
-                    }
-                }
-                console.warn(`⚠️ openrouter/owl-alpha returned empty`);
-                lastError = "openrouter/owl-alpha returned empty";
-            } catch (err) {
-                const errMsg = err.response?.data?.error?.message || err.message;
-                console.error(`❌ openrouter/owl-alpha failed:`, errMsg);
-                lastError = errMsg;
-            }
-        }
-    }
-
-    if (lastError) {
-        console.error(`❌ All models failed. Last error: ${lastError}`);
-        return `⚠️ Error: ${lastError}`;
-    }
-    return reply || fallbackText;
-}
-
-/**
- * Dedicated AI function for the Website Designer
- */
-export async function fetchDesignerAiResponse(systemPrompt, userPrompt, fallbackText = "Failed to generate design.", preferredModel = null) {
-    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-    
-    if (openRouterApiKey) {
-        let targetModel = preferredModel || "openrouter/pareto-code";
-        let modelsToTry = [targetModel];
-        if (!modelsToTry.includes("openrouter/free")) {
-            modelsToTry.push("openrouter/free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free");
-        }
-        
-        for (let model of modelsToTry) {
-            try {
-                console.log(`🎨 Designer AI: Sending to OpenRouter (${model})...`);
-                
-                const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-                    model: model,
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: userPrompt }
-                    ],
-                    temperature: 0.7,
-                    max_tokens: 8000
-                }, {
-                    headers: {
-                        "Authorization": `Bearer ${openRouterApiKey}`,
-                        "Content-Type": "application/json"
-                    },
-                    timeout: 60000
-                });
-                
-                if (response.data?.choices?.length > 0) {
-                    const content = response.data.choices[0].message?.content;
-                    if (content) {
-                        console.log(`✅ Designer AI: Got response from ${model}, length:`, content.length);
-                        return content;
-                    } else {
-                        console.warn(`⚠️ Designer AI OpenRouter returned empty content for ${model}, trying next...`);
-                    }
-                } else {
-                    console.warn(`⚠️ Designer AI OpenRouter choices array empty for ${model}, trying next...`);
-                }
-            } catch (err) {
-                console.error(`🎨 Designer AI OpenRouter failed for ${model}:`, err.response?.data?.error?.message || err.message);
-            }
-        }
-    }
-    
-    // Fallback to CoreSys
-    try {
-        const fullQuestion = systemPrompt + "\n\nUser request: " + userPrompt;
-        return await fetchAiResponse(fullQuestion, fallbackText);
-    } catch (err) {
-        console.error("🎨 Designer AI CoreSys fallback also failed:", err.message);
-    }
-    
+export async function fetchAiResponse(
+  fullQuestion,
+  fallbackText = "لم أتمكن من الرد حالياً.",
+  preferredModel = null,
+  base64Media = null,
+  systemPrompt = null
+) {
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.error("❌ OPENROUTER_API_KEY غير مضبوط");
     return fallbackText;
+  }
+
+  // اختصار السؤال الطويل
+  const question = fullQuestion.length > 12_000
+    ? fullQuestion.substring(0, 12_000) + "…"
+    : fullQuestion;
+
+  // Cache key (بدون الصور لأنها كبيرة)
+  const cacheKey = !base64Media ? `q::${question.slice(0, 200)}` : null;
+  if (cacheKey) {
+    const cached = cacheGet(cacheKey);
+    if (cached) { console.log("⚡ [Cache] رد من الكاش"); return cached; }
+  }
+
+  try {
+    let userContent = question;
+
+    // ── مسار الصور: تحليل أولاً ثم إرسال الوصف ──
+    if (base64Media) {
+      const imageDescription = await analyzeImage(base64Media);
+
+      userContent = imageDescription
+        ? `${question}\n\n━━━ وصف الصورة التفصيلي ━━━\n${imageDescription}\n━━━━━━━━━━━━━━━━━━━━━━━━`
+        : question;
+    }
+
+    // ── بناء رسائل المحادثة ──
+    const messages = [
+      { role: "system", content: systemPrompt || DEFAULT_SYSTEM_PROMPT },
+      { role: "user",   content: userContent },
+    ];
+
+    console.log(`🤖 [AI] إرسال إلى ${preferredModel || MODELS.text}…`);
+
+    const reply = await openRouterRequest({
+      model: preferredModel || MODELS.text,
+      messages,
+      max_tokens: 2000,
+      temperature: 0.6,
+    }, TIMEOUTS.text);
+
+    if (cacheKey) cacheSet(cacheKey, reply);
+    return reply;
+
+  } catch (err) {
+    const msg = err.response?.data?.error?.message || err.message;
+    console.error(`❌ [AI] فشل الرد:`, msg);
+    return `⚠️ حدث خطأ: ${msg}`;
+  }
 }
 
+// ──────────────────────────────────────────────
+//  DESIGNER AI  (مُحسَّن)
+// ──────────────────────────────────────────────
 /**
- * Transcribe WhatsApp Voice Notes to Text (STT)
+ * @param {string} systemPrompt   - تعليمات التصميم
+ * @param {string} userPrompt     - طلب المستخدم
+ * @param {string} fallbackText   - رد احتياطي
+ * @param {string} preferredModel - نموذج مفضل
+ */
+export async function fetchDesignerAiResponse(
+  systemPrompt,
+  userPrompt,
+  fallbackText = "Failed to generate design.",
+  preferredModel = null
+) {
+  if (!process.env.OPENROUTER_API_KEY) return fallbackText;
+
+  const modelsToTry = [
+    preferredModel || MODELS.designer,
+    ...MODELS.fallbacks,
+  ].filter(Boolean);
+
+  for (const model of modelsToTry) {
+    try {
+      console.log(`🎨 [Designer] تجربة النموذج: ${model}…`);
+
+      const reply = await openRouterRequest({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user",   content: userPrompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 8000,
+      }, TIMEOUTS.design, 1);
+
+      console.log(`✅ [Designer] رد ناجح من ${model} (${reply.length} حرف)`);
+      return reply;
+
+    } catch (err) {
+      console.warn(`⚠️ [Designer] ${model} فشل:`, err.message);
+    }
+  }
+
+  // Fallback للـ AI العادي
+  try {
+    console.log("↩️ [Designer] تجربة الـ fallback العام…");
+    return await fetchAiResponse(`${systemPrompt}\n\nUser request: ${userPrompt}`, fallbackText);
+  } catch (err) {
+    console.error("❌ [Designer] الـ fallback فشل أيضاً:", err.message);
+  }
+
+  return fallbackText;
+}
+
+// ──────────────────────────────────────────────
+//  SPEECH-TO-TEXT  (Whisper)
+// ──────────────────────────────────────────────
+const MIME_TO_EXT = {
+  'audio/ogg': 'ogg', 'audio/oga': 'oga',
+  'audio/mpeg': 'mp3', 'audio/mp3': 'mp3',
+  'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a',
+  'audio/wav': 'wav', 'audio/x-wav': 'wav',
+  'audio/webm': 'webm', 'audio/flac': 'flac',
+  'audio/amr': 'amr', 'audio/3gpp': '3gp',
+};
+
+/**
+ * @param {Buffer} buffer   - بيانات الصوت
+ * @param {string} fileName - اسم الملف
+ * @param {string} mimeType - نوع الملف
  */
 export async function transcribeAudio(buffer, fileName = "audio.ogg", mimeType = "audio/ogg") {
-    const openaiKey = process.env.OPENAI_API_KEY;
-    const groqKey = process.env.GROQ_API_KEY;
+  const groqKey  = process.env.GROQ_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const apiKey   = groqKey || openaiKey;
 
-    if (!openaiKey && !groqKey) {
-        console.error("[STT] No API keys configured for transcription");
-        return "[رسالة صوتية: عذراً، ميزة فك التشفير غير مفعلة لعدم توفر مفتاح API]";
+  if (!apiKey) {
+    console.error("[STT] لا يوجد API key للتفريغ الصوتي");
+    return "[رسالة صوتية: ميزة التفريغ غير مفعّلة]";
+  }
+
+  const apiUrl = groqKey
+    ? "https://api.groq.com/openai/v1/audio/transcriptions"
+    : "https://api.openai.com/v1/audio/transcriptions";
+
+  const cleanMime  = mimeType.split(';')[0].trim();
+  const ext        = MIME_TO_EXT[cleanMime] || fileName.split('.').pop() || 'ogg';
+  const safeFile   = `audio.${ext}`;
+
+  console.log(`🎙️ [STT] إرسال إلى ${groqKey ? 'Groq' : 'OpenAI'} Whisper (${safeFile})…`);
+
+  try {
+    const formData = new FormData();
+    formData.append("file", new Blob([buffer], { type: cleanMime }), safeFile);
+    formData.append("model", "whisper-large-v3");
+    formData.append("language", "ar");
+    formData.append("temperature", "0");
+    formData.append("response_format", "json");
+
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${apiKey}` },
+      body: formData,
+      signal: AbortSignal.timeout(35_000),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`❌ [STT] HTTP ${res.status}: ${body}`);
+      if (res.status === 413) return "[رسالة صوتية: الملف كبير جداً، يُرجى تقصيره]";
+      if (res.status === 401 || res.status === 403) return "[رسالة صوتية: خطأ في مفتاح API]";
+      return "[رسالة صوتية: خطأ في التفريغ]";
     }
 
-    const apiUrl = groqKey
-        ? "https://api.groq.com/openai/v1/audio/transcriptions"
-        : "https://api.openai.com/v1/audio/transcriptions";
-    const apiKey = groqKey || openaiKey;
-
-    const cleanMime = mimeType.split(';')[0].trim();
-    const extMap = {
-        'audio/ogg': 'ogg', 'audio/oga': 'oga',
-        'audio/mpeg': 'mp3', 'audio/mp3': 'mp3',
-        'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a',
-        'audio/wav': 'wav', 'audio/x-wav': 'wav',
-        'audio/webm': 'webm', 'audio/flac': 'flac',
-        'audio/amr': 'amr', 'audio/3gpp': '3gp'
-    };
-    const ext = extMap[cleanMime] || fileName.split('.').pop() || 'ogg';
-    const safeFileName = 'audio.' + ext;
-
-    console.log(`🎙️ [STT] Sending to ${groqKey ? 'Groq' : 'OpenAI'} Whisper...`);
-
-    try {
-        const formData = new FormData();
-        const blob = new Blob([buffer], { type: cleanMime });
-        formData.append("file", blob, safeFileName);
-        formData.append("model", "whisper-large-v3");
-        formData.append("language", "ar");
-        formData.append("temperature", "0");
-
-        const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`
-            },
-            body: formData,
-            signal: AbortSignal.timeout(35000)
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.text().catch(() => "Unknown error");
-            console.error(`❌ [STT] API error ${response.status}: ${errorBody}`);
-            if (response.status === 413) return "[رسالة صوتية: الملف كبير جداً]";
-            if (response.status === 401 || response.status === 403) return "[رسالة صوتية: خطأ في مفتاح API]";
-            return "[رسالة صوتية غير واضحة]";
-        }
-
-        const result = await response.json();
-
-        if (result.text) {
-            const transcribed = result.text.trim();
-            console.log(`✅ [STT] Success (${transcribed.length} chars)`);
-            return transcribed;
-        } else {
-            return "[رسالة صوتية: لم يتم التعرف على نص واضح]";
-        }
-    } catch (e) {
-        console.error("❌ [STT] Transcription failed:", e.message);
-        if (e.name === 'TimeoutError' || e.code === 'ECONNABORTED') {
-            return "[رسالة صوتية: انتهت مهلة المعالجة]";
-        }
+    const { text } = await res.json();
+    if (text?.trim()) {
+      console.log(`✅ [STT] تم التفريغ (${text.trim().length} حرف)`);
+      return text.trim();
     }
+    return "[رسالة صوتية: لم يُكتشف نص واضح]";
 
+  } catch (e) {
+    console.error("❌ [STT] فشل التفريغ:", e.message);
+    if (e.name === 'TimeoutError') return "[رسالة صوتية: انتهت مهلة المعالجة]";
     return "[رسالة صوتية غير واضحة]";
+  }
+}
+
+// ──────────────────────────────────────────────
+//  LEGACY HELPER  (للتوافق مع الكود القديم)
+// ──────────────────────────────────────────────
+export function extractCorexReply(data, fallback = "لم أتمكن من الرد حالياً.") {
+  if (!data) return fallback;
+  const ok = data.status === 'success' || data.success === true || data.status === 'ok';
+  if (!ok) return fallback;
+  let raw = data.response || data.reply || data.text || data.message;
+  if (!raw) return fallback;
+  if (typeof raw === 'string' && raw.trim().startsWith('{')) {
+    try {
+      const p = JSON.parse(raw);
+      raw = p.response || p.reply || p.text || p.message || raw;
+    } catch (_) {}
+  }
+  return raw || fallback;
 }
