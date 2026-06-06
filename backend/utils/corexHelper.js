@@ -33,22 +33,14 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
 
     // 🚀 1. Try OpenRouter FIRST
     if (openRouterApiKey) {
-        let modelsToTry;
+        let modelsToTry = ["openrouter/owl-alpha"];
 
-        // 📸 For images: use proven vision models
         if (base64Media) {
             console.log(`📸 Media input detected, size: ${(base64Media.length / 1024).toFixed(0)}KB`);
-            modelsToTry = [
-                "moonshotai/kimi-vl-a3b-thinking:free",
-                "qwen/qwen2.5-vl-32b-instruct:free",
-            ];
 
             if (typeof base64Media === 'string' && !base64Media.startsWith('data:')) {
                 base64Media = `data:image/jpeg;base64,${base64Media}`;
             }
-        } else {
-            // For text: use owl-alpha only, ignore preferredModel
-            modelsToTry = ["openrouter/owl-alpha"];
         }
 
         for (let targetModel of modelsToTry) {
@@ -72,13 +64,13 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
                 const fallbackResponse = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
                     model: targetModel, 
                     messages: messages,
-                    max_tokens: base64Media ? 4000 : 2000
+                    max_tokens: 2000
                 }, {
                     headers: {
                         "Authorization": `Bearer ${openRouterApiKey}`,
                         "Content-Type": "application/json"
                     },
-                    timeout: base64Media ? 90000 : 45000
+                    timeout: 45000
                 });
                 
                 if (fallbackResponse.data?.choices?.length > 0) {
