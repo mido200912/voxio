@@ -6,13 +6,37 @@ import axios from 'axios';
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1/chat/completions";
 
 const MODELS = {
-  vision:   "openrouter/free",          // تحليل الصور
-  text:     "openrouter/owl-alpha",     // الردود النصية
-  designer: "openrouter/pareto-code",  // تصميم المواقع
+  // ── النماذج الأساسية ────────────────────────────────────────────────────
+  // تحليل الصور: Qwen3 VL 235B مجاني تماماً ويدعم الصور بشكل ممتاز
+  vision:   "qwen/qwen3-vl-235b-a22b-thinking",
+
+  // النصوص: Owl Alpha مجاني، 1M context، سريع جداً
+  text:     "openrouter/owl-alpha",
+
+  // الكود والتصميم: Qwen3 Coder 480B مجاني تماماً - أقوى كودر مجاني
+  designer: "qwen/qwen3-coder:free",
+
+  // ── Fallbacks مُرتّبة: مجاني أولاً، ثم الأرخص ─────────────────────────
   fallbacks: [
-    "openrouter/free",
-    "google/gemma-4-31b-it:free",
-    "google/gemma-4-26b-a4b-it:free",
+    "openrouter/owl-alpha",                     // ✅ مجاني، 1M context
+    "qwen/qwen3-coder:free",                    // ✅ مجاني، 480B، أقوى كودر
+    "qwen/qwen3-235b-a22b-thinking-2507",       // ✅ مجاني تماماً، 235B
+    "qwen/qwen3-next-80b-a3b-instruct:free",    // ✅ مجاني، 262K context
+    "arcee-ai/trinity-mini:free",               // ✅ مجاني، 131K context
+    "meta-llama/llama-3.3-70b-instruct:free",  // ✅ مجاني، موثوق
+    "openai/gpt-oss-120b:free",                // ✅ مجاني، 120B params
+    "openai/gpt-oss-20b:free",                 // ✅ مجاني، خفيف وسريع
+    "stepfun/step-3.5-flash:free",             // ✅ مجاني، 256K context
+    "z-ai/glm-4.5-air:free",                   // ✅ مجاني، agentic
+    "openrouter/free",                          // ✅ router عام - آخر خيار
+  ],
+
+  // ── نماذج الصور المجانية ─────────────────────────────────────────────
+  visionFallbacks: [
+    "qwen/qwen3-vl-235b-a22b-thinking",        // ✅ مجاني، 235B VL thinking
+    "qwen/qwen3-vl-30b-a3b-thinking",          // ✅ مجاني تماماً
+    "nvidia/nemotron-nano-12b-v2-vl:free",     // ✅ مجاني، متخصص للصور
+    "openrouter/free",                          // router عام يختار vision model
   ],
 };
 
@@ -93,21 +117,31 @@ async function analyzeImage(base64Media) {
 
   console.log(`📸 [Vision] بدء تحليل الصورة (${(base64Media.length / 1024).toFixed(0)} KB)…`);
 
-  const description = await openRouterRequest({
-    model: MODELS.vision,
-    messages: [{
-      role: "user",
-      content: [
-        { type: "text", text: VISION_PROMPT },
-        { type: "image_url", image_url: { url: base64Media, detail: "high" } },
-      ],
-    }],
-    max_tokens: 1500,
-    temperature: 0.2,
-  }, TIMEOUTS.vision);
+  for (const model of MODELS.visionFallbacks) {
+    try {
+      console.log(`🔍 [Vision] تجربة: ${model}`);
+      const description = await openRouterRequest({
+        model,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "text", text: VISION_PROMPT },
+            { type: "image_url", image_url: { url: base64Media, detail: "high" } },
+          ],
+        }],
+        max_tokens: 1500,
+        temperature: 0.2,
+      }, TIMEOUTS.vision, 1); // retry واحد فقط للصور
 
-  console.log(`✅ [Vision] تم التحليل (${description.length} حرف)`);
-  return description;
+      console.log(`✅ [Vision] تم التحليل بـ ${model} (${description.length} حرف)`);
+      return description;
+    } catch (err) {
+      console.warn(`⚠️ [Vision] ${model} فشل: ${err.message}`);
+    }
+  }
+
+  console.error("❌ [Vision] كل نماذج الصور فشلت");
+  return ""; // fallback: إرسال السؤال بدون وصف صورة
 }
 
 // ──────────────────────────────────────────────
