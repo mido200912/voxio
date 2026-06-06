@@ -262,4 +262,4 @@ export async function transcribeAudio(buffer, fileName = "audio.ogg", mimeType =
     }
 
     return "[رسالة صوتية غير واضحة]";
-}بهء
+}
