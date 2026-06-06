@@ -35,10 +35,13 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
     if (openRouterApiKey) {
         let modelsToTry;
 
-        // 📸 For images: use openrouter/free router which auto-selects vision models
+        // 📸 For images: use proven vision models
         if (base64Media) {
             console.log(`📸 Media input detected, size: ${(base64Media.length / 1024).toFixed(0)}KB`);
-            modelsToTry = ["openrouter/free"];
+            modelsToTry = [
+                "moonshotai/kimi-vl-a3b-thinking:free",
+                "qwen/qwen2.5-vl-32b-instruct:free",
+            ];
 
             if (typeof base64Media === 'string' && !base64Media.startsWith('data:')) {
                 base64Media = `data:image/jpeg;base64,${base64Media}`;
