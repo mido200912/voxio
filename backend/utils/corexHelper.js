@@ -33,7 +33,7 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
 
     // 🚀 1. Try OpenRouter FIRST
     if (openRouterApiKey) {
-        let modelsToTry = ["moonshotai/kimi-k2.6:free"];
+        let modelsToTry = ["openrouter/free"];
 
         if (base64Media) {
             console.log(`📸 Media input detected, size: ${(base64Media.length / 1024).toFixed(0)}KB`);
