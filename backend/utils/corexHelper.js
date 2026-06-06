@@ -41,7 +41,7 @@ export async function fetchAiResponse(fullQuestion, fallbackText = "لم أتم�
             modelsToTry = [
                 "moonshotai/kimi-k2.6:free",
                 "google/gemini-2.5-flash:free",
-                "qwen/qwen2.5-vl-7b-instruct:free"
+                "meta-llama/llama-3.2-11b-vision-instruct:free",
             ];
 
             if (typeof base64Media === 'string' && !base64Media.startsWith('data:')) {
