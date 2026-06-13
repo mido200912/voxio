@@ -24,7 +24,7 @@ class CompanyModel extends FirestoreModel {
       },
       aiSettings: {
         mode: 'restricted', // 'general' or 'restricted'
-        model: 'inclusionai/ring-2.6-1t',
+        model: 'openrouter/owl-alpha',
         languages: ['Arabic', 'English']
       },
       aiCredits: 500,

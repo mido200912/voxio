@@ -1,0 +1,108 @@
+/* ========================================
+   Logos Section — Hover Marquee
+======================================== */
+
+.logos {
+    padding: 40px 5%;
+    background: transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.logos-title {
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 500;
+}
+
+.logos-track-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: var(--container-max);
+    margin: 0 auto;
+    display: flex;
+    overflow: hidden;
+    user-select: none;
+    /* Smooth fade on the edges */
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.logos-track {
+    display: flex;
+    align-items: center;
+    gap: 5rem;
+    padding: 0;
+    min-width: 100%;
+    /* 30s linear animation */
+    animation: marquee 30s linear infinite;
+}
+
+/* Pause on hover to make it more professional */
+.logos-track:hover {
+    animation-play-state: paused;
+}
+
+.logo-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    transition: color 0.3s ease, transform 0.3s ease;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    position: relative;
+}
+
+/* Hovering on the logo turns it to the brand color or primary color */
+.logo-item:hover {
+    color: var(--color-text); /* Black/White theme */
+    transform: scale(1.05);
+}
+
+.logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+}
+
+.logo-item:hover .logo-icon {
+    color: var(--color-text);
+}
+
+.logo-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+html[dir="rtl"] .logos-track {
+    animation-direction: reverse;
+}
+
+/* ========================================
+   Responsive
+======================================== */
+@media (max-width: 768px) {
+    .logos {
+        padding: 16px 5%;
+    }
+    
+    .logos-track {
+        gap: 3.5rem;
+    }
+    
+    .logo-name {
+        font-size: 1.1rem;
+    }
+}

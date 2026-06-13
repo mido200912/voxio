@@ -1,134 +1,176 @@
 /* ========================================
-   Footer — VOXIO Premium
+   Footer — Linear Style Minimalist
 ======================================== */
+
 .footer {
-    padding: var(--spacing-lg) 0 var(--spacing-md);
-    border-top: 1px solid var(--color-border);
-    position: relative;
+  background: var(--color-bg);
+  padding: 80px 0 40px;
+  /* Very subtle border if any, Linear often uses no border or very dark */
+  border-top: 1px solid var(--color-border);
 }
 
-.footer-content {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr;
-    gap: 3rem;
-    margin-bottom: var(--spacing-lg);
+.footer-container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
 }
 
-.footer-section {
-    display: flex;
-    flex-direction: column;
+/* ─── Grid ─── */
+
+.footer-grid {
+  display: grid;
+  /* Linear layout: Logo takes 2fr or 1.5fr, the 5 link columns take 1fr each */
+  grid-template-columns: 2fr repeat(5, 1.2fr);
+  gap: 32px;
+  margin-bottom: 80px;
 }
 
-/* Footer Logo */
+/* ─── Brand Column ─── */
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+}
+
 .footer-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-start;
 }
 
 .footer-logo img {
-    width: 36px;
-    height: 36px;
-    object-fit: contain;
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  filter: grayscale(100%);
+  opacity: 0.9;
+  transition: opacity 0.2s;
 }
 
-.footer-logo span {
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--color-text);
+.footer-logo:hover img {
+  opacity: 1;
 }
 
-.footer-section>p {
-    font-size: 0.9rem;
-    line-height: 1.7;
-    color: var(--color-text-secondary);
-    max-width: 300px;
+/* ─── Column Headings & Links ─── */
+
+.footer-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 24px;
+  letter-spacing: -0.01em;
 }
 
-/* Footer Links */
-.footer-section h4 {
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 1.25rem;
-    color: var(--color-text);
+.footer-links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.footer-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+.footer-links-list li a {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  font-weight: 400;
 }
 
-.footer-section ul li a {
-    font-size: 0.9rem;
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    transition: all 0.2s ease;
-    display: inline-block;
+.footer-links-list li a:hover {
+  color: var(--color-text);
 }
 
-.footer-section ul li a:hover {
-    color: var(--color-text);
-    transform: translateX(6px);
-}
+/* ─── Bottom Bar ─── */
 
-/* Footer Bottom */
 .footer-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 24px;
 }
 
-.footer-bottom p {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    margin: 0;
+.footer-bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
-.footer-links {
-    display: flex;
-    gap: 1.5rem;
+.footer-bottom-left a {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-.footer-links a {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    transition: color 0.2s ease;
+.footer-bottom-left a:hover {
+  color: var(--color-text);
 }
 
-.footer-links a:hover {
-    color: var(--color-text);
+/* Theme Toggle Button next to bottom links */
+.footer-theme-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.footer-theme-btn:hover {
+  color: var(--color-text);
+  background: var(--color-bg-tertiary);
+}
+
+.footer-copy {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin: 0;
 }
 
 /* ========================================
-   Responsive Design
+   Responsive
 ======================================== */
+
 @media (max-width: 1024px) {
-    .footer-content {
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-    }
+  .footer-grid {
+    grid-template-columns: 1fr repeat(3, 1fr);
+    gap: 48px 32px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
 }
 
-@media (max-width: 768px) {
-    .footer-content {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
+@media (max-width: 640px) {
+  .footer {
+    padding: 48px 0 32px;
+  }
 
-    .footer-bottom {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-    }
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px 24px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+    margin-bottom: 16px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    padding-top: 32px;
+  }
+
+  .footer-bottom-left {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
 }

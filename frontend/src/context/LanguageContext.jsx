@@ -4,9 +4,16 @@ import { translations } from '../translations';
 const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
-    const [language, setLanguage] = useState('ar');
+    // Initialize from localStorage, default to 'en'
+    const [language, setLanguage] = useState(() => {
+        const savedLang = localStorage.getItem('voxio_lang');
+        return savedLang ? savedLang : 'en';
+    });
 
     useEffect(() => {
+        // Save to localStorage
+        localStorage.setItem('voxio_lang', language);
+        
         // Update document direction and language code
         document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
         document.documentElement.lang = language;

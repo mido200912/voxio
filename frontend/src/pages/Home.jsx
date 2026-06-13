@@ -1,9 +1,12 @@
 import Hero from '../components/Hero';
+import Logos from '../components/Logos';
 import Features from '../components/Features';
 import HowItWorks from '../components/HowItWorks';
 import Integrations from '../components/Integrations';
 import Pricing from '../components/Pricing';
-import Contact from '../components/Contact';
+import Testimonials from '../components/Testimonials';
+import FAQ from '../components/FAQ';
+import CTASection from '../components/CTASection';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useSEO } from '../hooks/useSEO';
@@ -62,11 +65,14 @@ const Home = () => {
             <Navbar />
             <main>
                 <Hero />
+                <Logos />
                 <Features />
                 <HowItWorks />
                 <Integrations />
                 <Pricing />
-                <Contact />
+                <Testimonials />
+                <FAQ />
+                <CTASection />
             </main>
             <Footer />
         </div>

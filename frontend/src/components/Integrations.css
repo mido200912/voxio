@@ -1,148 +1,121 @@
-/* ========================================
-   Integrations Section — VOXIO Premium
-======================================== */
 .integrations {
-    position: relative;
-    padding: var(--spacing-xl) 0;
+  padding: 120px 0;
+  background: var(--color-bg);
 }
 
 .integrations-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
 }
 
 .integration-card {
-    padding: 2rem;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    text-align: center;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.integration-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 20px;
-    padding: 1px;
-    background: linear-gradient(135deg, transparent 40%, rgba(var(--color-text-rgb), 0.1) 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
+  flex: 1 1 calc((100% - 2 * 24px) / 3);
+  max-width: calc((100% - 2 * 24px) / 3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: default;
 }
 
 .integration-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
-}
-
-.integration-card:hover::after {
-    opacity: 1;
-}
-
-.integration-card:hover .integration-logo {
-    transform: scale(1.15) rotate(-5deg);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-}
-
-.integration-card.coming-soon {
-    opacity: 0.7;
-}
-
-.integration-card.coming-soon:hover {
-    opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px var(--color-shadow);
+  border-color: var(--color-border-hover);
 }
 
 .integration-logo {
-    width: 64px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1.25rem;
-    border-radius: 18px;
-    font-size: 1.5rem;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
 }
 
-.integration-logo.facebook,
-.integration-logo.instagram,
-.integration-logo.whatsapp,
-.integration-logo.shopify,
-.integration-logo.telegram,
+.integration-logo.whatsapp {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25D366;
+}
+
+.integration-logo.instagram {
+  background: rgba(193, 53, 132, 0.1);
+  color: #C13584;
+}
+
+.integration-logo.telegram {
+  background: rgba(0, 136, 204, 0.1);
+  color: #0088CC;
+}
+
+.integration-logo.shopify {
+  background: rgba(150, 191, 72, 0.1);
+  color: #96BF48;
+}
+
 .integration-logo.twitter {
-    background: rgba(var(--color-text-rgb), 0.06);
-    color: var(--color-text);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
 }
 
-
-
-.integration-card h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: var(--color-text);
+.integration-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 
-.integration-card p {
-    font-size: 0.875rem;
-    line-height: 1.6;
-    color: var(--color-text-secondary);
-    margin-bottom: 1rem;
+.integration-desc {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
 }
 
 .integration-status {
-    display: inline-block;
-    padding: 0.35rem 1rem;
-    border-radius: 100px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: auto;
 }
 
-.integration-status.upcoming {
-    background: rgba(var(--color-text-rgb), 0.06);
-    color: var(--color-text-secondary);
+.status-active {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25D366;
 }
 
-.integration-status.status-active {
-    background: rgba(var(--color-text-rgb), 0.1);
-    color: var(--color-text);
-    border: 1px solid rgba(var(--color-text-rgb), 0.2);
+.upcoming {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-tertiary);
 }
 
-.active-card {
-    border-color: rgba(var(--color-text-rgb), 0.15) !important;
-    background: rgba(var(--color-text-rgb), 0.02) !important;
-}
-
-/* ========================================
-   Responsive Design
-======================================== */
 @media (max-width: 1024px) {
-    .integrations-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+  .integration-card {
+    flex: 1 1 calc((100% - 24px) / 2);
+    max-width: calc((100% - 24px) / 2);
+  }
 }
 
-@media (max-width: 768px) {
-    .integrations-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
+@media (max-width: 640px) {
+  .integrations {
+    padding: 80px 5%;
+  }
 
-    .integration-card {
-        padding: 1.5rem;
-    }
+  .integration-card {
+    flex: 1 1 100%;
+    max-width: 100%;
+    padding: 24px;
+  }
 }

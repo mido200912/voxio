@@ -1,0 +1,113 @@
+/* ═══ Fade In ═══ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══ Slide Up ═══ */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ Slide Down ═══ */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ Scale In ═══ */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ═══ Blur In ═══ */
+@keyframes blurIn {
+  from { opacity: 0; filter: blur(10px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+/* ═══ Marquee (for logos) ═══ */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marqueeReverse {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+/* ═══ Float ═══ */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* ═══ Pulse Glow ═══ */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px var(--accent-glow, rgba(108,99,255,0.25)); }
+  50% { box-shadow: 0 0 40px var(--accent-glow, rgba(108,99,255,0.25)), 0 0 60px var(--accent-glow, rgba(108,99,255,0.25)); }
+}
+
+/* ═══ Shimmer ═══ */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ═══ Typing ═══ */
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+
+/* ═══ Scroll Wheel ═══ */
+@keyframes scrollWheel {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  50% { transform: translateX(-50%) translateY(8px); opacity: 0; }
+}
+
+/* ═══ Accordion Slide ═══ */
+@keyframes accordionSlide {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 500px; opacity: 1; }
+}
+
+/* ═══ Spin ═══ */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ═══ Utility Classes ═══ */
+.animate-fade-in { animation: fadeIn 0.5s var(--ease-out, cubic-bezier(0.16,1,0.3,1)) forwards; }
+.animate-slide-up { animation: slideUp 0.5s var(--ease-out, cubic-bezier(0.16,1,0.3,1)) forwards; }
+.animate-slide-down { animation: slideDown 0.5s var(--ease-out, cubic-bezier(0.16,1,0.3,1)) forwards; }
+.animate-scale-in { animation: scaleIn 0.5s var(--ease-out, cubic-bezier(0.16,1,0.3,1)) forwards; }
+.animate-blur-in { animation: blurIn 0.7s var(--ease-out, cubic-bezier(0.16,1,0.3,1)) forwards; }
+.animate-marquee { animation: marquee 40s linear infinite; }
+.animate-marquee-reverse { animation: marqueeReverse 40s linear infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+
+/* ═══ Stagger Delays ═══ */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-800 { animation-delay: 800ms; }
+
+/* ═══ Reduced Motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
