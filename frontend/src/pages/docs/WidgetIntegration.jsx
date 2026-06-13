@@ -1,25 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { useSEO } from '../../hooks/useSEO';
+import SEO from '../../components/SEO';
 
 const WidgetIntegration = () => {
   const { language } = useLanguage();
   const isAr = language === 'ar';
   const t = (en, ar) => (isAr ? ar : en);
 
-  useSEO({
-    title: t('VOXIO Docs | Website Widget Integration', 'توثيق VOXIO | تضمين ودجت الموقع'),
-    description: t('Easily embed the VOXIO AI Chat widget on your website using a single script tag. Compatible with React, HTML, WordPress, and more.', 'قم بتضمين ودجت محادثة VOXIO بسهولة في موقعك باستخدام سطر واحد. متوافق مع كافة المنصات.'),
-    keywords: 'Website chatbot widget, Embed VOXIO widget, React chatbot component, AI chat widget, تضمين بوت المحادثة, ودجت ذكاء اصطناعي',
-    schema: {
-      "@context": "https://schema.org",
-      "@type": "TechArticle",
-      "headline": t('Website Widget Integration', 'تضمين ودجت الموقع'),
-      "description": t('How to embed VOXIO widget.', 'كيفية تضمين ودجت VOXIO في موقعك.'),
-      "author": { "@type": "Organization", "name": "VOXIO" },
-      "articleSection": "Documentation"
-    }
-  });
+  const seoProps = {
+    title: t('Website Chat Widget | VOXIO Docs', 'ودجيت محادثة الموقع | توثيق VOXIO'),
+    description: t('Embed the VOXIO AI chat widget directly into your React, WordPress, or HTML website using a simple script tag.', 'قم بتضمين ودجيت المحادثة الذكي من VOXIO مباشرة في موقع React أو ووردبريس أو HTML عبر كود برمجي بسيط.'),
+    keywords: 'AI website widget, Embed AI chatbot, React chat widget, ودجيت محادثة ذكي, إضافة بوت للموقع',
+  };
 
   return (
     <section className="docs-section" style={{ padding: '0' }}>

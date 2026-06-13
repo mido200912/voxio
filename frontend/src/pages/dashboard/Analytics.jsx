@@ -122,24 +122,167 @@ const Analytics = () => {
     return 'var(--an-heat-4)';
   };
 
+  /* ── PDF Download ── */
+  /* Uses html2canvas@1.4.1 + jsPDF@2.5.2 directly (NOT html2pdf@0.10.1)
+     Reason: html2pdf bundles html2canvas@0.10.1 which crashes on modern
+     CSS color() functions used by Chrome/Safari. Version 1.4.1 handles them. */
   const handleDownloadPDF = async () => {
-    const element = document.getElementById('an-pdf-root');
-    if (!element) return;
+    const original = document.getElementById('an-pdf-root');
+    if (!original) return;
     setDownloading(true);
-    const opt = {
-      margin:      0.3,
-      filename:    `Analytics_${new Date().toISOString().split('T')[0]}.pdf`,
-      image:       { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF:       { unit: 'in', format: 'a4', orientation: 'landscape' },
-    };
-    const run = () => window.html2pdf().set(opt).from(element).save().finally(() => setDownloading(false));
-    if (!window.html2pdf) {
+
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const bgColor      = currentTheme === 'dark' ? '#0f0f0f' : '#F9FAFB';
+    const textColor    = currentTheme === 'dark' ? '#f1f1f1' : '#111827';
+    const borderColor  = currentTheme === 'dark' ? '#2a2a2a' : '#e5e7eb';
+    const cardBg       = currentTheme === 'dark' ? '#1a1a1a' : '#ffffff';
+
+    // ── 1. Load libraries ──────────────────────────────────────────────
+    const loadScript = (src) => new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      s.onload = run;
-      document.body.appendChild(s);
-    } else run();
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`Failed to load: ${src}`));
+      document.head.appendChild(s);
+    });
+
+    try {
+      // html2canvas 1.4.1 supports color() — load sequentially so jsPDF finds window.jspdf
+      await loadScript('https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js');
+      await loadScript('https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js');
+    } catch (err) {
+      console.error('PDF libraries failed to load:', err);
+      setDownloading(false);
+      return;
+    }
+
+    // ── 2. Build isolated wrapper with resolved (hard-coded) colors ────
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+      position: fixed;
+      top: -99999px;
+      left: -99999px;
+      width: 1200px;
+      padding: 24px;
+      background: ${bgColor};
+      color: ${textColor};
+      font-family: 'Segoe UI', Arial, sans-serif;
+      direction: ${isArabic ? 'rtl' : 'ltr'};
+      box-sizing: border-box;
+    `;
+
+    const clone    = original.cloneNode(true);
+    const liveEls  = [original, ...original.querySelectorAll('*')];
+    const cloneEls = [clone,    ...clone.querySelectorAll('*')];
+
+    // ── 3. Copy computed styles; replace any color() or var() with safe values ──
+    const safeProp = (val, fallback) =>
+      !val || val.includes('color(') || val.includes('var(') ? fallback : val;
+
+    cloneEls.forEach((el, i) => {
+      const live = liveEls[i];
+      if (!live) return;
+      try {
+        const cs = getComputedStyle(live);
+
+        const bg = cs.backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+          el.style.backgroundColor = safeProp(bg, cardBg);
+        }
+        el.style.color       = safeProp(cs.color, textColor);
+        el.style.borderColor = safeProp(cs.borderColor, borderColor);
+
+        // Fix SVG presentation attributes
+        const tag = el.tagName?.toLowerCase();
+        if (['path', 'line', 'rect', 'circle', 'polygon', 'polyline', 'stop'].includes(tag)) {
+          const stroke = el.getAttribute('stroke');
+          if (stroke && (stroke.startsWith('var(') || stroke.includes('color(')))
+            el.setAttribute('stroke', borderColor);
+
+          const fill = el.getAttribute('fill');
+          if (fill && (fill.startsWith('var(') || fill.includes('color(')))
+            el.setAttribute('fill', textColor);
+
+          const sc = el.getAttribute('stop-color');
+          if (sc && sc.includes('color('))
+            el.setAttribute('stop-color', '#6366f1');
+        }
+      } catch (_) { /* skip inaccessible cross-origin elements */ }
+    });
+
+    // ── 4. Inject page-break styles ───────────────────────────────────
+    const style = document.createElement('style');
+    style.textContent = `
+      * { box-sizing: border-box !important; }
+      .an-card    { page-break-inside: avoid !important; break-inside: avoid !important;
+                    margin-bottom: 20px !important; background: ${cardBg} !important; }
+      .an-kpi     { page-break-inside: avoid !important; break-inside: avoid !important; }
+      .an-row     { page-break-inside: avoid !important; break-inside: avoid !important; }
+      .an-kpi-row { page-break-inside: avoid !important; break-inside: avoid !important; }
+    `;
+    clone.prepend(style);
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
+    // Wait for SVGs to paint
+    await new Promise(r => setTimeout(r, 800));
+
+    try {
+      // ── 5. Capture with html2canvas 1.4.1 ───────────────────────────
+      const canvas = await window.html2canvas(wrapper, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: bgColor,
+        logging: false,
+        // Skip invisible placeholder spans Recharts injects (they cause ResizeObserver loops)
+        ignoreElements: (el) =>
+          el.tagName === 'SPAN' &&
+          el.style?.position === 'absolute' &&
+          !el.textContent?.trim(),
+      });
+
+      // ── 6. Build PDF page-by-page ────────────────────────────────────
+      const { jsPDF } = window.jspdf;
+      const pdf   = new jsPDF({ unit: 'px', format: 'a4', orientation: 'landscape' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const ratio = pageW / canvas.width;       // scale factor canvas → PDF pts
+      const sliceH = Math.floor(pageH / ratio); // canvas rows per page
+
+      let yOffset = 0;
+      while (yOffset < canvas.height) {
+        if (yOffset > 0) pdf.addPage();
+
+        const rowsLeft   = canvas.height - yOffset;
+        const rowsOnPage = Math.min(sliceH, rowsLeft);
+
+        // Slice the canvas vertically for this page
+        const pageCanvas    = document.createElement('canvas');
+        pageCanvas.width    = canvas.width;
+        pageCanvas.height   = rowsOnPage;
+        pageCanvas.getContext('2d').drawImage(
+          canvas,
+          0, yOffset,          // source x, y
+          canvas.width, rowsOnPage,  // source w, h
+          0, 0,                // dest x, y
+          canvas.width, rowsOnPage   // dest w, h
+        );
+
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pageW, rowsOnPage * ratio);
+        yOffset += rowsOnPage;
+      }
+
+      pdf.save(`Analytics_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    } catch (err) {
+      console.error('PDF generation error:', err);
+    } finally {
+      if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
+      document.querySelectorAll('.html2canvas-container').forEach(el => el.remove());
+      setDownloading(false);
+    }
   };
 
   if (loading) return <PageLoader />;

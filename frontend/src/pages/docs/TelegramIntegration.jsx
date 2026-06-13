@@ -1,16 +1,16 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { useSEO } from '../../hooks/useSEO';
+import SEO from '../../components/SEO';
 
 const TelegramIntegration = () => {
   const { language } = useLanguage();
   const isAr = language === 'ar';
   const t = (en, ar) => (isAr ? ar : en);
 
-  useSEO({
-    title: t('VOXIO Docs | Telegram Bot Integration', 'توثيق VOXIO | ربط بوت تيليجرام'),
-    description: t('Learn how to connect your trained VOXIO AI agent to a Telegram bot instantly.', 'تعلم كيفية ربط وكيلك الذكي المدرب على VOXIO ببوت تيليجرام في ثوانٍ لاستقبال رسائل العملاء والرد عليها آلياً.'),
-    keywords: 'Telegram Bot API integration, AI Telegram Bot, VOXIO Telegram, ربط تيليجرام, بوت تيليجرام ذكي',
+  const seoProps = {
+    title: t('Telegram Bot Integration | VOXIO Docs', 'تكامل بوت تيليجرام | توثيق VOXIO'),
+    description: t('Learn how to link your custom AI agent to a Telegram bot token via BotFather in just two steps.', 'تعلم كيفية ربط وكيلك الذكي ببوت تيليجرام عبر BotFather في خطوتين فقط.'),
+    keywords: 'Telegram AI bot, Telegram API integration, BotFather, بوت تيليجرام ذكاء اصطناعي, ربط تيليجرام',
     schema: {
       "@context": "https://schema.org",
       "@type": "TechArticle",
@@ -19,10 +19,11 @@ const TelegramIntegration = () => {
       "author": { "@type": "Organization", "name": "VOXIO" },
       "articleSection": "Documentation"
     }
-  });
+  };
 
   return (
     <section className="docs-section" style={{ padding: '0' }}>
+      <SEO {...seoProps} />
       <div className="docs-section-header" style={{ marginBottom: '2rem' }}>
         <div className="docs-section-icon" style={{ background: '#0088cc', color: '#fff' }}>
           <i className="fab fa-telegram" />

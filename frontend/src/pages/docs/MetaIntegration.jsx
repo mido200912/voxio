@@ -1,16 +1,16 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { useSEO } from '../../hooks/useSEO';
+import SEO from '../../components/SEO';
 
 const MetaIntegration = () => {
   const { language } = useLanguage();
   const isAr = language === 'ar';
   const t = (en, ar) => (isAr ? ar : en);
 
-  useSEO({
-    title: t('VOXIO Docs | Meta Integration (WhatsApp, Facebook, Instagram)', 'توثيق VOXIO | ربط ميتا (واتساب، فيسبوك، إنستجرام)'),
-    description: t('Comprehensive guide on integrating Meta APIs including WhatsApp Business API, Facebook Messenger, and Instagram Direct with VOXIO AI.', 'دليل شامل لربط واجهات ميتا البرمجية (واتساب بيزنس، ماسنجر، إنستجرام) مع روبوتات الذكاء الاصطناعي في Voxio.'),
-    keywords: 'WhatsApp API integration, Facebook Messenger Bot, Instagram DM Automation, Meta Graph API, VOXIO Meta, ربط واتساب بيزنس, أتمتة رسائل فيسبوك',
+  const seoProps = {
+    title: t('Meta Integration (WhatsApp, Instagram, Messenger) | VOXIO Docs', 'ربط ميتا (واتساب، إنستجرام، ماسنجر) | توثيق VOXIO'),
+    description: t('Learn how to connect your VOXIO AI agent to WhatsApp Business API, Instagram DMs, and Facebook Messenger automatically.', 'تعلم كيفية ربط وكيل VOXIO الخاص بك بواتساب للأعمال، رسائل إنستجرام، وماسنجر فيسبوك تلقائياً.'),
+    keywords: 'WhatsApp API integration, Instagram DM automation, Facebook Messenger AI, ربط واتساب API, أتمتة إنستجرام',
     schema: {
       "@context": "https://schema.org",
       "@type": "TechArticle",
@@ -19,10 +19,11 @@ const MetaIntegration = () => {
       "author": { "@type": "Organization", "name": "VOXIO" },
       "articleSection": "Documentation"
     }
-  });
+  };
 
   return (
     <section className="docs-section" style={{ padding: '0' }}>
+      <SEO {...seoProps} />
       <div className="docs-section-header" style={{ marginBottom: '2rem' }}>
         <div className="docs-section-icon" style={{ background: 'linear-gradient(45deg, #1877F2, #25D366, #E4405F)' }}>
           <i className="fab fa-meta" style={{ color: '#fff' }} />

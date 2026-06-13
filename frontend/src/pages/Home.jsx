@@ -9,7 +9,7 @@ import FAQ from '../components/FAQ';
 import CTASection from '../components/CTASection';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { useSEO } from '../hooks/useSEO';
+import SEO from '../components/SEO';
 import { useLanguage } from '../context/LanguageContext';
 
 const Home = () => {
@@ -17,7 +17,7 @@ const Home = () => {
     const isAr = language === 'ar';
     const t = (en, ar) => (isAr ? ar : en);
 
-    useSEO({
+    const seoProps = {
         title: t('VOXIO - AI Customer Service Platform', 'VOXIO - منصة الذكاء الاصطناعي لخدمة العملاء'),
         description: t('Automate your customer service with VOXIO. AI chatbots for WhatsApp, Shopify, Facebook, and your Website.', 'أتمت خدمة عملائك مع VOXIO. روبوتات محادثة ذكية للواتساب، شوبيفاي، فيسبوك، وموقعك الخاص.'),
         keywords: 'AI Chatbot, Customer Service Automation, WhatsApp Bot, Shopify Bot, VOXIO, روبوت محادثة, ذكاء اصطناعي, خدمة عملاء, واتساب بيزنس',
@@ -58,10 +58,11 @@ const Home = () => {
             }
           ]
         }
-    });
+    };
 
     return (
         <div className="home-page">
+            <SEO {...seoProps} />
             <Navbar />
             <main>
                 <Hero />

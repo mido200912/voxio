@@ -2,6 +2,42 @@
    VOXIO Dashboard Layout — Multi-Theme Design
    ═══════════════════════════════════════════════════ */
 
+:root {
+    --dash-bg: #F9FAFB;
+    --dash-card: #FFFFFF;
+    --dash-text: #111111;
+    --dash-text-sec: #6B7280;
+    --dash-border: #E5E7EB;
+    --dash-rail: #FFFFFF;
+    --dash-sidebar: #FFFFFF;
+    --dash-icon: #9CA3AF;
+    --dash-bg-rgb: 249, 250, 251;
+}
+
+:root[data-theme="light"] {
+    --dash-bg: #F9FAFB;
+    --dash-card: #FFFFFF;
+    --dash-text: #111111;
+    --dash-text-sec: #6B7280;
+    --dash-border: #E5E7EB;
+    --dash-rail: #FFFFFF;
+    --dash-sidebar: #FFFFFF;
+    --dash-icon: #9CA3AF;
+    --dash-bg-rgb: 249, 250, 251;
+}
+
+:root[data-theme="dark"] {
+    --dash-bg: #000000;
+    --dash-card: #0A0A0A;
+    --dash-text: #FFFFFF;
+    --dash-text-sec: #A1A1AA;
+    --dash-border: #27272A;
+    --dash-rail: #0A0A0A;
+    --dash-sidebar: #0A0A0A;
+    --dash-icon: #71717A;
+    --dash-bg-rgb: 0, 0, 0;
+}
+
 .dashboard-layout {
     display: flex;
     height: 100vh;

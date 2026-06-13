@@ -1,16 +1,16 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { useSEO } from '../../hooks/useSEO';
+import SEO from '../../components/SEO';
 
 const ShopifyIntegration = () => {
   const { language } = useLanguage();
   const isAr = language === 'ar';
   const t = (en, ar) => (isAr ? ar : en);
 
-  useSEO({
-    title: t('VOXIO Docs | Shopify API Integration', 'توثيق VOXIO | ربط متجر شوبيفاي Shopify API'),
-    description: t('Learn how to integrate your Shopify store with VOXIO using Webhooks and API to automate customer service, handle abandoned carts, and increase sales.', 'تعلم كيفية ربط متجر شوبيفاي بمنصة Voxio باستخدام Webhooks و API لتفعيل الرد الآلي واستعادة السلات المتروكة.'),
-    keywords: 'Shopify API integration, Automation flow, Customer engagement, Webhooks, VOXIO Shopify, ربط شوبيفاي, بوت شوبيفاي',
+  const seoProps = {
+    title: t('Shopify App Integration | VOXIO Docs', 'تكامل تطبيق شوبيفاي | توثيق VOXIO'),
+    description: t('Sync your Shopify store products with your VOXIO AI agent. Automate customer support and recover abandoned carts.', 'زامن منتجات متجرك على شوبيفاي مع وكيل VOXIO الذكي. أتمت خدمة العملاء واستعد السلات المتروكة.'),
+    keywords: 'Shopify AI chatbot, Shopify store automation, Ecommerce AI bot, بوت شوبيفاي, أتمتة المتاجر الإلكترونية',
     schema: {
       "@context": "https://schema.org",
       "@type": "TechArticle",
@@ -19,10 +19,11 @@ const ShopifyIntegration = () => {
       "author": { "@type": "Organization", "name": "VOXIO" },
       "articleSection": "Documentation"
     }
-  });
+  };
 
   return (
     <section className="docs-section" style={{ padding: '0' }}>
+      <SEO {...seoProps} />
       <div className="docs-section-header" style={{ marginBottom: '2rem' }}>
         <div className="docs-section-icon" style={{ background: '#96bf48', color: '#fff' }}><i className="fab fa-shopify" /></div>
         <div>

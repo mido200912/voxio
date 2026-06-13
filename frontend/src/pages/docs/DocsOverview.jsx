@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { useSEO } from '../../hooks/useSEO';
+import SEO from '../../components/SEO';
 import { Link } from 'react-router-dom';
 
 const DocsOverview = () => {
@@ -8,14 +8,15 @@ const DocsOverview = () => {
   const isAr = language === 'ar';
   const t = (en, ar) => (isAr ? ar : en);
 
-  useSEO({
+  const seoProps = {
     title: t('VOXIO Documentation | API & Integrations', 'توثيق VOXIO | واجهة البرمجة والتكاملات'),
     description: t('Official VOXIO documentation. Learn how to train your AI agent, integrate it into your apps, and deploy across multiple channels.', 'التوثيق الرسمي لمنصة VOXIO. تعلم كيفية تدريب وكيلك الذكي، دمجه في تطبيقاتك، ونشره عبر القنوات المتعددة.'),
     keywords: 'VOXIO API, AI chatbot API, LLM API docs, Conversational AI integration, توثيق API, أتمتة بالذكاء الاصطناعي',
-  });
+  };
 
   return (
     <section className="docs-section" style={{ padding: '0' }}>
+      <SEO {...seoProps} />
       <div className="docs-section-hero" style={{ padding: '0', background: 'transparent', textAlign: isAr ? 'right' : 'left' }}>
         <div className="docs-hero-badge" style={{ margin: isAr ? '0 0 1.5rem 0' : '0 0 1.5rem 0' }}><i className="fas fa-compass" /> {t('Overview', 'نظرة عامة')}</div>
         <h1>{t('Welcome to VOXIO API', 'مرحباً بك في VOXIO API')}</h1>

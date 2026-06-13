@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
-import { useSEO } from '../hooks/useSEO';
+import SEO from '../components/SEO';
 import './LegalPages.css';
 
 const AboutUs = () => {
@@ -9,7 +9,7 @@ const AboutUs = () => {
   const isAr = language === 'ar';
   const t = (en, ar) => (isAr ? ar : en);
 
-  useSEO({
+  const seoProps = {
     title: t('About VOXIO - The Future of AI Customer Service', 'عن VOXIO - مستقبل خدمة العملاء بالذكاء الاصطناعي'),
     description: t('Learn about VOXIO, our mission, vision, and the team building the most advanced AI customer service platform for businesses.', 'تعرف على VOXIO، رسالتنا، رؤيتنا، والفريق الذي يبني المنصة الأكثر تطوراً لخدمة العملاء بالذكاء الاصطناعي.'),
     keywords: 'About VOXIO, AI Startup, Customer Service Automation Company, فريق فكسيو, عن الشركة',
@@ -24,10 +24,11 @@ const AboutUs = () => {
         "url": "https://voxio.com/"
       }
     }
-  });
+  };
 
   return (
     <div className="lp-page" dir={isAr ? 'rtl' : 'ltr'}>
+      <SEO {...seoProps} />
       <div className="lp-topbar">
         <Link to="/" className="lp-logo">
           <i className="fas fa-arrow-right" />
