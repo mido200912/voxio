@@ -44,11 +44,18 @@ const HowItWorks = () => {
         </div>
 
         <div className="steps-container reveal-section" ref={revealRef}>
+          <div className="steps-line">
+            <div className="steps-line-progress"></div>
+          </div>
           {steps.map((step, index) => (
             <div key={index} className="step-wrapper" data-reveal-delay={index * 150}>
-              <div className="step-number">{step.number}</div>
-              <h3 className="step-title">{step.title}</h3>
-              <p className="step-description">{step.description}</p>
+              <div className="step-card">
+                <div className="step-icon-wrapper">
+                  <span className="step-number">{step.number}</span>
+                </div>
+                <h3 className="step-title">{step.title}</h3>
+                <p className="step-description">{step.description}</p>
+              </div>
             </div>
           ))}
         </div>
