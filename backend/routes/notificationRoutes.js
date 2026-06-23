@@ -1,6 +1,7 @@
 import express from "express";
 import { requireAuth } from "../middleware/auth.js";
 import NotificationService from "../services/notificationService.js";
+import NotificationSettings from "../models/NotificationSettings.js";
 
 const router = express.Router();
 
@@ -29,6 +30,60 @@ router.delete("/fcm-token", requireAuth, async (req, res) => {
       await user.save();
     }
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// @route   GET /api/notifications/settings
+// @desc    Get user notification settings
+router.get("/settings", requireAuth, async (req, res) => {
+  try {
+    let settings = await NotificationSettings.findOne({ user: req.user._id });
+    if (!settings) {
+      settings = await NotificationSettings.create({ user: req.user._id });
+    }
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// @route   PUT /api/notifications/settings
+// @desc    Update user notification settings
+router.put("/settings", requireAuth, async (req, res) => {
+  try {
+    const updateData = req.body;
+    let settings = await NotificationSettings.findOne({ user: req.user._id });
+
+    if (!settings) {
+      settings = await NotificationSettings.create({ user: req.user._id, ...updateData });
+    } else {
+      Object.assign(settings, updateData);
+      await settings.save();
+    }
+
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// @route   POST /api/notifications/mute
+// @desc    Mute or unmute all notifications
+router.post("/mute", requireAuth, async (req, res) => {
+  try {
+    const { mute } = req.body;
+    let settings = await NotificationSettings.findOne({ user: req.user._id });
+
+    if (!settings) {
+      settings = await NotificationSettings.create({ user: req.user._id, enabled: !mute });
+    } else {
+      settings.enabled = !mute;
+      await settings.save();
+    }
+
+    res.json({ success: true, enabled: settings.enabled });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
