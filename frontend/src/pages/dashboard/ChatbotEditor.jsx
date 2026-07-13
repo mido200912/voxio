@@ -472,7 +472,7 @@ const ChatbotEditor = () => {
                                     >
                                         <optgroup label="Coding Specialists">
                                             <option value="inclusionai/ring-2.6-1t:free">Ring 2.6 (Fast & Accurate)</option>
-                                            <option value="openrouter/owl-alpha">Owl Alpha (Advanced Design AI)</option>
+                                            <option value="nvidia/nemotron-3-ultra-550b-a55b:free">nvidia/nemotron-3-ultra-550b-a55b:free (Advanced Design AI)</option>
                                         </optgroup>
                                     </select>
                                 </div>

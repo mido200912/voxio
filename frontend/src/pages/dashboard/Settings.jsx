@@ -255,7 +255,7 @@ const Settings = () => {
                                 <label>AI Model</label>
                                 <select className="settings-select" value={companyData.aiSettings?.model}
                                     onChange={(e) => setCompanyData({...companyData, aiSettings: {...companyData.aiSettings, model: e.target.value}})}>
-                                    <option value="openrouter/owl-alpha">Owl Alpha</option>
+                                    <option value="nvidia/nemotron-3-ultra-550b-a55b:free">nemotron-3-ultra</option>
                                 </select>
                             </div>
                         </div>

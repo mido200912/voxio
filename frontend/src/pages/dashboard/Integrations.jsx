@@ -689,7 +689,7 @@ const Integrations = () => {
                                         value={whatsappData.aiModel || 'openrouter/owl-alpha'}
                                         onChange={(e) => setWhatsappData({ ...whatsappData, aiModel: e.target.value })}
                                     >
-                                        <option value="openrouter/owl-alpha">Owl Alpha</option>
+                                        <option value="nvidia/nemotron-3-ultra-550b-a55b:free">nemotron-3-ultra</option>
                                     </select>
                                 </div>
                             </div>
