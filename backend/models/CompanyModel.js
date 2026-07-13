@@ -24,7 +24,7 @@ class CompanyModel extends FirestoreModel {
       },
       aiSettings: {
         mode: 'restricted', // 'general' or 'restricted'
-        model: 'openrouter/owl-alpha',
+        model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
         languages: ['Arabic', 'English']
       },
       aiCredits: 500,
@@ -33,6 +33,51 @@ class CompanyModel extends FirestoreModel {
       ...data
     };
     return super.create(defaultData);
+  }
+
+  async findById(id) {
+    const company = await super.findById(id);
+    return await this._syncModel(company);
+  }
+
+  async findOne(query) {
+    const company = await super.findOne(query);
+    return await this._syncModel(company);
+  }
+
+  async find(query = {}) {
+    const companies = await super.find(query);
+    if (!companies) return [];
+    return Promise.all(companies.map(c => this._syncModel(c)));
+  }
+
+  async _syncModel(company) {
+    if (!company) return null;
+    
+    // Dynamic import to avoid circular dependencies just in case
+    const { VALID_MODELS, DEFAULT_TEXT_MODEL } = await import("../utils/corexHelper.js");
+    
+    if (company.aiSettings && company.aiSettings.model) {
+      if (!VALID_MODELS.includes(company.aiSettings.model)) {
+        console.log(`[Model Sync] Updating company ${company.name || company._id} model from ${company.aiSettings.model} to ${DEFAULT_TEXT_MODEL}`);
+        company.aiSettings.model = DEFAULT_TEXT_MODEL;
+        try {
+          // company is an instance with .save() mapped
+          await company.save();
+        } catch (e) {
+          console.error("[Model Sync] Failed to save updated model", e);
+        }
+      }
+    } else if (company.aiSettings && !company.aiSettings.model) {
+        company.aiSettings.model = DEFAULT_TEXT_MODEL;
+        try {
+          await company.save();
+        } catch (e) {
+          console.error("[Model Sync] Failed to save updated model", e);
+        }
+    }
+    
+    return company;
   }
 }
 

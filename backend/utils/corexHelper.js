@@ -46,6 +46,16 @@ const TIMEOUTS = {
   design: 60_000,
 };
 
+export const VALID_MODELS = [
+  MODELS.vision,
+  MODELS.text,
+  MODELS.designer,
+  ...MODELS.fallbacks,
+  ...MODELS.visionFallbacks
+];
+
+export const DEFAULT_TEXT_MODEL = MODELS.text;
+
 // Simple in-memory cache (يتنظف تلقائياً بعد 10 دقايق)
 const _cache = new Map();
 const CACHE_TTL = 10 * 60 * 1000;

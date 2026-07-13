@@ -5,8 +5,8 @@ dotenv.config();
 (async () => {
     try {
         console.log("=== Testing fetchAiResponse ===");
-        console.log("Testing with model openrouter/owl-alpha...");
-        let reply = await fetchAiResponse("مرحبا", "Fallback", "openrouter/owl-alpha");
+        console.log("Testing with model nvidia/nemotron-3-ultra-550b-a55b:free...");
+        let reply = await fetchAiResponse("مرحبا", "Fallback", "nvidia/nemotron-3-ultra-550b-a55b:free");
         console.log("Final Reply 1:", reply);
         
         console.log("\n=== Testing fetchDesignerAiResponse ===");
