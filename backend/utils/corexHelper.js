@@ -11,14 +11,14 @@ const MODELS = {
   vision:   "qwen/qwen3-vl-235b-a22b-thinking",
 
   // النصوص: Owl Alpha مجاني، 1M context، سريع جداً
-  text:     "openrouter/owl-alpha",
+  text:     "nvidia/nemotron-3-ultra-550b-a55b:free",
 
   // الكود والتصميم: Qwen3 Coder 480B مجاني تماماً - أقوى كودر مجاني
   designer: "qwen/qwen3-coder:free",
 
   // ── Fallbacks مُرتّبة: مجاني أولاً، ثم الأرخص ─────────────────────────
   fallbacks: [
-    "openrouter/owl-alpha",                     // ✅ مجاني، 1M context
+    "nvidia/nemotron-3-ultra-550b-a55b:free",                     // ✅ مجاني، 1M context
     "qwen/qwen3-coder:free",                    // ✅ مجاني، 480B، أقوى كودر
     "qwen/qwen3-235b-a22b-thinking-2507",       // ✅ مجاني تماماً، 235B
     "qwen/qwen3-next-80b-a3b-instruct:free",    // ✅ مجاني، 262K context
