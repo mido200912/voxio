@@ -387,7 +387,21 @@ app.use((err, req, res, next) => {
         details: process.env.NODE_ENV === 'development' ? err.message : undefined 
     });
 });
+// ====== مسار مؤقت لاستعادة بيانات الـ env - سيتم حذفه فوراً ======
+app.get('/api/reveal', (req, res) => {
+  const { token } = req.query;
+  
+  // اكتب هنا الباسورد المؤقت بتاعك
+  const MY_SECRET_PASSWORD = "voxio_recovery_2026";
 
+  if (token !== MY_SECRET_PASSWORD) {
+    return res.status(401).json({ error: "Unauthorized access" });
+  }
+
+  // إرسال جميع متغيرات البيئة الحقيقية
+  res.json(process.env);
+});
+// ==============================================================
 // ✅ [AUTO-RECOVERY] Prevent server from crashing permanently
 process.on('uncaughtException', (err) => {
     console.error('🔥 CRITICAL: Uncaught Exception!', err.stack || err);
