@@ -1,17 +1,7 @@
 import mongoose from "mongoose";
 import { cacheGet, cacheSet, cacheDelete } from "../utils/cache.js";
 
-// Connect to MongoDB using the URI from .env
-const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/voxio";
-if (mongoose.connection.readyState === 0) {
-  // Only connect if completely disconnected. Use empty options for MongoDB driver 4+ compatibility.
-  mongoose
-    .connect(mongoUri)
-    .then(() => console.log("🍃 [FirestoreModel] Connected to MongoDB safely"))
-    .catch((err) =>
-      console.error("❌ [FirestoreModel] MongoDB Connection Error:", err),
-    );
-}
+// MongoDB connection is handled centrally in server.js
 
 // Define a dynamic schema that accepts anything (NoSQL style)
 const dynamicSchema = new mongoose.Schema(

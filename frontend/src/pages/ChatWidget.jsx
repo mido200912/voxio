@@ -209,8 +209,11 @@ const ChatWidget = ({ apiKeyProp }) => {
 
             {/* Header */}
             <header className="vx-widget-header">
-                <div className="vx-avatar-main" style={{ background: color }}>
-                    {company?.name ? company.name[0].toUpperCase() : '🤖'}
+                <div className="vx-avatar-main" style={{ background: company?.logo ? 'transparent' : color, border: company?.logo ? '2px solid rgba(0,0,0,0.1)' : 'none', overflow: 'hidden', padding: 0 }}>
+                    {company?.logo
+                        ? <img src={company.logo} alt={company.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.style.background = color; e.target.parentElement.textContent = company?.name ? company.name[0].toUpperCase() : '🤖'; }} />
+                        : (company?.name ? company.name[0].toUpperCase() : '🤖')
+                    }
                 </div>
                 <div className="vx-header-info">
                     <h2>{company?.name || 'Support'}</h2>

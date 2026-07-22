@@ -3,8 +3,9 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';  
 import { secureStorage } from '../../utils/secureStorage';
 import { useLanguage } from '../../context/LanguageContext';
-import { useToast } from '../../components/Toast';
+
 import './DashboardShared.css';
+import { useToast } from '../../components/ui/Toast';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -17,7 +18,7 @@ const WidgetCustomizer = () => {
     
     // Default config fallback
     const defaultConfig = { 
-        primaryColor: '#6C63FF',
+        primaryColor: '#111111',
         launcherColor: '#1e293b',
         welcomeMessage: isArabic ? 'مرحباً! كيف يمكنني مساعدتك؟' : 'Hello! How can I help you?',
     };
@@ -141,7 +142,7 @@ const WidgetCustomizer = () => {
     const embedCode = `<script 
   src="${BACKEND_URL.replace('/api', '')}/widget.js" 
   data-api-key="${apiKey}" 
-  data-primary-color="${config.primaryColor || '#6C63FF'}"
+  data-primary-color="${config.primaryColor || '#111111'}"
   data-launcher-color="${config.launcherColor || '#1e293b'}">
 </script>`;
 
@@ -192,14 +193,14 @@ const WidgetCustomizer = () => {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(var(--color-text-rgb), 0.03)', padding: '6px', borderRadius: '12px', border: '1px solid var(--dash-border)' }}>
                                             <input 
                                                 type="color" 
-                                                value={config.primaryColor || '#6C63FF'} 
+                                                value={config.primaryColor || '#111111'} 
                                                 onChange={e => setConfig({...config, primaryColor: e.target.value})}
                                                 style={{ width: '40px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none', padding: 0 }}
                                             />
                                             <input 
                                                 type="text" 
                                                 className="dash-input"
-                                                value={config.primaryColor || '#6C63FF'} 
+                                                value={config.primaryColor || '#111111'} 
                                                 onChange={e => setConfig({...config, primaryColor: e.target.value})}
                                                 style={{ border: 'none', background: 'none', padding: '4px', fontSize: '0.85rem' }}
                                             />

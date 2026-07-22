@@ -3,9 +3,11 @@ import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion } from 'framer-motion';
-import PageLoader from '../../components/PageLoader';
-import { useToast } from '../../components/Toast';
+
+
 import './DashboardShared.css';
+import PageLoader from '../../components/ui/PageLoader';
+import { useToast } from '../../components/ui/Toast';
 
 const ROLES = [
   { id: 'admin', labelAr: 'مدير', labelEn: 'Admin', icon: 'fas fa-crown' },

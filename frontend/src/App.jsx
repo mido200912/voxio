@@ -8,7 +8,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
-import ToastProvider from './components/Toast';
+import ToastProvider from './components/ui/Toast';
 import './App.css';
 
 import PublicLayout from './layouts/PublicLayout';
@@ -33,6 +33,8 @@ const Products = lazy(() => import('./pages/dashboard/Products'));
 const Conversations = lazy(() => import('./pages/dashboard/Conversations'));
 const Analytics = lazy(() => import('./pages/dashboard/Analytics'));
 const TeamManagement = lazy(() => import('./pages/dashboard/TeamManagement'));
+const AiCopilot = lazy(() => import('./pages/dashboard/AiCopilot'));
+
 const OnboardingProfile = lazy(() => import('./pages/onboarding/Profile'));
 const OnboardingKnowledge = lazy(() => import('./pages/onboarding/Knowledge'));
 const OnboardingConnect = lazy(() => import('./pages/onboarding/Connect'));
@@ -123,6 +125,7 @@ function App() {
                   <Route path="conversations" element={<Conversations />} />
                   <Route path="analytics" element={<Analytics />} />
                   <Route path="team" element={<TeamManagement />} />
+                  <Route path="ai-copilot" element={<AiCopilot />} />
                 </Route>
               </Routes>
               </Suspense>

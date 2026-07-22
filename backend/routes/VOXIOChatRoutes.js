@@ -1,8 +1,10 @@
 import express from 'express';
 import axios from 'axios';
-import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
+import multer from 'multer';
+import { extractCorexReply, fetchAiResponse, transcribeAudio } from '../utils/corexHelper.js';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // معلومات VOXIO (هوية البوت)
 const VOXIO_CONTEXT = `
@@ -50,6 +52,20 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error("VOXIO Bot Error:", error?.response?.data || error.message);
         res.status(500).json({ error: "Service unavailable" });
+    }
+});
+
+router.post('/transcribe', upload.single('audio'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No audio file provided' });
+        }
+        
+        const text = await transcribeAudio(req.file.buffer, req.file.originalname || 'audio.webm', req.file.mimetype || 'audio/webm');
+        res.json({ text });
+    } catch (error) {
+        console.error("Transcription Error:", error);
+        res.status(500).json({ error: 'Failed to transcribe audio' });
     }
 });
 

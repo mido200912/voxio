@@ -529,3 +529,45 @@
     }
 }
 
+/* 🤖 Agent Acting Indicator */
+.vx-agent-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(108, 99, 255, 0.05));
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    border-radius: 12px;
+    color: var(--vx-color);
+    font-size: 0.85rem;
+    font-weight: 600;
+    animation: vx-fade-in-down 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin: 0 1.5rem;
+}
+
+.vx-agent-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(108, 99, 255, 0.3);
+    border-top-color: var(--vx-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin { 
+    to { transform: rotate(360deg); } 
+}
+@keyframes vx-fade-in-down {
+    0% { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-color-scheme: dark) {
+    .vx-agent-bar {
+        background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(108, 99, 255, 0.05));
+        color: #a5b4fc;
+    }
+    .vx-agent-spinner {
+        border-top-color: #a5b4fc;
+    }
+}

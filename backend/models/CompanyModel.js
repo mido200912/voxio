@@ -9,8 +9,6 @@ class CompanyModel extends FirestoreModel {
       slug: data.name ? data.name.toLowerCase().replace(/ /g, "-") : `company-${Date.now()}`,
       websiteUrl: data.websiteUrl || "",
       allowedDomains: data.allowedDomains || [],
-      requests: [],
-      knowledgeBase: [],
       extractedKnowledge: "",
       urlExtractedKnowledge: "",
       customInstructions: "",

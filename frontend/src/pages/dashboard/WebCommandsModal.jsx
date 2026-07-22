@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
-import { useToast } from '../../components/Toast';
+import { useToast } from '../../components/ui/Toast';
+
 
 const WebCommandsModal = ({ show, onClose, isInline = false, platform = 'website' }) => {
     const { t } = useLanguage();

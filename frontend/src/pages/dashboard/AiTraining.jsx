@@ -3,9 +3,10 @@ import axios from 'axios';
 import { secureStorage } from '../../utils/secureStorage';
 import { useLanguage } from '../../context/LanguageContext';
 import { motion } from 'framer-motion';  
-import { useToast } from '../../components/Toast';
+
 import './AiTraining.css';
 import './DashboardShared.css';
+import { useToast } from '../../components/ui/Toast';
 
 const AiTraining = () => {
     const { t, language } = useLanguage();
@@ -268,7 +269,7 @@ const AiTraining = () => {
                 {/* ✨ URL Scraping Section */}
                 <motion.div className="dash-card animate-slide-in" variants={itemVariants}>
                     <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', padding: 0, background: 'none', border: 'none' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(108, 99, 255, 0.1)', color: '#6C63FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(17, 17, 17, 0.1)', color: '#111111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <i className="fas fa-link"></i>
                         </div>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>{isArabic ? 'التدريب عبر الروابط' : 'URL Training'}</h3>

@@ -32,7 +32,7 @@
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(0, 0, 0, 0.08);
   /* Glow colors */
-  --glow-primary: rgba(108, 99, 255, 0.15);
+  --glow-primary: rgba(17, 17, 17, 0.15);
   --glow-secondary: rgba(0, 194, 255, 0.15);
 }
 
@@ -58,7 +58,7 @@
   --glass-bg: rgba(10, 10, 10, 0.6);
   --glass-border: rgba(255, 255, 255, 0.08);
   /* Glow colors */
-  --glow-primary: rgba(108, 99, 255, 0.25);
+  --glow-primary: rgba(17, 17, 17, 0.25);
   --glow-secondary: rgba(0, 194, 255, 0.25);
 }
 
@@ -145,7 +145,7 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05);
-  --shadow-glow: 0 0 40px -10px var(--accent-glow, rgba(108,99,255,0.25));
+  --shadow-glow: 0 0 40px -10px var(--accent-glow, rgba(17, 17, 17,0.25));
 
   /* ═══ Transitions ═══ */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -205,8 +205,8 @@
 }
 
 @keyframes heroPulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(108, 99, 255, 0.4); }
-  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(108, 99, 255, 0); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(17, 17, 17, 0); }
 }
 
 @keyframes heroScrollAnim {
@@ -526,3 +526,214 @@ html[data-theme="light"] .text-gradient {
   z-index: 0;
   pointer-events: none;
 }
+
+/* ========================================
+   Dashboard Premium Design System
+   Extended tokens for dashboard overhaul
+======================================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* ── Outfit for Dashboard ── */
+  --font-dash: 'Outfit', 'Inter', -apple-system, sans-serif;
+
+  /* ── Dashboard Accent Colors ── */
+  --dash-accent: #111111;
+  --dash-accent-rgb: 17, 17, 17;
+  --dash-primary: #111111;
+  --dash-primary-rgb: 17, 17, 17;
+  --dash-text-rgb: 17, 17, 17;
+
+  /* ── Premium Gradient Palette ── */
+  --grad-violet: linear-gradient(135deg, #111111 0%, #a855f7 100%);
+  --grad-teal:   linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+  --grad-amber:  linear-gradient(135deg, #dddddd 0%, #f97316 100%);
+  --grad-rose:   linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  --grad-green:  linear-gradient(135deg, #cccccc 0%, #16a34a 100%);
+
+  /* ── Glow Shadows ── */
+  --glow-violet: 0 0 40px rgba(17, 17, 17, 0.2);
+  --glow-teal:   0 0 40px rgba(20, 184, 166, 0.3);
+  --glow-amber:  0 0 40px rgba(245, 158, 11, 0.3);
+  --glow-card:   0 8px 32px rgba(0, 0, 0, 0.08);
+
+  /* ── AI Copilot Colors ── */
+  --copilot-bg:        #000000;
+  --copilot-card:      #111111;
+  --copilot-border:    rgba(255, 255, 255, 0.15);
+  --copilot-user-msg:  #333333;
+  --copilot-ai-msg:    #111111;
+  --copilot-text:      #ffffff;
+  --copilot-text-sec:  rgba(255, 255, 255, 0.55);
+  --copilot-glow:      rgba(255, 255, 255, 0.15);
+}
+
+:root[data-theme="light"] {
+  --dash-text-rgb: 17, 17, 17;
+  --dash-accent: #111111;
+  --dash-primary: #111111;
+  --glow-card: 0 8px 32px rgba(17, 17, 17, 0.07);
+  --copilot-bg:        #f9fafb;
+  --copilot-card:      #ffffff;
+  --copilot-border:    rgba(17, 17, 17, 0.15);
+  --copilot-user-msg:  #111111;
+  --copilot-ai-msg:    #f3f4f6;
+  --copilot-text:      #111111;
+  --copilot-text-sec:  #6b7280;
+  --copilot-glow:      rgba(17, 17, 17, 0.08);
+}
+
+:root[data-theme="dark"] {
+  --dash-text-rgb: 255, 255, 255;
+  --dash-accent: #ffffff;
+  --dash-primary: #ffffff;
+  --glow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========================================
+   Dashboard Enhanced Animations
+======================================== */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dash-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dash-pop {
+  0%   { opacity: 0; transform: scale(0.85); }
+  70%  { transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dash-slide-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes copilot-blink {
+  0%, 80%, 100% { opacity: 0; transform: scale(0.8); }
+  40%           { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.4); }
+  50%      { box-shadow: 0 0 0 8px rgba(17, 17, 17, 0); }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-4px); }
+}
+
+.animate-fade-in  { animation: dash-fade-up 0.5s var(--ease-out) both; }
+.animate-pop-in   { animation: dash-pop 0.4s var(--ease-out) both; }
+.animate-slide-in { animation: dash-slide-in 0.4s var(--ease-out) both; }
+
+/* ========================================
+   Skeleton Loader Utility
+======================================== */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 25%,
+    var(--color-bg-secondary) 50%,
+    var(--color-bg-tertiary) 75%
+  );
+  background-size: 400px 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+/* ========================================
+   Dashboard Shared Card Styles
+======================================== */
+.dash-card {
+  background: var(--dash-card);
+  border: 1px solid var(--dash-border);
+  border-radius: 20px;
+  margin-bottom: 20px;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dash-card:hover {
+  border-color: rgba(var(--dash-accent-rgb), 0.25);
+  box-shadow: var(--glow-card);
+}
+
+.dash-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dash-page-title {
+  font-family: var(--font-dash);
+  font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+  font-weight: 800;
+  color: var(--dash-text);
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+
+.dash-page-subtitle {
+  font-size: 0.875rem;
+  color: var(--dash-text-sec);
+  margin: 4px 0 0;
+  font-weight: 400;
+}
+
+/* Shared button primitives for dashboard */
+.dash-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-family: var(--font-dash);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.dash-btn-primary {
+  background: var(--dash-text);
+  color: #fff;
+}
+.dash-btn-primary:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+  box-shadow: var(--glow-violet);
+}
+
+.dash-btn-outline {
+  background: transparent;
+  border: 1px solid var(--dash-border);
+  color: var(--dash-text-sec);
+}
+.dash-btn-outline:hover {
+  border-color: rgba(var(--dash-accent-rgb), 0.4);
+  color: var(--dash-text);
+  background: rgba(var(--dash-accent-rgb), 0.05);
+}
+
+/* Dropdown menu */
+.dash-dropdown-menu {
+  animation: dash-pop 0.2s var(--ease-out) both;
+}
+.dash-dropdown-item {
+  transition: background 0.15s ease;
+}

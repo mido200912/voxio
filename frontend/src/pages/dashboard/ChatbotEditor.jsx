@@ -14,8 +14,9 @@ import 'prismjs/components/prism-markup';
 import './ChatbotEditor.css';
 import { secureStorage } from '../../utils/secureStorage';
 import WebCommandsModal from './WebCommandsModal';
-import { useToast } from '../../components/Toast';
+
 import './DashboardShared.css';
+import { useToast } from '../../components/ui/Toast';
 
 const ChatbotEditor = () => {
     const { user } = useAuth();
@@ -228,7 +229,7 @@ const ChatbotEditor = () => {
             const firstFile = filesToModify[0];
             const remainingFiles = filesToModify.slice(1);
 
-            setWorkflow(prev => ({ ...prev, report, pendingFiles: remainingFiles }));
+            setWorkflow(prev => ({ ...prev, report, pendingFiles: remainingFiles, step: `editing_${firstFile}` }));
 
             // Step 2: Edit First Segment
             setMessages(prev => [...prev, { id: Date.now()+2, role: 'ai', content: `🔍 جاري تحليل وتعديل الـ ${firstFile.toUpperCase()}...` }]);
@@ -411,6 +412,14 @@ const ChatbotEditor = () => {
                 </div>
 
                 <div className="toolbar-right">
+                    <div className="presence-avatars">
+                        <div className="presence-avatar user-avatar" title={isArabic ? 'أنت' : 'You'}>
+                            {user?.name ? user.name[0].toUpperCase() : 'U'}
+                        </div>
+                        <div className="presence-avatar ai-avatar" title={isArabic ? 'الذكاء الاصطناعي' : 'VOXIO AI'}>
+                            <i className="fas fa-robot"></i>
+                        </div>
+                    </div>
                     <button 
                         className="tb-icon-btn" 
                         onClick={() => setIsSidebarOpen(prev => !prev)} 
@@ -515,22 +524,7 @@ const ChatbotEditor = () => {
                                         <i className="fas fa-arrow-up"></i>
                                     </button>
                                 </form>
-                                {workflow.step.startsWith('review_') && (
-                                    <div className="workflow-actions" style={{ display: 'flex', gap: '10px', padding: '10px', background: 'var(--bg-card)', borderTop: '1px solid var(--border-color)' }}>
-                                        <button 
-                                            onClick={() => handleAcceptReject('accept')} 
-                                            className="tb-btn" style={{ flex: 1, background: '#10b981', color: 'white' }}
-                                        >
-                                            <i className="fas fa-check"></i> {language === 'ar' ? 'قبول' : 'Accept'}
-                                        </button>
-                                        <button 
-                                            onClick={() => handleAcceptReject('reject')} 
-                                            className="tb-btn" style={{ flex: 1, background: '#ef4444', color: 'white' }}
-                                        >
-                                            <i className="fas fa-times"></i> {language === 'ar' ? 'رفض' : 'Reject'}
-                                        </button>
-                                    </div>
-                                )}
+
                             </div>
                         )}
 
@@ -584,7 +578,62 @@ const ChatbotEditor = () => {
                 </aside>
 
                 {/* ─── Code & Preview Area ─── */}
-                <main className="dynamic-area">
+                <main className="dynamic-area" style={{ position: 'relative' }}>
+                    {workflow.active && (
+                        <div className="ai-progress-tracker">
+                            <div className="ai-progress-header">
+                                <div className="ai-progress-title">
+                                    <i className="fas fa-robot"></i>
+                                    {isArabic ? 'جاري تنفيذ التعديلات المقترحة... يرجى الانتظار.' : 'AI is processing your request...'}
+                                </div>
+                                <div className="ai-progress-percentage">
+                                    {workflow.step === 'idle' ? '0%' : workflow.step === 'analyzing' ? '30%' : workflow.step.startsWith('editing') ? '70%' : '100%'}
+                                </div>
+                            </div>
+                            <div className="ai-progress-bar-bg">
+                                <div className="ai-progress-bar-fill" style={{ width: workflow.step === 'idle' ? '0%' : workflow.step === 'analyzing' ? '30%' : workflow.step.startsWith('editing') ? '70%' : '100%' }}></div>
+                            </div>
+                            <div className="ai-progress-steps">
+                                <div className={`ai-progress-step ${workflow.step === 'analyzing' ? 'active' : workflow.step.startsWith('editing') || workflow.step.startsWith('review') ? 'completed' : ''}`}>
+                                    <div className="ai-step-icon">
+                                        {workflow.step === 'analyzing' ? <i className="fas fa-spinner fa-spin"></i> : (workflow.step.startsWith('editing') || workflow.step.startsWith('review') ? <i className="fas fa-check"></i> : <i className="fas fa-circle" style={{fontSize: '8px'}}></i>)}
+                                    </div>
+                                    <span>{isArabic ? 'تحليل الطلب وتحديد الملفات' : 'Analyzing Request & Locating Files'}</span>
+                                    {workflow.step === 'analyzing' && <span className="ai-confidence">Confidence 98%</span>}
+                                </div>
+                                <div className={`ai-progress-step ${workflow.step.startsWith('editing') ? 'active' : workflow.step.startsWith('review') ? 'completed' : ''}`}>
+                                    <div className="ai-step-icon">
+                                        {workflow.step.startsWith('editing') ? <i className="fas fa-spinner fa-spin"></i> : (workflow.step.startsWith('review') ? <i className="fas fa-check"></i> : <i className="fas fa-circle" style={{fontSize: '8px'}}></i>)}
+                                    </div>
+                                    <span>{isArabic ? 'كتابة وتحديث الكود' : 'Writing & Updating Code'}</span>
+                                    {workflow.step.startsWith('editing') && <span className="ai-confidence">Confidence 95%</span>}
+                                </div>
+                                <div className={`ai-progress-step ${workflow.step.startsWith('review') ? 'active' : ''}`}>
+                                    <div className="ai-step-icon">
+                                        {workflow.step.startsWith('review') ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-circle" style={{fontSize: '8px'}}></i>}
+                                    </div>
+                                    <span>{isArabic ? 'المراجعة والاعتماد' : 'Review & Approval'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {workflow.step.startsWith('review_') && (
+                        <div className="ai-review-overlay">
+                            <div className="ai-review-msg">
+                                <i className="fas fa-shield-alt"></i>
+                                {isArabic ? 'التغييرات جاهزة للمراجعة.' : 'Changes are ready for review.'}
+                            </div>
+                            <div className="ai-review-actions">
+                                <button className="btn-formal-accept" onClick={() => handleAcceptReject('accept')}>
+                                    {isArabic ? 'موافق (تأكيد التعديلات)' : 'Accept (Confirm)'}
+                                </button>
+                                <button className="btn-formal-reject" onClick={() => handleAcceptReject('reject')}>
+                                    {isArabic ? 'إلغاء (تجاهل التعديلات)' : 'Reject (Discard)'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     
                     {/* Code Editor */}
                     <div className="editor-panel code-panel">
@@ -597,7 +646,13 @@ const ChatbotEditor = () => {
                                 ))}
                             </div>
                         </div>
-                        <div className="code-container" dir="ltr" style={{ textAlign: 'left', direction: 'ltr' }}>
+                        <div className={`code-container ${workflow.active ? 'component-locked ai-glow' : ''}`} dir="ltr" style={{ textAlign: 'left', direction: 'ltr', position: 'relative' }}>
+                            {workflow.active && (
+                                <div className="live-cursor-ai" style={{ top: '30%', left: '40%' }}>
+                                    <i className="fas fa-mouse-pointer live-cursor-icon"></i>
+                                    <div className="live-cursor-tag">VOXIO AI</div>
+                                </div>
+                            )}
                             <Editor
                                 value={segments[activeFile]}
                                 onValueChange={code => handleSegmentChange(code, activeFile)}

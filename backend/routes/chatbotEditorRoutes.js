@@ -128,12 +128,16 @@ IMPORTANT RULES:
 - If targetSegment is 'html', return ONLY the raw HTML body/structure (no <style> or <script> tags).
 - If targetSegment is 'css', return ONLY raw CSS code.
 - If targetSegment is 'js', return ONLY raw JavaScript code.
-- DO NOT wrap the code in markdown blocks like \`\`\`html or \`\`\`css.
-- RESPOND WITH EXACTLY THIS RAW JSON FORMAT:
-  {"message": "شرح التعديل بالعربي في سطر واحد", "code": "THE_MODIFIED_CODE"}
+- RESPOND WITH EXACTLY THIS FORMAT:
+[MESSAGE]
+شرح التعديل بالعربي في سطر واحد
+[/MESSAGE]
+
+[CODE]
+THE_MODIFIED_CODE
+[/CODE]
   
-CRITICAL COMMAND: You MUST generate this code modification quickly. DO NOT EXCEED 300 SECONDS!
-CRITICAL COMMAND 2: You MUST return the ENTIRE and COMPLETE ${targetSegment.toUpperCase()} code with your modifications integrated. Do NOT return partial snippets or just the changed lines. Return the full code.
+CRITICAL COMMAND: You MUST return the ENTIRE and COMPLETE ${targetSegment.toUpperCase()} code with your modifications integrated. Do NOT return partial snippets or just the changed lines. Return the full code.
 WARNING: DO NOT use ellipsis (...) or placeholders to skip code! You MUST write out every single line of the code from start to finish. If you omit code using ..., the website will break!
 
 Context of what you should do: ${userRequest}
@@ -155,21 +159,25 @@ Task: Modify ONLY the ${targetSegment.toUpperCase()} to fulfill the request. If 
     console.log(`🤖 Segment Editor: Editing ${targetSegment}...`);
     const aiResult = await fetchDesignerAiResponse(systemPrompt, userPrompt, "Failed", codingModel);
     
-    let parsed;
+    let parsed = { message: "تم التعديل", code: currentCode };
     try {
-      let cleaned = aiResult.replace(/```json\s*/gi, '').replace(/```[a-z]*\s*/gi, '').replace(/```\s*/gi, '').trim();
+      let msgMatch = aiResult.match(/\[MESSAGE\]([\s\S]*?)\[\/MESSAGE\]/i);
+      let codeMatch = aiResult.match(/\[CODE\]([\s\S]*?)\[\/CODE\]/i);
       
-      const startIdx = cleaned.indexOf('{');
-      const endIdx = cleaned.lastIndexOf('}');
-      if (startIdx !== -1 && endIdx !== -1) {
-          parsed = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
+      if (msgMatch && msgMatch[1]) parsed.message = msgMatch[1].trim();
+      if (codeMatch && codeMatch[1]) {
+          let codeStr = codeMatch[1].trim();
+          // Clean markdown blocks if the AI accidentally added them inside [CODE]
+          codeStr = codeStr.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+          parsed.code = codeStr;
       } else {
-          throw new Error("No JSON found");
+          // Fallback: If AI didn't use [CODE], assume the whole response might be code, after stripping markdown
+          let codeStr = aiResult.replace(/\[MESSAGE\][\s\S]*?\[\/MESSAGE\]/i, '').trim();
+          codeStr = codeStr.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+          if (codeStr.length > 10) parsed.code = codeStr;
       }
     } catch (e) {
-      console.warn("Manual JSON extraction for segment...");
-      // simple fallback
-      parsed = { message: "تم التعديل", code: currentCode }; 
+      console.warn("Manual extraction failed...");
     }
 
     let finalCode = parsed.code || currentCode;

@@ -125,4 +125,34 @@ router.get("/comprehensive", requireAuth, async (req, res) => {
   }
 });
 
+// @route   GET /api/analytics/unanswered
+// @desc    Get top questions the bot failed to answer
+router.get("/unanswered", requireAuth, async (req, res) => {
+  try {
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getTopUnansweredQuestions(company._id, days);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// @route   GET /api/analytics/top-users
+// @desc    Get most frequent customers talking to AI
+router.get("/top-users", requireAuth, async (req, res) => {
+  try {
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    const days = parseInt(req.query.days) || 30;
+    const data = await AnalyticsService.getTopAiUsers(company._id, days);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

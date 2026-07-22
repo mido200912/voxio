@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';  
-import axios from 'axios';
 import { secureStorage } from '../utils/secureStorage';
-import VOXIOChatWidget from '../components/VOXIOChatWidget';
+import VOXIOChatWidget from '../components/ui/VOXIOChatWidget';
+import { useGetCompanyQuery, useGetIntegrationsQuery } from '../store/dashboardApi';
 import './DashboardLayout.css';
+
+const DashboardRouteFallback = () => (
+    <div className="dashboard-route-loader" role="status" aria-live="polite">
+        <span className="dashboard-route-loader__spinner" aria-hidden="true"></span>
+        <span>Loading...</span>
+    </div>
+);
 
 const DashboardLayout = () => {
     const { t, language, toggleLanguage } = useLanguage();
@@ -16,43 +23,98 @@ const DashboardLayout = () => {
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
     const [activeIntegrations, setActiveIntegrations] = useState([]);
+    const hasToken = Boolean(secureStorage.getItem('token'));
+    const companyQuery = useGetCompanyQuery(undefined, { skip: !hasToken });
+    const integrationsQuery = useGetIntegrationsQuery(undefined, { skip: !hasToken });
 
+    // ─── Handle VOXIO_* commands from widget iframe ──────────────────────────────
     useEffect(() => {
-        const fetchIntegrations = async () => {
-            const token = secureStorage.getItem('token');
-            if (!token) return;
-            try {
-                const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-                
-                // ⚡ Critical: Check if company exists. If not, redirect to onboarding.
-                try {
-                    await axios.get(`${BACKEND_URL}/company`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                } catch (err) {
-                    if (err.response?.status === 404) {
-                        console.log('Company not found, redirecting to onboarding...');
-                        window.location.href = '/onboarding/profile';
-                        return;
-                    }
-                }
+        const handleMessage = (event) => {
+            if (!event.data || typeof event.data.type !== 'string') return;
+            if (!event.data.type.startsWith('VOXIO_')) return;
 
-                const res = await axios.get(`${BACKEND_URL}/integration-manager`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const platforms = res.data.map(i => i.platform.toLowerCase());
-                console.log('[Sidebar] Connected platforms:', platforms);
-                setActiveIntegrations(platforms);
-            } catch (err) {
-                console.error('Failed to fetch sidebar data:', err);
+            const { type, target, selector } = event.data;
+
+            if (type === 'VOXIO_NAVIGATE') {
+                if (!target) return;
+                if (target.startsWith('#')) {
+                    const el = document.querySelector(target);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                } else if (target.startsWith('/')) {
+                    window.location.href = target;
+                } else {
+                    window.location.href = target;
+                }
+            }
+
+            if (type === 'VOXIO_SCROLL') {
+                if (!selector) return;
+                const el = document.querySelector(selector);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            if (type === 'VOXIO_CLICK') {
+                if (!selector) return;
+                const el = document.querySelector(selector);
+                if (el) {
+                    el.click();
+                }
+            }
+
+            if (type === 'VOXIO_HIGHLIGHT') {
+                if (!selector) return;
+                const el = document.querySelector(selector);
+                if (!el) return;
+
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('voxio-copilot-highlight');
+
+                setTimeout(() => {
+                    el.classList.remove('voxio-copilot-highlight');
+                }, 4000);
+            }
+
+            if (type === 'VOXIO_FILL') {
+                if (!selector || !event.data.value) return;
+                const el = document.querySelector(selector);
+                if (el) {
+                    el.focus();
+                    el.value = event.data.value;
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             }
         };
-        fetchIntegrations();
 
-        // ⚡ Listen for custom event to refetch integrations dynamically
-        window.addEventListener('integrationsUpdated', fetchIntegrations);
-        return () => window.removeEventListener('integrationsUpdated', fetchIntegrations);
-    }, [location.pathname]);
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
+    useEffect(() => {
+        if (companyQuery.error?.status === 404) {
+            window.location.href = '/onboarding/profile';
+        }
+    }, [companyQuery.error]);
+
+    useEffect(() => {
+        if (!integrationsQuery.data) return;
+
+        const platforms = integrationsQuery.data.map((integration) =>
+            integration.platform.toLowerCase(),
+        );
+        setActiveIntegrations(platforms);
+    }, [integrationsQuery.data]);
+
+    useEffect(() => {
+        const refreshIntegrations = () => integrationsQuery.refetch();
+
+        window.addEventListener('integrationsUpdated', refreshIntegrations);
+        return () => window.removeEventListener('integrationsUpdated', refreshIntegrations);
+    }, [integrationsQuery]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -62,32 +124,24 @@ const DashboardLayout = () => {
                 setIsSidebarOpen(true);
             }
         };
-
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
     const handleNavItemClick = () => {
-        if (window.innerWidth <= 768) {
-            setIsSidebarOpen(false);
-        }
+        if (window.innerWidth <= 768) setIsSidebarOpen(false);
     };
 
-    const isActive = (path) => {
-        return location.pathname === path ? 'active' : '';
-    };
+    const isActive = (path) => location.pathname === path ? 'active' : '';
+    const isRailActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-    const isRailActive = (path) => {
-        return location.pathname === path || location.pathname.startsWith(path + '/');
-    };
+    const isArabic = language === 'ar';
 
     return (
         <div className="dashboard-layout">
-            {/* Icon Rail (Narrow Left Bar) */}
+            {/* ── Icon Rail (Narrow Left Bar) ── */}
             <div className="icon-rail">
                 <img
                     src={theme === 'dark' ? '/logodark.png' : '/logo.png'}
@@ -102,42 +156,66 @@ const DashboardLayout = () => {
                     <i className="fas fa-home"></i>
                 </button>
                 <button
+                    className={`icon-rail-btn ${isRailActive('/dashboard/analytics') ? 'active' : ''}`}
+                    onClick={() => { window.location.href = '/dashboard/analytics'; }}
+                    title={isArabic ? 'التحليلات' : 'Analytics'}
+                >
+                    <i className="fas fa-chart-line"></i>
+                </button>
+                <button
+                    className={`icon-rail-btn ${isRailActive('/dashboard/conversations') ? 'active' : ''}`}
+                    onClick={() => { window.location.href = '/dashboard/conversations'; }}
+                    title={isArabic ? 'المحادثات' : 'Conversations'}
+                >
+                    <i className="fas fa-comments"></i>
+                </button>
+                <button
+                    className={`icon-rail-btn ${isRailActive('/dashboard/ai-copilot') ? 'active' : ''}`}
+                    onClick={() => { window.location.href = '/dashboard/ai-copilot'; }}
+                    title={isArabic ? 'مساعد AI' : 'AI Copilot'}
+                    style={{ color: isRailActive('/dashboard/ai-copilot') ? '#a855f7' : undefined }}
+                >
+                    <i className="fas fa-magic"></i>
+                </button>
+
+                <div className="icon-rail-spacer"></div>
+
+                <button
                     className={`icon-rail-btn ${isRailActive('/dashboard/settings') ? 'active' : ''}`}
                     onClick={() => { window.location.href = '/dashboard/settings'; }}
                     title={t.dashboard.settings}
                 >
                     <i className="fas fa-cog"></i>
                 </button>
-
-                <div className="icon-rail-spacer"></div>
-
                 <button className="icon-rail-btn" onClick={toggleTheme} title="Toggle Theme">
                     {theme === 'light' ? <i className="fas fa-moon"></i> : <i className="fas fa-sun"></i>}
                 </button>
             </div>
 
-            {/* Mobile Overlay */}
+            {/* ── Mobile Overlay ── */}
             {isSidebarOpen && (
                 <div className="sidebar-overlay mobile-only" onClick={() => setIsSidebarOpen(false)}></div>
             )}
 
-            {/* Sidebar */}
+            {/* ── Sidebar ── */}
             <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-                <div className="sidebar-header">
+                {/* Mobile header */}
+                <div className="sidebar-header mobile-only">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <img
                             src={theme === 'dark' ? '/logodark.png' : '/logo.png'}
                             alt="VOXIO"
                             className="sidebar-logo"
-                            style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+                            style={{ width: '30px', height: '30px', objectFit: 'contain' }}
                         />
-                        <span style={{ fontWeight: 800, color: 'var(--dash-text)', fontSize: '1.1rem' }}>VOXIO</span>
+                        <span style={{ fontWeight: 800, color: 'var(--dash-text)', fontSize: '1rem', fontFamily: 'var(--font-dash)' }}>VOXIO</span>
                     </div>
                     <button className="close-sidebar-btn mobile-only" onClick={() => setIsSidebarOpen(false)}>
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
 
+                {/* User info */}
                 <div className="sidebar-user">
                     <div className="user-avatar">
                         <span>{user?.name?.[0]?.toUpperCase() || 'U'}</span>
@@ -146,13 +224,14 @@ const DashboardLayout = () => {
                         <>
                             <div className="user-info">
                                 <span className="user-name">{user?.name || 'User'}</span>
-                                <span className="user-role">User Name</span>
+                                <span className="user-role">{isArabic ? 'مشرف' : 'Admin'}</span>
                             </div>
-                            <span className="user-badge">ADMIN</span>
+                            <span className="user-badge">PRO</span>
                         </>
                     )}
                 </div>
 
+                {/* Navigation */}
                 <nav className="sidebar-nav">
                     <ul>
                         <li>
@@ -164,37 +243,37 @@ const DashboardLayout = () => {
                         <li>
                             <Link to="/dashboard/orders" className={`nav-item ${isActive('/dashboard/orders')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-shopping-cart"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'الطلبات' : 'Orders'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'الطلبات' : 'Orders'}</span>}
                             </Link>
                         </li>
                         <li>
                             <Link to="/dashboard/leads" className={`nav-item ${isActive('/dashboard/leads')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-user-friends"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'العملاء المحتملين' : 'Leads'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'العملاء المحتملين' : 'Leads'}</span>}
                             </Link>
                         </li>
                         <li>
                             <Link to="/dashboard/products" className={`nav-item ${isActive('/dashboard/products')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-box"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'المنتجات' : 'Products'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'المنتجات' : 'Products'}</span>}
                             </Link>
                         </li>
                         <li>
                             <Link to="/dashboard/conversations" className={`nav-item ${isActive('/dashboard/conversations')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-comments"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'المحادثات والردود' : 'Conversations'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'المحادثات والردود' : 'Conversations'}</span>}
                             </Link>
                         </li>
                         <li>
                             <Link to="/dashboard/analytics" className={`nav-item ${isActive('/dashboard/analytics')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-chart-line"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'التحليلات' : 'Analytics'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'التحليلات' : 'Analytics'}</span>}
                             </Link>
                         </li>
                         <li>
                             <Link to="/dashboard/team" className={`nav-item ${isActive('/dashboard/team')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-users"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'الفريق' : 'Team'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'الفريق' : 'Team'}</span>}
                             </Link>
                         </li>
                         <li>
@@ -209,6 +288,20 @@ const DashboardLayout = () => {
                                 {isSidebarOpen && <span>{t.dashboard.modelTest}</span>}
                             </Link>
                         </li>
+
+                        {/* ── AI Copilot — Special Item ── */}
+                        <li>
+                            <Link to="/dashboard/ai-copilot" className={`nav-item nav-item-copilot ${isActive('/dashboard/ai-copilot')}`} onClick={handleNavItemClick}>
+                                <i className="fas fa-magic"></i>
+                                {isSidebarOpen && (
+                                    <>
+                                        <span>{isArabic ? 'مساعد AI' : 'AI Copilot'}</span>
+                                        <span style={{ marginInlineStart: 'auto', fontSize: '0.6rem', padding: '2px 6px', borderRadius: '5px', background: 'rgba(168,85,247,0.15)', color: '#a855f7', fontWeight: 700, letterSpacing: '0.04em' }}>NEW</span>
+                                    </>
+                                )}
+                            </Link>
+                        </li>
+
                         <li>
                             <Link to="/dashboard/integrations" className={`nav-item ${isActive('/dashboard/integrations')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-plug"></i>
@@ -223,42 +316,41 @@ const DashboardLayout = () => {
                         <li>
                             <Link to="/dashboard/widget" className={`nav-item nav-item-website ${isActive('/dashboard/widget')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-code"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'ودجت الموقع' : 'Website Widget'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'ودجت الموقع' : 'Website Widget'}</span>}
                             </Link>
                         </li>
-                        {activeIntegrations.includes('whatsapp') === true ? (
+                        {activeIntegrations.includes('whatsapp') && (
                         <li>
                             <Link to="/dashboard/whatsapp" className={`nav-item nav-item-whatsapp ${isActive('/dashboard/whatsapp')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-whatsapp"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'واتساب' : 'WhatsApp'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'واتساب' : 'WhatsApp'}</span>}
                             </Link>
                         </li>
-                        ) : null}
-                        {activeIntegrations.includes('instagram') === true ? (
+                        )}
+                        {activeIntegrations.includes('instagram') && (
                         <li>
                             <Link to="/dashboard/instagram" className={`nav-item nav-item-instagram ${isActive('/dashboard/instagram')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-instagram"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'إنستاجرام' : 'Instagram'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'إنستاجرام' : 'Instagram'}</span>}
                             </Link>
                         </li>
-                        ) : null}
-                        {activeIntegrations.includes('telegram') === true ? (
+                        )}
+                        {activeIntegrations.includes('telegram') && (
                         <li>
                             <Link to="/dashboard/telegram" className={`nav-item nav-item-telegram ${isActive('/dashboard/telegram')}`} onClick={handleNavItemClick}>
                                 <i className="fab fa-telegram-plane"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'تليجرام' : 'Telegram'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'تليجرام' : 'Telegram'}</span>}
                             </Link>
                         </li>
-                        ) : null}
-                        {activeIntegrations.includes('website') === true ? (
+                        )}
+                        {activeIntegrations.includes('website') && (
                         <li>
                             <Link to="/dashboard/website-chat" className={`nav-item ${isActive('/dashboard/website-chat')}`} onClick={handleNavItemClick}>
                                 <i className="fas fa-globe"></i>
-                                {isSidebarOpen && <span>{language === 'ar' ? 'موقع الويب (URL)' : 'Website (URL)'}</span>}
+                                {isSidebarOpen && <span>{isArabic ? 'موقع الويب (URL)' : 'Website (URL)'}</span>}
                             </Link>
                         </li>
-                        ) : null}
-
+                        )}
 
                         <li>
                             <Link to="/dashboard/settings" className={`nav-item ${isActive('/dashboard/settings')}`} onClick={handleNavItemClick}>
@@ -271,8 +363,8 @@ const DashboardLayout = () => {
                                 <i className="fas fa-question-circle"></i>
                                 {isSidebarOpen && (
                                     <>
-                                        <span>{language === 'ar' ? 'مركز المساعدة' : 'Help Center'}</span>
-                                        <i className="fas fa-external-link-alt" style={{ fontSize: '0.65rem', marginInlineStart: 'auto', opacity: 0.4 }}></i>
+                                        <span>{isArabic ? 'مركز المساعدة' : 'Help Center'}</span>
+                                        <i className="fas fa-external-link-alt" style={{ fontSize: '0.6rem', marginInlineStart: 'auto', opacity: 0.4 }}></i>
                                     </>
                                 )}
                             </a>
@@ -288,7 +380,7 @@ const DashboardLayout = () => {
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* ── Main Content ── */}
             <main className="dashboard-main">
                 <header className="dashboard-header">
                     <button className="toggle-btn" onClick={toggleSidebar}>
@@ -309,17 +401,43 @@ const DashboardLayout = () => {
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={location.pathname}
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.3 }}
+                            exit={{ opacity: 0, y: -16 }}
+                            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                             className="dashboard-content-inner"
                         >
-                            <Outlet />
+                            <Suspense fallback={<DashboardRouteFallback />}>
+                                <Outlet />
+                            </Suspense>
                         </motion.div>
                     </AnimatePresence>
                 </div>
             </main>
+
+            {/* ── Mobile Bottom Nav Bar ── */}
+            <nav className="mobile-bottom-nav mobile-only">
+                <Link to="/dashboard" className={`mobile-nav-btn ${isActive('/dashboard')}`}>
+                    <i className="fas fa-home"></i>
+                    <span>{isArabic ? 'الرئيسية' : 'Home'}</span>
+                </Link>
+                <Link to="/dashboard/conversations" className={`mobile-nav-btn ${isActive('/dashboard/conversations')}`}>
+                    <i className="fas fa-comments"></i>
+                    <span>{isArabic ? 'المحادثات' : 'Chats'}</span>
+                </Link>
+                <Link to="/dashboard/analytics" className={`mobile-nav-btn ${isActive('/dashboard/analytics')}`}>
+                    <i className="fas fa-chart-line"></i>
+                    <span>{isArabic ? 'التحليلات' : 'Analytics'}</span>
+                </Link>
+                <Link to="/dashboard/ai-copilot" className={`mobile-nav-btn ${isActive('/dashboard/ai-copilot')}`} style={{ color: isActive('/dashboard/ai-copilot') ? '#a855f7' : undefined }}>
+                    <i className="fas fa-magic"></i>
+                    <span>AI</span>
+                </Link>
+                <button className="mobile-nav-btn" onClick={toggleSidebar}>
+                    <i className="fas fa-bars"></i>
+                    <span>{isArabic ? 'المزيد' : 'More'}</span>
+                </button>
+            </nav>
 
             {/* Global Chat Widget */}
             <VOXIOChatWidget />

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '../../components/Toast';
+import { useToast } from '../components/ui/Toast';
 import '../../pages/auth/Auth.css';
 
 const OnboardingConnect = () => {

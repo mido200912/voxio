@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
-import PageLoader from '../../components/PageLoader';
+
 import {
   AreaChart, Area,
   BarChart, Bar,
@@ -11,6 +11,8 @@ import {
 } from 'recharts';
 import './DashboardShared.css';
 import './Analytics.css';
+import AIPageInsight from '../../components/AIPageInsight';
+import PageLoader from '../../components/ui/PageLoader';
 
 /* ── Platform Config ── */
 const PLATFORM_CONFIG = {
@@ -18,14 +20,14 @@ const PLATFORM_CONFIG = {
   telegram:  { color: '#229ED9', icon: 'fab fa-telegram-plane' },
   instagram: { color: '#E1306C', icon: 'fab fa-instagram' },
   web:       { color: '#6366f1', icon: 'fas fa-globe' },
-  widget:    { color: '#a0a0a0', icon: 'fas fa-puzzle-piece' },
-  unknown:   { color: '#a0a0a0', icon: 'fas fa-question-circle' },
+  widget:    { color: '#4f46e5', icon: 'fas fa-puzzle-piece' },
+  unknown:   { color: '#9ca3af', icon: 'fas fa-question-circle' },
 };
 
 const LEAD_STATUS_COLORS = {
-  new:       '#6366f1',
+  new:       '#3b82f6',
   contacted: '#f59e0b',
-  converted: '#22c55e',
+  converted: '#10b981',
   lost:      '#ef4444',
   qualified: '#8b5cf6',
 };
@@ -66,6 +68,8 @@ const Analytics = () => {
   const [hourly, setHourly]          = useState([]);
   const [responseTime, setResponseTime] = useState(null);
   const [leads, setLeads]            = useState(null);
+  const [unanswered, setUnanswered]  = useState([]);
+  const [topUsers, setTopUsers]      = useState([]);
   const [loading, setLoading]        = useState(true);
   const [refreshing, setRefreshing]  = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -80,13 +84,14 @@ const Analytics = () => {
     if (isFirstLoad.current) setLoading(true);
     else setRefreshing(true);
     try {
-      const [dashRes, tsRes, plRes, hrRes, rtRes, ldRes] = await Promise.allSettled([
+      const [dashRes, tsRes, plRes, hrRes, rtRes, ldRes, tuRes] = await Promise.allSettled([
         axios.get(`${BACKEND_URL}/analytics/dashboard?days=${period}`, { headers }),
         axios.get(`${BACKEND_URL}/analytics/timeseries?days=${period}`, { headers }),
         axios.get(`${BACKEND_URL}/analytics/platforms?days=${period}`, { headers }),
         axios.get(`${BACKEND_URL}/analytics/hourly?days=${period}`, { headers }),
         axios.get(`${BACKEND_URL}/analytics/response-time?days=${period}`, { headers }),
         axios.get(`${BACKEND_URL}/analytics/leads?days=${period}`, { headers }),
+        axios.get(`${BACKEND_URL}/analytics/top-users?days=${period}`, { headers }),
       ]);
       if (dashRes.status === 'fulfilled') setDashboard(dashRes.value.data);
       if (tsRes.status  === 'fulfilled') setTimeseries(Array.isArray(tsRes.value.data) ? tsRes.value.data : []);
@@ -94,6 +99,10 @@ const Analytics = () => {
       if (hrRes.status  === 'fulfilled') setHourly(Array.isArray(hrRes.value.data) ? hrRes.value.data : []);
       if (rtRes.status  === 'fulfilled') setResponseTime(rtRes.value.data);
       if (ldRes.status  === 'fulfilled') setLeads(ldRes.value.data);
+      if (tuRes.status  === 'fulfilled') setTopUsers(Array.isArray(tuRes.value.data) ? tuRes.value.data : []);
+
+      const unansRes = (await Promise.allSettled([axios.get(`${BACKEND_URL}/analytics/unanswered?days=${period}`, { headers })]))[0];
+      if (unansRes && unansRes.status === 'fulfilled') setUnanswered(unansRes.value.data);
     } catch (err) {
       console.error('Analytics fetch error:', err);
     } finally {
@@ -206,7 +215,7 @@ const Analytics = () => {
 
           const sc = el.getAttribute('stop-color');
           if (sc && sc.includes('color('))
-            el.setAttribute('stop-color', '#6366f1');
+            el.setAttribute('stop-color', '#ffffff');
         }
       } catch (_) { /* skip inaccessible cross-origin elements */ }
     });
@@ -297,28 +306,28 @@ const Analytics = () => {
       label:   t('إجمالي الرسائل', 'Total Messages'),
       value:   fmt(s.totalMessages),
       note:    `${fmt(s.totalConversations)} ${t('محادثة', 'conversations')}`,
-      accent:  '#6366f1',
+      accent:  '#ffffff',
     },
     {
       icon:    'fas fa-robot',
       label:   t('معدل الـ AI', 'AI Resolution'),
       value:   `${s.aiResolutionRate || 0}%`,
       note:    `${fmt(s.aiReplies)} ${t('رد آلي', 'AI replies')}`,
-      accent:  '#8b5cf6',
+      accent:  '#bbbbbb',
     },
     {
       icon:    'fas fa-user-plus',
       label:   t('العملاء المحتملون', 'Total Leads'),
       value:   fmt(leads?.totalLeads || 0),
       note:    `${fmt(s.newLeads)} ${t('جديد', 'new')}`,
-      accent:  '#f59e0b',
+      accent:  '#dddddd',
     },
     {
       icon:    'fas fa-bolt',
       label:   t('وقت الاستجابة', 'Avg. Response'),
       value:   `${responseTime?.averageResponseTimeSeconds || 0}s`,
       note:    `${t('أسرع', 'Fastest')}: ${responseTime?.fastestResponse || 0}s`,
-      accent:  '#22c55e',
+      accent:  '#cccccc',
     },
   ];
 
@@ -375,6 +384,11 @@ const Analytics = () => {
       {/* ══════════ PDF Root ══════════ */}
       <div id="an-pdf-root" className="an-body">
 
+        <AIPageInsight
+          pageName="Analytics"
+          dataContext={{ period, dashboard, platforms, topUsers: topUsers?.slice(0, 3) }}
+        />
+
         {/* ── KPI Row ── */}
         <div className="an-kpi-row">
           {kpis.map((k, i) => (
@@ -399,7 +413,7 @@ const Analytics = () => {
             </div>
             <div className="an-legend">
               <span className="an-legend-item"><span className="an-legend-dot" style={{ background: '#6366f1' }} />{t('مستخدمون', 'Users')}</span>
-              <span className="an-legend-item"><span className="an-legend-dot" style={{ background: '#a78bfa' }} />{t('ردود AI', 'AI')}</span>
+              <span className="an-legend-item"><span className="an-legend-dot" style={{ background: '#a855f7' }} />{t('ردود AI', 'AI')}</span>
             </div>
           </div>
 
@@ -409,12 +423,12 @@ const Analytics = () => {
                 <AreaChart data={timeseries} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gUser" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.18} />
+                      <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gAi" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#a78bfa" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
+                      <stop offset="5%"  stopColor="#a855f7" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="2 4" stroke="var(--dash-border)" vertical={false} />
@@ -422,9 +436,9 @@ const Analytics = () => {
                   <YAxis tick={{ fontSize: 10, fill: 'var(--dash-text-sec)' }} axisLine={false} tickLine={false} />
                   <Tooltip content={<ChartTooltip />} />
                   <Area type="monotone" dataKey="user" name={t('مستخدمون', 'Users')}
-                    stroke="#6366f1" strokeWidth={2} fill="url(#gUser)" dot={false} activeDot={{ r: 4, fill: '#6366f1' }} />
+                    stroke="#6366f1" strokeWidth={3} fill="url(#gUser)" dot={false} activeDot={{ r: 4, fill: '#6366f1' }} />
                   <Area type="monotone" dataKey="ai" name={t('ردود AI', 'AI Replies')}
-                    stroke="#a78bfa" strokeWidth={2} fill="url(#gAi)" dot={false} activeDot={{ r: 4, fill: '#a78bfa' }} />
+                    stroke="#a855f7" strokeWidth={3} fill="url(#gAi)" dot={false} activeDot={{ r: 4, fill: '#a855f7' }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -451,7 +465,7 @@ const Analytics = () => {
                     <YAxis tick={{ fontSize: 10, fill: 'var(--dash-text-sec)' }} axisLine={false} tickLine={false} />
                     <Tooltip content={<ChartTooltip />} />
                     <Bar dataKey="conversations" name={t('محادثات', 'Conversations')}
-                      fill="var(--dash-text)" radius={[3, 3, 0, 0]} maxBarSize={20} opacity={0.85} />
+                      fill="#6366f1" radius={[3, 3, 0, 0]} maxBarSize={20} opacity={0.85} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -558,9 +572,9 @@ const Analytics = () => {
             {/* Response stats */}
             <div className="an-stat-trio">
               {[
-                { label: t('متوسط', 'Avg'), value: `${responseTime?.averageResponseTimeSeconds ?? 0}s`, color: '#22c55e' },
-                { label: t('أسرع', 'Fastest'), value: `${responseTime?.fastestResponse ?? 0}s`, color: '#6366f1' },
-                { label: t('أبطأ', 'Slowest'), value: `${responseTime?.slowestResponse ?? 0}s`, color: '#f59e0b' },
+                { label: t('متوسط', 'Avg'), value: `${responseTime?.averageResponseTimeSeconds ?? 0}s`, color: '#cccccc' },
+                { label: t('أسرع', 'Fastest'), value: `${responseTime?.fastestResponse ?? 0}s`, color: '#ffffff' },
+                { label: t('أبطأ', 'Slowest'), value: `${responseTime?.slowestResponse ?? 0}s`, color: '#dddddd' },
               ].map((st, i) => (
                 <div key={i} className="an-stat-item">
                   <div className="an-stat-val" style={{ color: st.color }}>{st.value}</div>
@@ -572,8 +586,8 @@ const Analytics = () => {
             {/* Reply breakdown */}
             <div className="an-section-label">{t('توزيع الردود', 'Reply Breakdown')}</div>
             {[
-              { label: t('AI', 'AI'), val: s.aiReplies || 0, color: '#8b5cf6' },
-              { label: t('بشري', 'Human'), val: s.agentReplies || 0, color: '#f59e0b' },
+              { label: t('AI', 'AI'), val: s.aiReplies || 0, color: '#bbbbbb' },
+              { label: t('بشري', 'Human'), val: s.agentReplies || 0, color: '#dddddd' },
             ].map((item, i) => {
               const total = (s.aiReplies || 0) + (s.agentReplies || 0);
               const pct = total > 0 ? Math.round((item.val / total) * 100) : 0;
@@ -644,7 +658,7 @@ const Analytics = () => {
                         <XAxis dataKey="source" tick={{ fontSize: 10, fill: 'var(--dash-text-sec)' }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 10, fill: 'var(--dash-text-sec)' }} axisLine={false} tickLine={false} />
                         <Tooltip content={<ChartTooltip />} />
-                        <Bar dataKey="count" name={t('عملاء', 'Leads')} fill="#f59e0b" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                        <Bar dataKey="count" name={t('عملاء', 'Leads')} fill="#6366f1" radius={[3, 3, 0, 0]} maxBarSize={28} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -653,6 +667,67 @@ const Analytics = () => {
             </div>
           </div>
         )}
+
+        {/* ── Top Unanswered Questions ── */}
+        <div className="an-card an-card--wide">
+          <div className="an-card-head">
+            <div>
+              <div className="an-card-title">{t('أهم الأسئلة غير المجاب عليها', 'Top Unanswered Questions')}</div>
+              <div className="an-card-sub">{t('أسئلة فشل البوت في الرد عليها', 'Questions the bot failed to answer')}</div>
+            </div>
+          </div>
+          <div className="an-unanswered-list">
+            {unanswered && unanswered.length > 0 ? (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {unanswered.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--dash-bg)', borderRadius: '8px', border: '1px solid var(--dash-border)' }}>
+                    <div style={{ flex: 1, paddingRight: isArabic ? '0' : '16px', paddingLeft: isArabic ? '16px' : '0', color: 'var(--dash-text)', fontSize: '0.95rem' }}>
+                      "{item.question}"
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#dddddd', fontWeight: 600, fontSize: '0.9rem', flexShrink: 0 }}>
+                      <i className="fas fa-times-circle" /> {item.count}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon="fas fa-check-circle" text={t('لا توجد أسئلة غير مجابة', 'No unanswered questions found')} />
+            )}
+          </div>
+        </div>
+
+        {/* ── Top AI Users ── */}
+        <div className="an-card an-card--wide">
+          <div className="an-card-head">
+            <div>
+              <div className="an-card-title">{t('أكثر العملاء تفاعلاً مع AI', 'Top AI Users')}</div>
+              <div className="an-card-sub">{t('العملاء الأكثر استخداماً للذكاء الاصطناعي', 'Customers interacting the most with AI')}</div>
+            </div>
+          </div>
+          <div className="an-unanswered-list">
+            {topUsers && topUsers.length > 0 ? (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {topUsers.map((user, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--dash-bg)', borderRadius: '8px', border: '1px solid var(--dash-border)' }}>
+                    <div style={{ flex: 1, paddingRight: isArabic ? '0' : '16px', paddingLeft: isArabic ? '16px' : '0', color: 'var(--dash-text)', fontSize: '0.95rem' }}>
+                      <span style={{ marginRight: isArabic ? 0 : 8, marginLeft: isArabic ? 8 : 0 }}>
+                        {user.platform === 'whatsapp' ? <i className="fab fa-whatsapp" style={{ color: '#25d366' }} /> :
+                         user.platform === 'telegram' ? <i className="fab fa-telegram-plane" style={{ color: '#229ED9' }} /> :
+                         <i className="fas fa-globe" style={{ color: '#6366f1' }} />}
+                      </span>
+                      {user.userId}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6366f1', fontWeight: 600, fontSize: '0.9rem', flexShrink: 0 }}>
+                      {user.count} {t('رسالة', 'Messages')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon="fas fa-user-slash" text={t('لا توجد بيانات للعملاء', 'No user data found')} />
+            )}
+          </div>
+        </div>
 
       </div>{/* end an-body */}
     </div>

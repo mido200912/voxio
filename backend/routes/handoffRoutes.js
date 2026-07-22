@@ -36,6 +36,7 @@ router.get("/conversations", requireAuth, async (req, res) => {
           handoffRequested: chat.handoffRequested || false,
           handoffAcceptedBy: chat.handoffAcceptedBy || null,
           messageCount: 1,
+          ip: chat.ip || null,
         };
       } else {
         conversationMap[key].messageCount++;

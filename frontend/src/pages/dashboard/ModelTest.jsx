@@ -4,9 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion } from 'framer-motion';  
-import { useToast } from '../../components/Toast';
+
 import './ModelTest.css';
 import './DashboardShared.css';
+import { useToast } from '../../components/ui/Toast';
 
 const ModelTest = () => {
     const { token } = useAuth();

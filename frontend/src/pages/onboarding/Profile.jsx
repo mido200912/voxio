@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { secureStorage } from '../../utils/secureStorage';
-import { useToast } from '../../components/Toast';
+import { useToast } from '../components/ui/Toast';
  
 import { motion } from 'framer-motion';
 import '../../pages/auth/Auth.css';
@@ -23,7 +23,8 @@ const OnboardingProfile = () => {
         mission: '',
         values: '',
         websiteUrl: '',
-        allowedDomains: ''
+        allowedDomains: '',
+        customInstructions: ''
     });
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState('');
@@ -245,6 +246,18 @@ const OnboardingProfile = () => {
                                 ? '⚠️ أدخل النطاقات التي سيتم تشغيل البوت عليها فقط لمنع استخدامه في مواقع أخرى.' 
                                 : '⚠️ Enter domains where your bot is allowed to run to prevent unauthorized use.'}
                         </p>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">{language === 'ar' ? 'تعليمات إضافية للذكاء الاصطناعي (Custom Instructions)' : 'Custom AI Instructions'}</label>
+                        <textarea
+                            className="form-input"
+                            name="customInstructions"
+                            value={formData.customInstructions}
+                            onChange={handleChange}
+                            rows="3"
+                            placeholder={language === 'ar' ? 'كيف تريد أن يتحدث الذكاء الاصطناعي؟ (مثال: رد دائماً بأسلوب مرح واختصار)' : 'How should the AI talk? (e.g. Always respond in a fun and concise manner)'}
+                        />
                     </div>
 
                     <div className="onboarding-actions">

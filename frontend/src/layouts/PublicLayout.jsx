@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import VOXIOChatWidget from '../components/VOXIOChatWidget';
+import VOXIOChatWidget from '../components/ui/VOXIOChatWidget';
 
 const PublicLayout = () => {
     return (

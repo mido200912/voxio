@@ -2,6 +2,8 @@ import express from 'express';
 import multer from 'multer';
 import axios from 'axios';
 import Company from '../models/CompanyModel.js';
+import KnowledgeFile from '../models/KnowledgeFile.js';
+import Request from '../models/Request.js';
 import { requireAuth as protect } from '../middleware/auth.js';
 import { extractCorexReply, fetchAiResponse } from '../utils/corexHelper.js';
 import { createRequire } from 'module';
@@ -75,14 +77,12 @@ router.post('/upload', protect, (req, res, next) => {
             }
         }
 
-        const newResource = {
-            id: Date.now().toString(),
+        const newResource = await KnowledgeFile.create({
             fileName: req.file.originalname,
-            fileUrl: fileUrl,
+            url: fileUrl,
             fileType: req.file.originalname.split('.').pop(),
-        };
-
-        company.knowledgeBase.push(newResource);
+            company: company._id.toString()
+        });
 
         // ✨ Extract text from file using AI
         try {
@@ -167,7 +167,13 @@ router.post('/image', protect, (req, res, next) => {
         }
 
         if (!supabase) {
-            return res.status(500).json({ error: 'Supabase configuration missing' });
+            // Fallback to Base64 for local development
+            const base64Data = req.file.buffer.toString('base64');
+            const imageUrl = `data:${req.file.mimetype};base64,${base64Data}`;
+            return res.json({
+                message: 'Image converted to Base64 (Local fallback)',
+                imageUrl
+            });
         }
 
         const fileExt = req.file.originalname.split('.').pop();
@@ -175,20 +181,25 @@ router.post('/image', protect, (req, res, next) => {
         const filePath = `images/${req.user.id}/${fileName}`;
 
         // Upload to Supabase Storage bucket named 'voxio'
-        const { data, error } = await supabase.storage
-            .from('voxio')
-            .upload(filePath, req.file.buffer, {
-                contentType: req.file.mimetype,
-                upsert: false
-            });
+        let imageUrl;
+        try {
+            const { data, error } = await supabase.storage
+                .from('voxio')
+                .upload(filePath, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false
+                });
 
-        if (error) {
-            console.error('Supabase upload error:', error);
-            return res.status(500).json({ error: 'Failed to upload image' });
+            if (error) throw error;
+
+            // Get public URL via ImageKit
+            imageUrl = `${IMAGEKIT_ENDPOINT}/voxio/${filePath}`;
+        } catch (supabaseErr) {
+            console.warn('⚠️ Supabase upload failed, falling back to Base64:', supabaseErr.message);
+            // Fallback: convert image to Base64 data URL
+            const base64Data = req.file.buffer.toString('base64');
+            imageUrl = `data:${req.file.mimetype};base64,${base64Data}`;
         }
-
-        // Get public URL via ImageKit
-        const imageUrl = `${IMAGEKIT_ENDPOINT}/voxio/${filePath}`;
 
         res.json({
             message: 'Image uploaded successfully',
@@ -310,7 +321,16 @@ router.get('/', protect, async (req, res) => {
         if (!company) {
             return res.status(404).json({ error: 'Company not found' });
         }
-        res.json(company.knowledgeBase);
+        const files = await KnowledgeFile.find({ company: company._id.toString() });
+        const legacyFiles = company.knowledgeBase || [];
+        // Map the new fields to match what frontend expects (id, fileName, fileUrl, fileType)
+        const mappedFiles = files.map(f => ({
+            id: f._id || f.id,
+            fileName: f.fileName,
+            fileUrl: f.url || f.fileUrl,
+            fileType: f.fileType || f.type
+        }));
+        res.json([...legacyFiles, ...mappedFiles]);
     } catch (error) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -440,8 +460,11 @@ router.get('/media-library', protect, async (req, res) => {
         });
 
         // 3. Scan requests (orders) messages or products
-        const requests = company.requests || [];
-        requests.forEach(r => {
+        const legacyRequests = company.requests || [];
+        const newRequests = await Request.find({ company: company._id.toString() });
+        const allRequests = [...legacyRequests, ...newRequests];
+        
+        allRequests.forEach(r => {
             if (r.message) {
                 const matches = r.message.match(/https?:\/\/[^\s"'<>\(\)]+\.(jpg|jpeg|png|webp|gif|svg)/gi);
                 if (matches) {
@@ -478,18 +501,24 @@ router.delete('/:fileId', protect, async (req, res) => {
             }
         }
 
-        if (fileIndex === -1) {
-            return res.status(404).json({ error: 'File not found' });
+        if (fileIndex !== -1) {
+            company.knowledgeBase.splice(fileIndex, 1);
+            await company.save();
+        } else {
+            // Try to delete from new collection
+            await KnowledgeFile.delete(req.params.fileId);
         }
 
-        // Optional: Delete from Cloudinary using public_id if you stored it
-        // const publicId = company.knowledgeBase[fileIndex].publicId; 
-        // if (publicId) await cloudinary.uploader.destroy(publicId);
+        const files = await KnowledgeFile.find({ company: company._id.toString() });
+        const legacyFiles = company.knowledgeBase || [];
+        const mappedFiles = files.map(f => ({
+            id: f._id || f.id,
+            fileName: f.fileName,
+            fileUrl: f.url || f.fileUrl,
+            fileType: f.fileType || f.type
+        }));
 
-        company.knowledgeBase.splice(fileIndex, 1);
-        await company.save();
-
-        res.json({ message: 'File deleted successfully', knowledgeBase: company.knowledgeBase });
+        res.json({ message: 'File deleted successfully', knowledgeBase: [...legacyFiles, ...mappedFiles] });
     } catch (error) {
         console.error("Delete error:", error);
         res.status(500).json({ error: 'Server error' });

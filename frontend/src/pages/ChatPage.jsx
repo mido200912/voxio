@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import PageLoader from '../components/PageLoader';
+import PageLoader from '../components/ui/PageLoader';
 
 const ChatPage = () => {
     const { slug } = useParams();

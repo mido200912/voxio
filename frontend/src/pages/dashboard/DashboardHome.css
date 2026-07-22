@@ -1,35 +1,11 @@
 /* ═══════════════════════════════════════════════════
-   VOXIO Dashboard Home — Multi-Theme Analytics
+   VOXIO Dashboard Home — Premium Analytics v2
    ═══════════════════════════════════════════════════ */
 
 .dashboard-home-v2 {
-    padding-bottom: 100px;
+    padding-bottom: 80px;
     position: relative;
-}
-
-/* ─── Header ─── */
-.dh-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
-}
-
-.dh-brand {
-    font-size: 2rem;
-    font-weight: 900;
-    color: var(--dash-text);
-    letter-spacing: -1px;
-    margin: 0;
-    background: none;
-    -webkit-text-fill-color: var(--dash-text);
-}
-
-.dh-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--dash-text-sec);
-    margin: 0;
+    animation: dash-fade-up 0.4s var(--ease-out) both;
 }
 
 /* ─── Stats Row ─── */
@@ -37,22 +13,25 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
+/* ─── Stat Card ─── */
 .dh-stat-card {
     background: var(--dash-card);
     border: 1px solid var(--dash-border);
-    border-radius: 18px;
-    padding: 22px 24px;
+    border-radius: 20px;
+    padding: 24px;
     display: flex;
     align-items: flex-start;
     gap: 16px;
-    transition: all 0.3s ease;
+    transition: all 0.3s var(--ease-out);
     position: relative;
     overflow: hidden;
+    margin-bottom: 0 !important;
 }
 
+/* Subtle top-edge shimmer */
 .dh-stat-card::before {
     content: '';
     position: absolute;
@@ -60,90 +39,102 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--dash-border), transparent);
+    background: linear-gradient(90deg, transparent 10%, rgba(var(--dash-accent-rgb, 17, 17, 17), 0.3) 50%, transparent 90%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
+
+.dh-stat-card:hover::before { opacity: 1; }
 
 .dh-stat-card:hover {
-    border-color: var(--dash-text-sec);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.05);
+    border-color: rgba(var(--dash-accent-rgb, 17, 17, 17), 0.2);
+    transform: translateY(-3px);
+    box-shadow: var(--glow-card), 0 0 0 1px rgba(var(--dash-accent-rgb, 17, 17, 17), 0.06);
 }
 
-:root[data-theme="dark"] .dh-stat-card:hover {
-    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
-}
-
+/* Icon Container */
 .dh-stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     flex-shrink: 0;
+    transition: transform 0.3s ease;
 }
+
+.dh-stat-card:hover .dh-stat-icon { transform: scale(1.06); }
 
 .dh-stat-body {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .dh-stat-label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--dash-text);
-    letter-spacing: -0.2px;
+    letter-spacing: -0.01em;
+    font-family: var(--font-dash);
 }
 
 .dh-stat-sublabel {
     font-size: 0.72rem;
     color: var(--dash-text-sec);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
 .dh-stat-value-row {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
 }
 
 .dh-stat-value {
-    font-size: 2.2rem;
+    font-size: 2.4rem;
     font-weight: 900;
     color: var(--dash-text);
     line-height: 1;
-    letter-spacing: -1px;
+    letter-spacing: -0.05em;
+    font-family: var(--font-dash);
 }
 
 .dh-stat-trend {
-    font-size: 0.75rem;
-    color: #50c8b4;
+    font-size: 0.72rem;
+    color: #22c55e;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
+    padding: 3px 8px;
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: 20px;
+    white-space: nowrap;
 }
 
 .dh-stat-meta {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--dash-text-sec);
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .dh-dot-green {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #25D366;
+    background: #22c55e;
     display: inline-block;
-    box-shadow: 0 0 6px rgba(37, 211, 102, 0.5);
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+    animation: glow-pulse 2s ease-in-out infinite;
 }
 
 /* Mini Bars */
@@ -151,157 +142,99 @@
     display: flex;
     align-items: flex-end;
     gap: 3px;
-    height: 36px;
+    height: 32px;
 }
 
 .dh-mini-bar {
-    width: 6px;
-    background: var(--dash-border);
-    border-radius: 3px;
+    width: 5px;
+    border-radius: 3px 3px 0 0;
     transition: height 0.4s ease;
-}
-
-.dh-mini-bar:nth-child(odd) {
-    background: var(--dash-text-sec);
-    opacity: 0.2;
 }
 
 /* ─── Analytics Section ─── */
 .dh-analytics {
     background: var(--dash-card);
     border: 1px solid var(--dash-border);
-    border-radius: 20px;
+    border-radius: 24px;
     padding: 28px;
     position: relative;
+    transition: border-color 0.3s ease;
 }
 
-.dh-analytics::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--dash-border), transparent);
+.dh-analytics:hover {
+    border-color: rgba(var(--dash-accent-rgb, 17, 17, 17), 0.2);
 }
 
 .dh-analytics-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
-}
-
-.dh-analytics-header h3 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--dash-text);
-    margin: 0;
-}
-
-.dh-analytics-menu {
-    background: var(--dash-bg);
-    border: 1px solid var(--dash-border);
-    color: var(--dash-text-sec);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.dh-analytics-menu:hover {
-    background: var(--dash-border);
-    color: var(--dash-text);
+    margin-bottom: 28px;
 }
 
 /* ─── Charts Grid ─── */
 .dh-charts-grid {
     display: grid;
     grid-template-columns: 1.5fr 1fr 1fr;
-    gap: 20px;
-}
-
-.dh-chart-card {
-    background: var(--dash-bg);
-    border: 1px solid var(--dash-border);
-    border-radius: 16px;
-    padding: 20px;
+    gap: 16px;
 }
 
 .dh-chart-title {
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.78rem;
+    font-weight: 700;
     color: var(--dash-text-sec);
-    margin: 0 0 12px 0;
-    text-align: center;
+    margin: 0 0 14px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: var(--font-dash);
 }
 
-.dh-chart-canvas {
-    display: block;
-}
+.dh-chart-canvas { display: block; }
 
-/* ─── AI Insight Button ─── */
+/* ─── AI Insight Floating Button ─── */
 .dh-ai-insight {
     position: fixed;
     bottom: 28px;
-    right: 28px;
+    left: 28px;
     display: flex;
     align-items: center;
     gap: 10px;
     z-index: 50;
 }
 
-[dir="rtl"] .dh-ai-insight {
-    right: auto;
-    left: 28px;
-}
+[dir="rtl"] .dh-ai-insight { left: auto; right: 28px; }
 
 .dh-ai-insight-bubble {
     position: absolute;
     bottom: 60px;
     right: 0;
-    width: 250px;
+    width: 260px;
     background: var(--dash-card);
-    border: 1px solid var(--dash-border);
-    padding: 12px 16px;
-    border-radius: 14px;
+    border: 1px solid rgba(var(--dash-accent-rgb, 17, 17, 17), 0.2);
+    padding: 14px 18px;
+    border-radius: 16px;
     font-size: 0.85rem;
     color: var(--dash-text);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    line-height: 1.4;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.12), var(--glow-violet);
+    line-height: 1.5;
     pointer-events: none;
     z-index: 60;
+    animation: dash-pop 0.35s var(--ease-out) both;
 }
 
 :root[data-theme="dark"] .dh-ai-insight-bubble {
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5), var(--glow-violet);
 }
 
-[dir="rtl"] .dh-ai-insight-bubble {
-    right: auto;
-    left: 0;
-}
-
-.animate-pop-up {
-    animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes popUp {
-    0% { opacity: 0; transform: scale(0.8) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-}
+[dir="rtl"] .dh-ai-insight-bubble { right: auto; left: 0; }
 
 .dh-ai-insight-btn {
     background: var(--dash-card);
-    border: 1px solid var(--dash-border);
-    color: var(--dash-text-sec);
-    padding: 10px 20px;
+    border: 1px solid rgba(var(--dash-accent-rgb, 17, 17, 17), 0.2);
+    color: var(--dash-text);
+    padding: 11px 20px;
     border-radius: 14px;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     display: flex;
@@ -310,50 +243,38 @@
     transition: all 0.25s ease;
     backdrop-filter: blur(12px);
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    font-family: var(--font-dash);
 }
 
 :root[data-theme="dark"] .dh-ai-insight-btn {
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 
-.dh-ai-insight-btn i {
-    color: #50c8b4;
-}
+.dh-ai-insight-btn i { color: var(--dash-text); animation: float-gentle 3s ease-in-out infinite; }
 
 .dh-ai-insight-btn:hover {
-    background: var(--dash-bg);
-    border-color: var(--dash-text-sec);
-    color: var(--dash-text);
+    background: rgba(var(--dash-accent-rgb, 17, 17, 17), 0.08);
+    border-color: rgba(var(--dash-accent-rgb, 17, 17, 17), 0.4);
     transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15), var(--glow-violet);
 }
 
 /* ─── Responsive ─── */
-@media (max-width: 1024px) {
-    .dh-charts-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+@media (max-width: 1200px) {
+    .dh-charts-grid { grid-template-columns: 1.5fr 1fr; }
+    .dh-charts-grid > *:last-child { grid-column: 1 / -1; }
+}
 
-    .dh-chart-card:first-child {
-        grid-column: 1 / -1;
-    }
+@media (max-width: 1024px) {
+    .dh-charts-grid { grid-template-columns: 1fr 1fr; }
+    .dh-charts-grid > *:first-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 768px) {
-    .dh-stats-row {
-        grid-template-columns: 1fr;
-    }
-
-    .dh-charts-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .dh-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
-
-    .dh-stat-value {
-        font-size: 1.8rem;
-    }
+    .dh-stats-row { grid-template-columns: 1fr; gap: 12px; }
+    .dh-charts-grid { grid-template-columns: 1fr; }
+    .dh-stat-value { font-size: 2rem; }
+    .dh-analytics { padding: 20px; border-radius: 18px; }
+    .dh-ai-insight { bottom: 80px; left: 16px; right: auto; }
+    [dir="rtl"] .dh-ai-insight { left: auto; right: 16px; }
 }

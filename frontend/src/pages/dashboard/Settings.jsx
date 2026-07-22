@@ -4,8 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion } from 'framer-motion';  
-import PageLoader from '../../components/PageLoader';
-import { useToast } from '../../components/Toast';
+import PageLoader from '../../components/ui/PageLoader';
+import { useToast } from '../../components/ui/Toast';
 import './Settings.css';
 
 const Settings = () => {
@@ -43,6 +43,7 @@ const Settings = () => {
         logo: '',
         slug: '',
         customDomain: '',
+        customInstructions: '',
         aiSettings: {
             mode: 'restricted',
             model: 'inclusionai/ring-2.6-1t',
@@ -75,6 +76,7 @@ const Settings = () => {
                 logo: data.logo || '',
                 slug: data.slug || '',
                 customDomain: data.customDomain || '',
+                customInstructions: data.customInstructions || '',
                 aiSettings: data.aiSettings || {
                     mode: 'restricted',
                     model: 'inclusionai/ring-2.6-1t',
@@ -168,6 +170,7 @@ const Settings = () => {
                 logo: logoUrl,
                 slug: companyData.slug,
                 customDomain: companyData.customDomain,
+                customInstructions: companyData.customInstructions,
                 aiSettings: companyData.aiSettings
             };
 
@@ -309,6 +312,20 @@ const Settings = () => {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+
+                        <div className="form-group" style={{ marginTop: '16px' }}>
+                            <label style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--dash-text-sec)', marginBottom: 8, display: 'block' }}>
+                                {language === 'ar' ? 'تعليمات إضافية للذكاء الاصطناعي (Custom Instructions)' : 'Custom AI Instructions'}
+                            </label>
+                            <textarea
+                                name="customInstructions"
+                                value={companyData.customInstructions}
+                                onChange={handleInputChange}
+                                className="settings-textarea"
+                                rows="3"
+                                placeholder={language === 'ar' ? 'مثال: رد دائماً باختصار وبأسلوب مرح، لا تذكر أسعار غير موجودة في بياناتك...' : 'e.g. Always keep answers short and fun. Never mention competitor names...'}
+                            />
                         </div>
                     </div>
                 </motion.div>

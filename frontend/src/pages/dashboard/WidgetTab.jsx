@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
-import { useToast } from '../../components/Toast';
+
 import WidgetCustomizer from './WidgetCustomizer';
 import WebCommandsModal from './WebCommandsModal';
 import './WidgetTab.css';
 import './WidgetCustomizer.css';
 import './DashboardShared.css';
+import { useToast } from '../../components/ui/Toast';
 
 const WidgetTab = () => {
     const { t, language } = useLanguage();

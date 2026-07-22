@@ -38,7 +38,7 @@ const verifyDomain = (req, company) => {
  */
 router.post("/chat", async (req, res) => {
   try {
-    const { companyApiKey, apiKey, slug, prompt: bodyPrompt, message } = req.body;
+    const { companyApiKey, apiKey, slug, prompt: bodyPrompt, message, isAutoPrompt } = req.body;
     const finalApiKey = companyApiKey || apiKey;
     const prompt = bodyPrompt || message;
 
@@ -261,6 +261,48 @@ router.post("/chat", async (req, res) => {
     const history = await getChatHistory(company._id, userId, 'web', 5);
     const historyContext = formatHistoryForPrompt(history);
 
+    // 🤖 AGENT MODE — inject page context if provided
+    const { pageContext } = req.body;
+    if (pageContext && typeof pageContext === 'object') {
+        const linksStr  = (pageContext.links  || []).slice(0,20).map(l => `"${l.text}" → ${l.href}`).join(', ');
+        const btnsStr   = (pageContext.buttons|| []).slice(0,15).map(b => `"${b.text}"(id:${b.id||'?'})`).join(', ');
+        const formsStr  = (pageContext.forms  || []).slice(0,5).map(f =>
+            `form#${f.id||'?'}[${(f.fields||[]).map(i=>`${i.type}#${i.id||i.name||'?'}`).join(',')}]`
+        ).join(', ');
+        const headingsStr = (pageContext.headings||[]).slice(0,8).map(h=>`${h.tag}:"${h.text}"(#${h.id||''})`).join(', ');
+
+        context += `\n\n🤖 **AGENT MODE - أنت تعمل كـ AI Agent على الصفحة:**
+الصفحة الحالية: ${pageContext.url || '?'}  |  العنوان: ${pageContext.title || '?'}
+الروابط: ${linksStr || 'لا يوجد'}
+الأزرار: ${btnsStr || 'لا يوجد'}
+النماذج: ${formsStr || 'لا يوجد'}
+العناوين: ${headingsStr || 'لا يوجد'}
+
+إذا طلب المستخدم تنفيذ حركة على الصفحة، أضف في نهاية ردك أمراً واحداً أو أكثر من:
+[NAVIGATE: /رابط]           ← للانتقال لصفحة
+[SCROLL: #id أو .class]    ← للتمرير لعنصر
+[CLICK: #id أو .class]     ← للضغط على زر أو رابط
+[HIGHLIGHT: #id أو .class] ← لتلميع وتمييز عنصر
+[FILL: #id|النص]           ← لكتابة في خانة إدخال
+
+قواعد Agent:
+- استخدم فقط العناصر المذكورة في القائمة أعلاه (لأنها الموجودة في الصفحة الحالية).
+- **هام جداً**: تحقق من الصفحة الحالية! إذا طلب المستخدم الانتقال لصفحة أنت موجود فيها بالفعل، **لا** تصدر أمر [NAVIGATE] أبداً.
+- إذا طلب المستخدم تنفيذ فعل في صفحة أخرى (ولست فيها الآن)، قم بإصدار أمر [NAVIGATE: /رابط] للانتقال فقط.
+- لا تستخدم [AUTO_PROMPT] لأي طلب يحتاج بيانات حقيقية أو نتيجة فعلية من صفحة أخرى (مثل: عملاء محتملين، تحليلات، محادثات، أرقام، تقارير)، لأن الـ widget لا يملك هذه البيانات.
+- [AUTO_PROMPT: نص] مسموح فقط لإكمال إجراء بسيط داخل نفس نوع المحادثة، وليس كسؤال جديد لنفسك بعد التنقل.
+- لا تصدر أوامر إلا إذا طلب المستخدم صراحة فعل شيء على الصفحة
+- اشرح للمستخدم ماذا ستفعل قبل إصدار الأمر
+- الأوامر تُوضع في سطر منفصل ولا تظهر في النص`;
+    }
+
+    if (isAutoPrompt) {
+        context += `\n\n⚠️ ملاحظة حرجة: هذه الرسالة تلقائية ناتجة عن AUTO_PROMPT سابق وليست رسالة يدوية من المستخدم.
+- أجب بإجابة نهائية مباشرة فقط.
+- ممنوع إصدار أي أمر جديد من نوع [NAVIGATE] أو [CLICK] أو [SCROLL] أو [HIGHLIGHT] أو [FILL] أو [AUTO_PROMPT].
+- إذا كان الطلب يحتاج بيانات حقيقية غير متاحة في سياقك، وضّح ذلك للمستخدم بدون تنفيذ أي حركة إضافية.`;
+    }
+
     // AI Response
     const fullQuestion = `${context}\n\n${historyContext}User Question:\n${prompt}`;
     const preferredModel = company.aiSettings?.model || null;
@@ -298,6 +340,7 @@ router.post("/chat", async (req, res) => {
                         phone: leadPhone.trim(),
                         email: leadEmail.trim(),
                         source,
+                        sourceData: { ip: clientIp, userAgent: req.headers['user-agent'] || 'unknown', firstMessage: prompt },
                         status: 'new'
                     }).catch(e => console.error("Failed to create lead:", e));
                 }
@@ -307,6 +350,7 @@ router.post("/chat", async (req, res) => {
                     name: leadName.trim(),
                     email: leadEmail.trim(),
                     source,
+                    sourceData: { ip: clientIp, userAgent: req.headers['user-agent'] || 'unknown', firstMessage: prompt },
                     status: 'new'
                 }).catch(e => console.error("Failed to create lead:", e));
             }

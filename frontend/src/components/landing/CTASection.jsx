@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext';
-import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import './CTASection.css';
 
 const CTASection = () => {

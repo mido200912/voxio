@@ -3,8 +3,9 @@ import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion, AnimatePresence } from 'framer-motion';  
-import PageLoader from '../../components/PageLoader';
+
 import './DashboardShared.css';
+import PageLoader from '../../components/ui/PageLoader';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 

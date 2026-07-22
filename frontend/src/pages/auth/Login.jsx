@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
-import Input from '../../components/Input';
+import Input from '../../components/ui/Input';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 

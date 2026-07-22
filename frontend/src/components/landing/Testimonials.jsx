@@ -1,5 +1,5 @@
-import { useLanguage } from '../context/LanguageContext';
-import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useLanguage } from '../../context/LanguageContext';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
 import './Testimonials.css';
 
 const StarIcon = () => (

@@ -4,10 +4,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
 import { motion, AnimatePresence } from 'framer-motion';  
-import { useToast } from '../../components/Toast';
+
 import { Link } from 'react-router-dom';
 import './Integrations.css';
 import './DashboardShared.css';
+import { useToast } from '../../components/ui/Toast';
 
 const Integrations = () => {
     const { t, language } = useLanguage();
@@ -522,7 +523,7 @@ const Integrations = () => {
             {/* NEW: Web Widget Section */}
             <div className="dash-card animate-slide-in" style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                    <div className="integration-icon" style={{ backgroundColor: '#6C63FF15', color: '#6C63FF', width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
+                    <div className="integration-icon" style={{ backgroundColor: 'rgba(17, 17, 17, 0.15)', color: '#111111', width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
                         <i className="fas fa-code"></i>
                     </div>
                     <div className="integration-info" style={{ flex: 1 }}>

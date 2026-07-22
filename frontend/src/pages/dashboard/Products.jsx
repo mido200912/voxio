@@ -1,12 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
+import { useGetProductsQuery, dashboardApi } from '../../store/dashboardApi';
+import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import PageLoader from '../../components/PageLoader';
-import { useToast } from '../../components/Toast';
+
+
+import AIPageInsight from '../../components/AIPageInsight';
 import './DashboardShared.css';
 import './Products.css';
+import PageLoader from '../../components/ui/PageLoader';
+import { useToast } from '../../components/ui/Toast';
 
 const EMPTY_FORM = { name: '', description: '', price: 0, currency: 'USD', category: '', sku: '', inventory: 0, platforms: [], images: [] };
 
@@ -22,8 +26,6 @@ const PLATFORMS = [
 const Products = () => {
   const { language } = useLanguage();
   const isArabic = language === 'ar';
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -35,19 +37,14 @@ const Products = () => {
   const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const token = secureStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
+  const dispatch = useDispatch();
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      const res = await axios.get(`${BACKEND_URL}/products`, { headers });
-      setProducts(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      toast(err.response?.data?.error || 'Failed to load products', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data = [], isLoading: loading, refetch } = useGetProductsQuery();
+  const products = useMemo(() => Array.isArray(data) ? data : [], [data]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  const fetchProducts = () => {
+    refetch();
+  };
 
   const filteredProducts = products.filter(p =>
     !search || p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -83,25 +80,36 @@ const Products = () => {
     if (!form.name.trim()) { toast(isArabic ? 'اسم المنتج مطلوب' : 'Product name is required', 'error'); return; }
     try {
       if (editingId) {
-        await axios.put(`${BACKEND_URL}/products/${editingId}`, form, { headers });
+        await fetch(`${BACKEND_URL}/products/${editingId}`, {
+            method: 'PUT',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify(form)
+        });
         toast(isArabic ? 'تم تحديث المنتج' : 'Product updated', 'success');
       } else {
-        await axios.post(`${BACKEND_URL}/products`, form, { headers });
+        await fetch(`${BACKEND_URL}/products`, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify(form)
+        });
         toast(isArabic ? 'تم إضافة المنتج' : 'Product added', 'success');
       }
       setShowForm(false);
-      fetchProducts();
+      refetch();
     } catch (err) {
-      toast(err.response?.data?.error || 'Error saving product', 'error');
+      toast('Error saving product', 'error');
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm(isArabic ? 'حذف هذا المنتج؟' : 'Delete this product?')) return;
     try {
-      await axios.delete(`${BACKEND_URL}/products/${id}`, { headers });
+      await fetch(`${BACKEND_URL}/products/${id}`, {
+          method: 'DELETE',
+          headers
+      });
       toast(isArabic ? 'تم الحذف' : 'Deleted', 'success');
-      fetchProducts();
+      refetch();
     } catch (err) {
       toast('Error deleting', 'error');
     }
@@ -125,15 +133,18 @@ const Products = () => {
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const res = await axios.post(`${BACKEND_URL}/products/upload-image`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
+      const res = await fetch(`${BACKEND_URL}/products/upload-image`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }, // FormData sets boundary automatically
+        body: formData
       });
-      if (res.data.imageUrl) {
-        setForm(prev => ({ ...prev, images: [...prev.images, res.data.imageUrl] }));
+      const data = await res.json();
+      if (data.imageUrl) {
+        setForm(prev => ({ ...prev, images: [...prev.images, data.imageUrl] }));
         toast(isArabic ? 'تم رفع الصورة' : 'Image uploaded', 'success');
       }
     } catch (err) {
-      toast(err.response?.data?.error || 'Upload failed', 'error');
+      toast('Upload failed', 'error');
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -143,11 +154,15 @@ const Products = () => {
   const handleSync = async () => {
     setSyncLoading(true);
     try {
-      const res = await axios.post(`${BACKEND_URL}/products/sync-from-integration/shopify`, {}, { headers });
-      toast(res.data.message, 'success');
-      fetchProducts();
+      const res = await fetch(`${BACKEND_URL}/products/sync-from-integration/shopify`, {
+          method: 'POST',
+          headers
+      });
+      const data = await res.json();
+      toast(data.message || 'Synced', 'success');
+      refetch();
     } catch (err) {
-      toast(err.response?.data?.error || 'Sync failed', 'error');
+      toast('Sync failed', 'error');
     } finally {
       setSyncLoading(false);
     }
@@ -161,6 +176,13 @@ const Products = () => {
   };
 
   if (loading) return <PageLoader />;
+
+  const pageInsightData = {
+    totalProducts: products.length,
+    filteredProducts: filteredProducts.length,
+    outOfStock: products.filter(p => p.inventory === 0).length,
+    topProducts: filteredProducts.slice(0, 5).map(p => ({ name: p.name, price: p.price, currency: p.currency, stock: p.inventory })),
+  };
 
   return (
     <div className="dashboard-page" dir={isArabic ? 'rtl' : 'ltr'}>
@@ -183,6 +205,8 @@ const Products = () => {
           </button>
         </div>
       </div>
+
+      <AIPageInsight pageName="Products" dataContext={pageInsightData} />
 
       <AnimatePresence>
         {showForm && (

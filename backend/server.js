@@ -40,6 +40,7 @@ import summaryRoutes from "./routes/summaryRoutes.js";
 import productUploadRoutes from "./routes/productUploadRoutes.js";
 import recommendationRoutes from "./routes/recommendationRoutes.js";
 import teamRoutes from "./routes/teamRoutes.js";
+import copilotRoutes from "./routes/copilotRoutes.js";
 
 const app = express();
 
@@ -179,6 +180,7 @@ if (serviceType === 'core' || serviceType === 'all') {
     app.use("/api/products", productUploadRoutes);
     app.use("/api/recommendations", recommendationRoutes);
     app.use("/api/team", teamRoutes);
+    app.use("/api/copilot", copilotRoutes);
 }
 
 if (serviceType === 'webhook' || serviceType === 'all') {
@@ -306,6 +308,122 @@ app.get('/widget.js', (req, res) => {
             setTimeout(() => { if(!isOpen) win.style.display = 'none'; }, 400);
         }
     };
+
+    // 🤖 VOXIO AGENT MODE: Listen to actions from the iframe
+    function findElement(selector) {
+        if (!selector) return null;
+        try {
+            // Priority 1: try as CSS selector
+            let el = document.querySelector(selector);
+            if (el) return el;
+            // Priority 2: try by ID if missing #
+            el = document.getElementById(selector);
+            if (el) return el;
+            // Priority 3: text content matching for buttons/links
+            const allElements = [...document.querySelectorAll('a, button, [role="button"]')];
+            return allElements.find(e => e.innerText.trim().toLowerCase() === selector.toLowerCase());
+        } catch(e) { return null; }
+    }
+
+    function showAiCursor(targetEl) {
+        let cursor = document.getElementById('voxio-ai-cursor');
+        if (!cursor) {
+            cursor = document.createElement('div');
+            cursor.id = 'voxio-ai-cursor';
+            cursor.innerHTML = '🤖';
+            cursor.style.cssText = \`
+                position: fixed; width: 40px; height: 40px; pointer-events: none; z-index: 2147483646;
+                font-size: 28px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+                transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            \`;
+            document.body.appendChild(cursor);
+        }
+        
+        const rect = targetEl.getBoundingClientRect();
+        cursor.style.left = (rect.left + rect.width/2 - 20) + 'px';
+        cursor.style.top = (rect.top + rect.height/2 - 20) + 'px';
+        setTimeout(() => cursor.remove(), 2500);
+    }
+
+    function typeWithEffect(input, text) {
+        if (!input || !text) return;
+        input.value = '';
+        let i = 0;
+        const interval = setInterval(() => {
+            input.value += text[i];
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            i++;
+            if (i >= text.length) clearInterval(interval);
+        }, 50);
+    }
+
+    window.addEventListener('message', (e) => {
+        if (!e.data?.type?.startsWith('VOXIO_')) return;
+        const iframeWindow = win.querySelector('iframe')?.contentWindow;
+        
+        switch(e.data.type) {
+            case 'VOXIO_REQ_CONTEXT':
+                if (iframeWindow) {
+                    iframeWindow.postMessage({
+                        type: 'VOXIO_PAGE_CONTEXT',
+                        data: {
+                            url: window.location.href,
+                            title: document.title,
+                            links: [...document.querySelectorAll('a[href]')].slice(0,25).map(a=>({text:a.innerText.trim().slice(0,40),href:a.getAttribute('href'),id:a.id})),
+                            buttons: [...document.querySelectorAll('button,[role="button"]')].slice(0,20).map(b=>({text:b.innerText.trim().slice(0,30),id:b.id,cls:b.className.split(' ')[0]})),
+                            forms: [...document.querySelectorAll('form')].slice(0,5).map(f=>({id:f.id,fields:[...f.querySelectorAll('input,textarea,select')].map(i=>({type:i.type,name:i.name,id:i.id,placeholder:i.placeholder}))})),
+                            headings: [...document.querySelectorAll('h1,h2,h3')].slice(0,10).map(h=>({tag:h.tagName,text:h.innerText.trim().slice(0,50),id:h.id})),
+                        }
+                    }, '*');
+                }
+                break;
+                
+            case 'VOXIO_NAVIGATE':
+                setTimeout(() => { window.location.href = e.data.target; }, 1000);
+                break;
+                
+            case 'VOXIO_SCROLL':
+                const scrollEl = findElement(e.data.selector);
+                if (scrollEl) {
+                    showAiCursor(scrollEl);
+                    setTimeout(() => scrollEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 600);
+                }
+                break;
+                
+            case 'VOXIO_CLICK':
+                const clickEl = findElement(e.data.selector);
+                if (clickEl) {
+                    showAiCursor(clickEl);
+                    clickEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => { clickEl.click(); }, 800);
+                }
+                break;
+                
+            case 'VOXIO_FILL':
+                const fillEl = findElement(e.data.selector);
+                if (fillEl) {
+                    showAiCursor(fillEl);
+                    fillEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        fillEl.focus();
+                        typeWithEffect(fillEl, e.data.value);
+                    }, 600);
+                }
+                break;
+                
+            case 'VOXIO_HIGHLIGHT':
+                const hlEl = findElement(e.data.selector);
+                if (hlEl) {
+                    hlEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    hlEl.style.transition = 'all 0.3s ease';
+                    hlEl.style.outline = '3px solid var(--vx-primary)';
+                    hlEl.style.boxShadow = '0 0 0 6px rgba(108,99,255,0.2)';
+                    setTimeout(() => { hlEl.style.outline = ''; hlEl.style.boxShadow = ''; }, 3500);
+                }
+                break;
+        }
+    });
+
 })();`;
     res.send(widgetCode);
 });

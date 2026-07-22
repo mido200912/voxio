@@ -4,6 +4,7 @@ import crypto from "crypto";
 import Company from "../models/CompanyModel.js";
 import CompanyChat from "../models/CompanyChat.js";
 import Lead from "../models/Lead.js";
+import Request from "../models/Request.js";
 import { requireAuth } from "../middleware/auth.js";
 import { verifyApiKey } from "../middleware/verifyApiKey.js";
 import { extractCorexReply, fetchAiResponse, fetchDesignerAiResponse } from "../utils/corexHelper.js";
@@ -579,7 +580,8 @@ router.post("/", requireAuth, async (req, res) => {
   try {
     const {
       name, industry, size, companySize, description,
-      vision, mission, values, websiteUrl, allowedDomains, logo, aiSettings, slug, customDomain
+      vision, mission, values, websiteUrl, allowedDomains, logo, aiSettings, slug, customDomain,
+      customInstructions
     } = req.body;
 
     const safeData = {
@@ -589,7 +591,8 @@ router.post("/", requireAuth, async (req, res) => {
       customDomain: customDomain || "",
       values: Array.isArray(values) ? values : [],
       allowedDomains: Array.isArray(allowedDomains) ? allowedDomains : [],
-      ...(aiSettings && { aiSettings }) // Only add if it exists
+      ...(aiSettings && { aiSettings }),
+      ...(customInstructions !== undefined && { customInstructions })
     };
 
     if (slug) {
@@ -917,16 +920,14 @@ router.post("/requests", requireAuth, async (req, res) => {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
 
-    const newRequest = {
+    const newRequest = await Request.create({
       customerName: customerName || "عميل غير معروف",
       product: product || "عام",
       message,
       source: source || 'web',
-      date: new Date()
-    };
-
-    company.requests.push(newRequest);
-    await company.save();
+      date: new Date().toISOString(),
+      company: company._id.toString()
+    });
 
     res.status(201).json({ success: true, request: newRequest });
   } catch (err) {
@@ -941,7 +942,50 @@ router.get("/requests", requireAuth, async (req, res) => {
   try {
     const company = await Company.findOne({ owner: req.user._id });
     if (!company) return res.status(404).json({ error: "Company not found" });
-    res.json(company.requests || []);
+    
+    // Fetch from new collection
+    let requests = await Request.find({ company: company._id.toString() });
+    
+    // Fallback/merge for legacy ones still inside the document (until migration script cleans them up)
+    let legacyRequests = company.requests || [];
+    
+    // Combine them
+    const allRequests = [...legacyRequests, ...requests];
+    
+    // Sort by newest first
+    allRequests.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+    
+    res.json(allRequests);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/*-------------------------------
+  حذف طلب
+-------------------------------*/
+router.delete("/requests/:indexOrId", requireAuth, async (req, res) => {
+  try {
+    const { indexOrId } = req.params;
+    const company = await Company.findOne({ owner: req.user._id });
+    if (!company) return res.status(404).json({ error: "Company not found" });
+
+    // Check if it's a legacy index vs a document ID
+    if (!isNaN(indexOrId) && Number(indexOrId) < 1000000) {
+        // Legacy deletion by index
+        const index = parseInt(indexOrId, 10);
+        if (company.requests && index >= 0 && index < company.requests.length) {
+            company.requests.splice(index, 1);
+            await company.save();
+            return res.json({ success: true, message: "Legacy request deleted" });
+        } else {
+            return res.status(404).json({ error: "Legacy request index out of bounds" });
+        }
+    } else {
+        // New deletion by document ID
+        await Request.delete(indexOrId);
+        return res.json({ success: true, message: "Request deleted" });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

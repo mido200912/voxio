@@ -28,7 +28,7 @@
 
 .tab-switcher {
     display: flex;
-    background: rgba(var(--dash-primary-rgb, 108, 99, 255), 0.1);
+    background: rgba(var(--dash-primary-rgb, 17, 17, 17), 0.1);
     padding: 0.5rem;
     border-radius: 1rem;
     gap: 0.5rem;

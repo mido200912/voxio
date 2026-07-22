@@ -819,3 +819,272 @@
     }
     .chatbot-editor .device-frame::before { display: none; }
 }
+
+/* =========================================
+   Epic AI Editor UI Overhaul
+========================================= */
+
+/* Presence Avatars in Toolbar */
+.presence-avatars {
+    display: flex;
+    align-items: center;
+    margin-right: 16px;
+}
+.presence-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--dash-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: white;
+    margin-left: -8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    position: relative;
+    background: #475569;
+}
+.presence-avatar.ai-avatar {
+    background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+    z-index: 2;
+}
+.presence-avatar.user-avatar {
+    background: #10b981;
+    z-index: 1;
+}
+
+/* Carbon for AI Glow */
+@keyframes carbon-glow {
+    0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); border-color: rgba(168, 85, 247, 0.5); }
+    50% { box-shadow: 0 0 15px 2px rgba(59, 130, 246, 0.6); border-color: rgba(59, 130, 246, 0.8); }
+    100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); border-color: rgba(168, 85, 247, 0.5); }
+}
+
+.ai-glow {
+    animation: carbon-glow 2s infinite alternate ease-in-out;
+    position: relative;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+/* Component Locking */
+.component-locked {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.8;
+}
+.component-locked::after {
+    content: 'تنبيه: عناصر الكود التالية يتم تحريرها من قِبل وكيل آخر.';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #cbd5e1;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 10;
+}
+.component-locked::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(59, 130, 246, 0.05),
+        rgba(59, 130, 246, 0.05) 10px,
+        rgba(0, 0, 0, 0) 10px,
+        rgba(0, 0, 0, 0) 20px
+    );
+    z-index: 9;
+}
+
+/* Live AI Cursor */
+.live-cursor-ai {
+    position: absolute;
+    pointer-events: none;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.live-cursor-icon {
+    color: #a855f7;
+    font-size: 16px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+.live-cursor-tag {
+    background: #a855f7;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border-top-left-radius: 0;
+    margin-top: 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-weight: bold;
+}
+
+/* AI Progress Tracker Panel */
+.ai-progress-tracker {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--dash-card);
+    border: 1px solid var(--dash-border);
+    border-radius: 12px;
+    padding: 16px;
+    width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    z-index: 1000;
+    direction: rtl;
+}
+
+.ai-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.ai-progress-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dash-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-progress-percentage {
+    font-size: 12px;
+    font-weight: 600;
+    color: #3b82f6;
+}
+
+.ai-progress-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: var(--dash-bg);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.ai-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #a855f7);
+    transition: width 0.4s ease;
+}
+
+.ai-progress-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ai-progress-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--dash-text-sec);
+}
+
+.ai-progress-step.active {
+    color: var(--dash-text);
+    font-weight: 600;
+}
+
+.ai-progress-step.completed {
+    color: #10b981;
+}
+
+.ai-step-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-step-icon i.fa-spinner {
+    color: #3b82f6;
+}
+
+.ai-confidence {
+    margin-right: auto;
+    font-size: 11px;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* Formal Accept/Reject Overlay */
+.ai-review-overlay {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--dash-card);
+    border: 1px solid var(--dash-border);
+    border-radius: 12px;
+    padding: 16px 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    direction: rtl;
+    animation: slideUp 0.3s ease;
+}
+
+.ai-review-msg {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dash-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-review-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-formal-accept {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-formal-accept:hover { background: #059669; }
+
+.btn-formal-reject {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 8px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-formal-reject:hover { background: rgba(239, 68, 68, 0.1); }
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translate(-50%, 20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}

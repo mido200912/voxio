@@ -1,12 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
+import { useGetConversationsQuery } from '../../store/dashboardApi';
 import { motion } from 'framer-motion';
-import PageLoader from '../../components/PageLoader';
-import { useToast } from '../../components/Toast';
+
+
 import './DashboardShared.css';
 import './Conversations.css';
+import PageLoader from '../../components/ui/PageLoader';
+import { useToast } from '../../components/ui/Toast';
 
 const TABS = [
   { key: 'all', labelAr: 'الكل', labelEn: 'All' },
@@ -18,12 +21,10 @@ const TABS = [
 const Conversations = () => {
   const { language } = useLanguage();
   const isArabic = language === 'ar';
-  const [data, setData] = useState({ all: [], handoff: [], active: [], manual: [] });
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
   const [replyText, setReplyText] = useState('');
   const [tab, setTab] = useState('all');
-  const [loading, setLoading] = useState(true);
   const [sendingReply, setSendingReply] = useState(false);
   const messagesEndRef = useRef(null);
   const { toast } = useToast();
@@ -33,22 +34,8 @@ const Conversations = () => {
 
   const t = (ar, en) => isArabic ? ar : en;
 
-  const fetchConversations = useCallback(async () => {
-    try {
-      const res = await axios.get(`${BACKEND_URL}/handoff/conversations`, { headers });
-      setData(res.data);
-    } catch (err) {
-      console.error('fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchConversations();
-    const iv = setInterval(fetchConversations, 15000);
-    return () => clearInterval(iv);
-  }, [fetchConversations]);
+  // Use polling in RTK query with pollingInterval: 15000
+  const { data = { all: [], handoff: [], active: [], manual: [] }, isLoading: loading, refetch: fetchConversations } = useGetConversationsQuery(undefined, { pollingInterval: 15000 });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -140,6 +127,17 @@ const Conversations = () => {
     return '👨‍💼';
   };
 
+  const formatUserId = (conv) => {
+    if (conv.platform === 'whatsapp' || conv.platform === 'telegram') {
+      return conv.userId; // Usually the raw phone number/ID
+    }
+    if (conv.platform === 'web' || conv.platform === 'website' || conv.platform === 'widget') {
+      if (conv.ip && conv.ip !== 'unknown' && conv.ip !== '::1') return `IP: ${conv.ip}`;
+      if (conv.userId && conv.userId.startsWith('web_')) return 'Web User';
+    }
+    return conv.userId?.substring(0, 18) || 'Unknown';
+  };
+
   if (loading) return <PageLoader />;
 
   return (
@@ -187,7 +185,7 @@ const Conversations = () => {
                 >
                   <div className="conv-item-top">
                     <span className="conv-item-user">
-                      {platformIcon(conv.platform)} {conv.userId?.substring(0, 18)}
+                      {platformIcon(conv.platform)} {formatUserId(conv)}
                     </span>
                     <span className="conv-item-time">{formatTime(conv.lastMessage)}</span>
                   </div>
@@ -220,10 +218,11 @@ const Conversations = () => {
               <div className="conv-main-header">
                 <div className="conv-main-info">
                   <span className="conv-main-user">
-                    {platformIcon(selected.platform)} {selected.userId}
+                    {platformIcon(selected.platform)} {formatUserId(selected)}
                   </span>
                   <div className="conv-main-meta">
                     <span className="conv-main-platform">{selected.platform}</span>
+                    {selected.ip && <span className="conv-main-platform" style={{ background: 'var(--dash-border)', color: 'var(--dash-text)' }}>IP: {selected.ip}</span>}
                     <span className={`badge-ai ${selected.aiEnabled !== false ? 'on' : 'off'}`}>
                       AI {selected.aiEnabled !== false ? 'ON' : 'OFF'}
                     </span>

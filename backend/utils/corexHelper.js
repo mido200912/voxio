@@ -10,8 +10,8 @@ const MODELS = {
   // تحليل الصور: Qwen3 VL 235B مجاني تماماً ويدعم الصور بشكل ممتاز
   vision:   "qwen/qwen3-vl-235b-a22b-thinking",
 
-  // النصوص: Owl Alpha مجاني، 1M context، سريع جداً
-  text:     "nvidia/nemotron-3-ultra-550b-a55b:free",
+  // النصوص: Llama 3.3 70B مجاني وموثوق جداً
+  text:     "meta-llama/llama-3.3-70b-instruct:free",
 
   // الكود والتصميم: Qwen3 Coder 480B مجاني تماماً - أقوى كودر مجاني
   designer: "qwen/qwen3-coder:free",
@@ -90,6 +90,7 @@ async function openRouterRequest(payload, timeoutMs = TIMEOUTS.text, retries = 2
       const res = await axios.post(OPENROUTER_BASE, payload, { headers, timeout: timeoutMs });
       const content = res.data?.choices?.[0]?.message?.content;
       if (content) return content;
+      console.error("OpenRouter Empty Response:", JSON.stringify(res.data, null, 2));
       throw new Error("الرد فارغ من النموذج");
     } catch (err) {
       lastErr = err;
@@ -216,21 +217,38 @@ export async function fetchAiResponse(
       { role: "user",   content: userContent },
     ];
 
-    console.log(`🤖 [AI] إرسال إلى ${preferredModel || MODELS.text}…`);
+    const modelsToTry = [
+      preferredModel || MODELS.text,
+      ...MODELS.fallbacks
+    ];
 
-    const reply = await openRouterRequest({
-      model: preferredModel || MODELS.text,
-      messages,
-      max_tokens: 2000,
-      temperature: 0.6,
-    }, TIMEOUTS.text);
+    let lastErrorMsg = "";
 
-    if (cacheKey) cacheSet(cacheKey, reply);
-    return reply;
+    for (const model of modelsToTry) {
+      try {
+        console.log(`🤖 [AI] إرسال إلى ${model}…`);
 
+        const reply = await openRouterRequest({
+          model,
+          messages,
+          max_tokens: 2000,
+          temperature: 0.6,
+        }, TIMEOUTS.text, 0); // Disable internal retries so we can quickly fallback to next model
+
+        if (cacheKey) cacheSet(cacheKey, reply);
+        return reply;
+      } catch (err) {
+        lastErrorMsg = err.response?.data?.error?.message || err.message;
+        console.warn(`⚠️ [AI] ${model} فشل:`, lastErrorMsg);
+        // Continue to the next model
+      }
+    }
+
+    console.error(`❌ [AI] كل النماذج فشلت. آخر خطأ:`, lastErrorMsg);
+    return `⚠️ حدث خطأ: ${lastErrorMsg}`;
   } catch (err) {
     const msg = err.response?.data?.error?.message || err.message;
-    console.error(`❌ [AI] فشل الرد:`, msg);
+    console.error(`❌ [AI] فشل كلي:`, msg);
     return `⚠️ حدث خطأ: ${msg}`;
   }
 }

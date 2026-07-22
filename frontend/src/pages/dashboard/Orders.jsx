@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
+import { useGetOrdersQuery } from '../../store/dashboardApi';
+import { dashboardApi } from '../../store/dashboardApi';
+import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import PageLoader from '../../components/PageLoader';
+
+import AIPageInsight from '../../components/AIPageInsight';
 import './DashboardShared.css';
 import './Orders.css';
+import PageLoader from '../../components/ui/PageLoader';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -14,29 +18,20 @@ const Orders = () => {
     const isArabic = language === 'ar';
     const token = secureStorage.getItem('token');
 
-    const [requests, setRequests] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [platformFilter, setPlatformFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const dispatch = useDispatch();
 
-    useEffect(() => {
-        fetchRequests();
-    }, []);
+    const { data: fetchedRequests = [], isLoading: loading, refetch } = useGetOrdersQuery();
 
-    const fetchRequests = async () => {
-        setLoading(true);
-        try {
-            const res = await axios.get(`${BACKEND_URL}/company/requests`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            // Reverse so newest orders are first
-            setRequests(res.data.reverse());
-        } catch (e) {
-            console.error("Error fetching requests:", e);
-        } finally {
-            setLoading(false);
-        }
+    const requests = useMemo(() => {
+        // Reverse so newest orders are first, without mutating original array
+        return [...fetchedRequests].reverse();
+    }, [fetchedRequests]);
+
+    const fetchRequests = () => {
+        refetch();
     };
 
     const handleDeleteRequest = async (originalIndex) => {
@@ -45,15 +40,17 @@ const Orders = () => {
         try {
             // Since we reversed the array to show newest first, the index mapping needs correction:
             const actualDbIndex = requests.length - 1 - originalIndex;
-            await axios.delete(`${BACKEND_URL}/company/requests/${actualDbIndex}`, {
+            const res = await fetch(`${BACKEND_URL}/company/requests/${actualDbIndex}`, {
+                method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // Remove from local state
-            const updated = [...requests];
-            updated.splice(originalIndex, 1);
-            setRequests(updated);
-            if (selectedOrder && selectedOrder.index === originalIndex) {
-                setSelectedOrder(null);
+            if (res.ok) {
+                dispatch(dashboardApi.util.updateQueryData('getOrders', undefined, (draft) => {
+                    draft.splice(actualDbIndex, 1);
+                }));
+                if (selectedOrder && selectedOrder.index === originalIndex) {
+                    setSelectedOrder(null);
+                }
             }
         } catch (e) {
             alert(isArabic ? 'فشل حذف الطلب.' : 'Failed to delete order.');
@@ -150,6 +147,15 @@ const Orders = () => {
         });
     };
 
+    const pageInsightData = {
+        totalOrders: requests.length,
+        ordersShown: filteredRequests.length,
+        recentOrders: filteredRequests.slice(0, 5).map(req => {
+            const details = parseOrderDetails(req);
+            return { product: details.product, customer: details.name, platform: getPlatformInfo(req).key };
+        }),
+    };
+
     return (
         <div className="orders-page animate-fade-in" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
             <div className="dash-page-header">
@@ -164,6 +170,8 @@ const Orders = () => {
                     {isArabic ? 'تحديث البيانات' : 'Refresh'}
                 </button>
             </div>
+
+            <AIPageInsight pageName="Orders" dataContext={pageInsightData} />
 
             {/* Filter and Search Bar */}
             <div className="orders-filter-bar card-glass">

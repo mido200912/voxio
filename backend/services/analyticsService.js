@@ -276,6 +276,61 @@ class AnalyticsService {
       generatedAt: new Date().toISOString(),
     };
   }
+
+  /**
+   * Identifies questions the bot struggled to answer.
+   * Finds user messages that were followed by AI replies containing uncertainty phrases.
+   */
+  static async getTopUnansweredQuestions(companyId, days = 30) {
+    const chatsRaw = await CompanyChat.find(getQuery(companyId, days));
+    const chats = chatsRaw.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    const failureKeywords = [
+      "i don't know", "i'm not sure", "cannot help", "not able to",
+      "contact support", "please reach out", "unfortunately",
+      "لا أعلم", "لا أستطيع", "تواصل مع", "غير متأكد", "عذراً",
+    ];
+
+    const questionFrequency = {};
+
+    for (let i = 0; i < chats.length - 1; i++) {
+      const curr = chats[i];
+      const next = chats[i + 1];
+      if (
+        curr.sender === "user" &&
+        next.sender === "ai" &&
+        curr.user === next.user
+      ) {
+        const aiText = (next.text || "").toLowerCase();
+        const failed = failureKeywords.some(kw => aiText.includes(kw));
+        if (failed && curr.text) {
+          const q = curr.text.trim().substring(0, 120);
+          questionFrequency[q] = (questionFrequency[q] || 0) + 1;
+        }
+      }
+    }
+
+    return Object.entries(questionFrequency)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 15)
+      .map(([question, count]) => ({ question, count }));
+  }
+
+  static async getTopAiUsers(companyId, days = 30) {
+    const chats = await CompanyChat.find(getQuery(companyId, days));
+    const userFrequency = {};
+    for (const chat of chats) {
+      if (chat.sender === "user" && chat.user) {
+        const id = chat.user;
+        if (!userFrequency[id]) userFrequency[id] = { count: 0, platform: chat.platform || 'web' };
+        userFrequency[id].count++;
+      }
+    }
+    return Object.entries(userFrequency)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 5)
+      .map(([userId, data]) => ({ userId, count: data.count, platform: data.platform }));
+  }
 }
 
 export default AnalyticsService;

@@ -1,5 +1,5 @@
-import { useLanguage } from '../context/LanguageContext';
-import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useLanguage } from '../../context/LanguageContext';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { FaWhatsapp, FaInstagram, FaTelegramPlane, FaShopify } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import './Logos.css';

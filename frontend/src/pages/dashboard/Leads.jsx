@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { secureStorage } from '../../utils/secureStorage';
+import { useGetLeadsQuery } from '../../store/dashboardApi';
+import { dashboardApi } from '../../store/dashboardApi';
+import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import PageLoader from '../../components/PageLoader';
+
+import AIPageInsight from '../../components/AIPageInsight';
 import './DashboardShared.css';
 import './Orders.css';
+import PageLoader from '../../components/ui/PageLoader';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -17,53 +21,45 @@ const Leads = () => {
     const token = secureStorage.getItem('token');
 
     const [leads, setLeads] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLead, setSelectedLead] = useState(null);
     const [statusFilter, setStatusFilter] = useState('');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalLeads, setTotalLeads] = useState(0);
     const [editStatus, setEditStatus] = useState('');
+    const dispatch = useDispatch();
 
-    useEffect(() => {
-        fetchLeads();
-    }, [page, statusFilter]);
+    const { data, error, isLoading: loading, isFetching, refetch } = useGetLeadsQuery();
+    
+    // Derived state since RTK query returns all (or we could pass page to query)
+    // Assuming backend handles pagination, we should ideally pass page/status to useGetLeadsQuery, 
+    // but the original axios called it with params. Let's adapt it to filter on frontend or modify the RTK endpoint if needed.
+    // For now, I'll filter the cached data on frontend for speed.
+    const allLeads = data?.leads || [];
+    const totalLeads = data?.total || allLeads.length;
+    const totalPages = data?.pages || 1;
 
-    const fetchLeads = async () => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({ page, limit: '50' });
-            if (statusFilter) params.append('status', statusFilter);
-            if (searchQuery.trim()) params.append('search', searchQuery.trim());
-
-            const res = await axios.get(`${BACKEND_URL}/company/leads?${params}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setLeads(res.data.leads || []);
-            setTotalPages(res.data.pages || 1);
-            setTotalLeads(res.data.total || 0);
-        } catch (e) {
-            console.error("Error fetching leads:", e);
-        } finally {
-            setLoading(false);
-        }
+    const fetchLeads = () => {
+        refetch();
     };
 
     const handleSearch = () => {
         setPage(1);
-        fetchLeads();
     };
 
     const handleDeleteLead = async (id) => {
         if (!window.confirm(isArabic ? 'هل أنت متأكد من حذف هذا العميل المحتمل؟' : 'Are you sure you want to delete this lead?')) return;
         
         try {
-            await axios.delete(`${BACKEND_URL}/company/leads/${id}`, {
+            const res = await fetch(`${BACKEND_URL}/company/leads/${id}`, {
+                method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setLeads(prev => prev.filter(l => l._id !== id));
-            if (selectedLead && selectedLead._id === id) setSelectedLead(null);
+            if (res.ok) {
+                dispatch(dashboardApi.util.updateQueryData('getLeads', undefined, (draft) => {
+                    if (draft?.leads) draft.leads = draft.leads.filter(l => l._id !== id);
+                }));
+                if (selectedLead && selectedLead._id === id) setSelectedLead(null);
+            }
         } catch (e) {
             alert(isArabic ? 'فشل حذف العميل.' : 'Failed to delete lead.');
         }
@@ -71,23 +67,38 @@ const Leads = () => {
 
     const handleUpdateStatus = async (id, newStatus) => {
         try {
-            await axios.put(`${BACKEND_URL}/company/leads/${id}`, { status: newStatus }, {
-                headers: { Authorization: `Bearer ${token}` }
+            const res = await fetch(`${BACKEND_URL}/company/leads/${id}`, {
+                method: 'PUT',
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
             });
-            setLeads(prev => prev.map(l => l._id === id ? { ...l, status: newStatus } : l));
-            if (selectedLead && selectedLead._id === id) setSelectedLead(prev => ({ ...prev, status: newStatus }));
+            if (res.ok) {
+                dispatch(dashboardApi.util.updateQueryData('getLeads', undefined, (draft) => {
+                    if (draft?.leads) {
+                        const lead = draft.leads.find(l => l._id === id);
+                        if (lead) lead.status = newStatus;
+                    }
+                }));
+                if (selectedLead && selectedLead._id === id) setSelectedLead(prev => ({ ...prev, status: newStatus }));
+            }
         } catch (e) {
             console.error("Failed to update lead status:", e);
         }
     };
 
-    const filteredLeads = leads.filter((req) => {
-        if (!searchQuery.trim()) return true;
-        const q = searchQuery.toLowerCase();
-        return (req.name || '').toLowerCase().includes(q) ||
-               (req.phone || '').toLowerCase().includes(q) ||
-               (req.email || '').toLowerCase().includes(q);
-    });
+    const filteredLeads = useMemo(() => {
+        return allLeads.filter((req) => {
+            if (statusFilter && req.status !== statusFilter) return false;
+            if (!searchQuery.trim()) return true;
+            const q = searchQuery.toLowerCase();
+            return (req.name || '').toLowerCase().includes(q) ||
+                   (req.phone || '').toLowerCase().includes(q) ||
+                   (req.email || '').toLowerCase().includes(q);
+        });
+    }, [allLeads, searchQuery, statusFilter]);
 
     const formatDate = (dateVal) => {
         if (!dateVal) return '';
@@ -118,6 +129,13 @@ const Leads = () => {
         return { color: colors[status] || '#6b7280', label: labels[status] || status };
     };
 
+    const pageInsightData = {
+        totalLeads,
+        leadsShown: filteredLeads.length,
+        statusBreakdown: STATUS_OPTIONS.map(s => ({ status: s, count: allLeads.filter(l => l.status === s).length })),
+        recentLeads: filteredLeads.slice(0, 5).map(l => ({ name: l.name, phone: l.phone, status: l.status, source: l.source })),
+    };
+
     return (
         <div className="orders-page animate-fade-in" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
             <div className="dash-page-header">
@@ -134,6 +152,8 @@ const Leads = () => {
                     {isArabic ? 'تحديث البيانات' : 'Refresh'}
                 </button>
             </div>
+
+            <AIPageInsight pageName="Leads" dataContext={pageInsightData} />
 
             <div className="orders-filter-bar card-glass" style={{ marginBottom: '20px' }}>
                 <div className="search-box-container" style={{ width: '100%' }}>
@@ -341,6 +361,17 @@ const Leads = () => {
                                                 <span className="platform-tag" style={{ color: 'var(--color-text)', borderColor: 'var(--color-border)', backgroundColor: 'rgba(128,128,128,0.05)', alignSelf: 'flex-start' }}>
                                                     {selectedLead.source}
                                                 </span>
+                                            </div>
+                                        )}
+                                        
+                                        {selectedLead.sourceData && (selectedLead.sourceData.ip || selectedLead.sourceData.userAgent) && (
+                                            <div className="detail-item">
+                                                <span className="detail-label">{isArabic ? 'بيانات التصفح' : 'Browser Data'}</span>
+                                                <div style={{ background: 'var(--dash-bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--dash-border)', fontSize: '0.85rem', color: 'var(--dash-text-sec)' }}>
+                                                    {selectedLead.sourceData.ip && <div><strong>IP:</strong> {selectedLead.sourceData.ip}</div>}
+                                                    {selectedLead.sourceData.userAgent && <div style={{ wordBreak: 'break-all', marginTop: '4px' }}><strong>Device:</strong> {selectedLead.sourceData.userAgent.substring(0, 80)}...</div>}
+                                                    {selectedLead.sourceData.firstMessage && <div style={{ marginTop: '8px', fontStyle: 'italic' }}>"{selectedLead.sourceData.firstMessage}"</div>}
+                                                </div>
                                             </div>
                                         )}
 
