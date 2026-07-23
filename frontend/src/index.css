@@ -2,6 +2,7 @@
    Google Fonts Import
 ======================================== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ========================================
    Global Variables & Theme
@@ -531,7 +532,6 @@ html[data-theme="light"] .text-gradient {
    Dashboard Premium Design System
    Extended tokens for dashboard overhaul
 ======================================== */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
   /* ── Outfit for Dashboard ── */
