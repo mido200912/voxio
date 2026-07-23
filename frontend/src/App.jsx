@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
@@ -68,6 +68,29 @@ const PageFallback = () => (
 );
 
 function App() {
+  useEffect(() => {
+    // Hide loader immediately if not on the homepage
+    if (window.location.pathname !== '/') {
+      const loader = document.getElementById('splash-loader');
+      if (loader) {
+        loader.style.display = 'none';
+      }
+    }
+    
+    // Safety fallback: if on homepage but something fails, hide loader after 10s
+    if (window.location.pathname === '/') {
+      const fallbackTimer = setTimeout(() => {
+        const loader = document.getElementById('splash-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          setTimeout(() => { loader.style.display = 'none'; }, 500);
+        }
+      }, 10000); // 10 seconds max wait time for 3D model
+      
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, []);
+
   return (
     <Router>
       <ThemeProvider>

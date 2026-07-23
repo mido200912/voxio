@@ -46,12 +46,40 @@ const Hero = () => {
     const { language } = useLanguage();
     const revealRef = useScrollReveal();
     const isAr = language === 'ar';
+    const splineRef = useRef(null);
+
+    useEffect(() => {
+        const spline = splineRef.current;
+        if (spline) {
+            const handleLoad = () => {
+                const loader = document.getElementById('splash-loader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => { loader.style.display = 'none'; }, 500);
+                }
+            };
+            spline.addEventListener('load', handleLoad);
+            
+            // Clean up
+            return () => spline.removeEventListener('load', handleLoad);
+        }
+    }, []);
 
     return (
         <section className="hero" id="home">
             <div className="hero-container reveal-section" ref={revealRef}>
                 
                 <div className="hero-top">
+                    {/* Floating 3D Model */}
+                    <div className="hero-spline-floating">
+                        <spline-viewer 
+                            ref={splineRef}
+                            url="https://prod.spline.design/KTKziaT8O4beJSVR/scene.splinecode"
+                            className="hero-spline-model"
+                        ></spline-viewer>
+                        <div className="spline-watermark-hide"></div>
+                    </div>
+
                     <div className="hero-text-content">
                         <h1 className="hero-title">
                             {isAr 

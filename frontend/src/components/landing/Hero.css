@@ -41,6 +41,7 @@ html[dir="rtl"] .hero-container {
 }
 
 .hero-top {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -50,6 +51,8 @@ html[dir="rtl"] .hero-container {
 
 .hero-text-content {
   max-width: 700px;
+  position: relative;
+  z-index: 10;
 }
 
 .hero-title {
@@ -76,6 +79,8 @@ html[dir="rtl"] .hero-title {
 
 .hero-side-content {
   padding-bottom: 8px; /* align visually with bottom of description */
+  position: relative;
+  z-index: 10;
 }
 
 .hero-announcement {
@@ -108,6 +113,81 @@ html[dir="rtl"] .hero-title {
 
 .hero-announcement:hover .hero-announcement-link {
   color: var(--color-text);
+}
+
+/* ========================================
+   Floating 3D Model
+======================================== */
+
+.hero-spline-floating {
+  position: absolute;
+  top: -220px;
+  right: 0;
+  width: 600px;
+  height: 600px;
+  z-index: 0;
+  pointer-events: auto;
+  opacity: 0;
+  animation: scaleIn 1s 0.3s both cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html[dir="rtl"] .hero-spline-floating {
+  right: auto;
+  left: 0;
+}
+
+.hero-spline-model {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  display: block;
+}
+
+.spline-watermark-hide {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 160px;
+  height: 60px;
+  background: var(--color-bg);
+  z-index: 20;
+  pointer-events: none;
+  /* Use a soft shadow to blend seamlessly into the gradient background */
+  box-shadow: 0 0 25px 15px var(--color-bg);
+}
+
+/* Dark Mode (Black and White) */
+:root[data-theme="dark"] .hero-spline-model {
+  filter: grayscale(100%) contrast(1.2) brightness(1.1);
+}
+
+/* Light Mode (Pure white background, dark realistic robot) */
+:root[data-theme="light"] .hero-spline-floating {
+  mix-blend-mode: multiply;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+:root[data-theme="light"] .hero-spline-model {
+  /* Invert makes the black bg white, multiply makes it transparent. 
+     High contrast fixes the negative look, making it a sleek dark metallic robot. */
+  filter: grayscale(100%) invert(1) contrast(1.5) brightness(1.2);
+}
+
+@media (max-width: 1024px) {
+  .hero-spline-floating {
+    width: 450px;
+    height: 450px;
+    top: -80px;
+    opacity: 0.5;
+    z-index: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-spline-floating {
+    display: none;
+  }
 }
 
 /* ========================================

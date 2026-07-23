@@ -39,12 +39,12 @@
     crossorigin="anonymous" referrerpolicy="no-referrer" />
 
   <title>VOXIO - منصة الذكاء الاصطناعي للشركات</title>
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.98/build/spline-viewer.js"></script>
 </head>
 
 <body>
-  <div id="root">
-    <!-- Premium Splash Loader (disappears when React mounts) -->
-    <div id="splash-loader" class="premium-loader">
+  <!-- Premium Splash Loader -->
+  <div id="splash-loader" class="premium-loader">
       <div class="loader-bg-glow"></div>
       <div class="floating-orbs">
         <div class="orb orb-1"></div>
@@ -145,6 +145,8 @@
       @keyframes splashFloat { 0% { transform: translate(0, 0); } 100% { transform: translate(40px, 20px); } }
     </style>
   </div>
+  <!-- React App Root -->
+  <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 
