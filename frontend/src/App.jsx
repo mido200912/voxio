@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -9,6 +9,7 @@ import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import ToastProvider from './components/ui/Toast';
+import VOXIOChatWidget from './components/ui/VOXIOChatWidget';
 import './App.css';
 
 import PublicLayout from './layouts/PublicLayout';
@@ -52,6 +53,18 @@ const Support = lazy(() => import('./pages/Support'));
 const AgentsExplorer = lazy(() => import('./pages/AgentsExplorer'));
 const ChatWidget = lazy(() => import('./pages/ChatWidget'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
+
+// ── Global Widget — renders on all pages except auth/widget/chat ──
+const GlobalWidget = () => {
+  const location = useLocation();
+  const HIDE_EXACT = ['/login', '/register', '/forgot-password'];
+  const HIDE_PREFIX = ['/widget/', '/chat/'];
+  const hidden =
+    HIDE_EXACT.includes(location.pathname) ||
+    HIDE_PREFIX.some(p => location.pathname.startsWith(p));
+  if (hidden) return null;
+  return <VOXIOChatWidget />;
+};
 
 // Minimal loading fallback — near-zero CLS
 const PageFallback = () => (
@@ -98,6 +111,7 @@ function App() {
           <AuthProvider>
             <ToastProvider>
             <div className="app">
+              <GlobalWidget />
               <Suspense fallback={<PageFallback />}>
               <Routes>
                 {/* Public Routes with Widget */}

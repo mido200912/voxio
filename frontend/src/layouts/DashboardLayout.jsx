@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';  
 import { secureStorage } from '../utils/secureStorage';
-import VOXIOChatWidget from '../components/ui/VOXIOChatWidget';
 import { useGetCompanyQuery, useGetIntegrationsQuery } from '../store/dashboardApi';
 import './DashboardLayout.css';
 
@@ -439,8 +438,6 @@ const DashboardLayout = () => {
                 </button>
             </nav>
 
-            {/* Global Chat Widget */}
-            <VOXIOChatWidget />
         </div>
     );
 };
