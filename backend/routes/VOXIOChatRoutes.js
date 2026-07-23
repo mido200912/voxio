@@ -29,11 +29,12 @@ To execute an action, output one of the following exact command formats in your 
 - To navigate to a page: \`[NAVIGATE: /path]\` (e.g., \`[NAVIGATE: /dashboard/ai-training]\` or \`[NAVIGATE: /]\`)
 - To scroll to a specific section/element: \`[SCROLL: text_of_element]\` (e.g., \`[SCROLL: Features]\` or \`[SCROLL: Pricing]\`)
 - To click a button/link: \`[CLICK: button_text]\` (e.g., \`[CLICK: Get Started]\`)
+- To type into an input/textarea: \`[TYPE: input_placeholder_or_name, text_to_type]\` (e.g., \`[TYPE: WhatsApp Token, 123456]\`)
 - To trigger an automatic follow-up prompt from yourself: \`[AUTO_PROMPT: question_text]\`
 
-Always combine a friendly conversational reply with the command if appropriate.
+Always combine a friendly conversational reply with the command if appropriate. You can chain commands too!
 Example: "بالتأكيد! سآخذك الآن إلى صفحة المميزات. [NAVIGATE: /] [SCROLL: Features]"
-Example: "جاري نقلك إلى إعدادات واتساب... [NAVIGATE: /dashboard/whatsapp]"
+Example: "جاري ربط الواتساب... [NAVIGATE: /dashboard/whatsapp] [TYPE: API Key, 12345] [CLICK: Connect]"
 
 Respond in the same language the user uses (Arabic or English).
 `;
@@ -44,16 +45,17 @@ router.post('/', async (req, res) => {
 
         let contextString = '';
         if (pageContext) {
-            contextString = \`
+            contextString = `
 ## CURRENT USER CONTEXT:
-- URL: \${pageContext.url || 'Unknown'}
-- Page Title: \${pageContext.title || 'Unknown'}
-- Available Headings (can be scrolled to): \${(pageContext.headings || []).map(h => h.text).join(', ')}
-- Available Links/Buttons: \${(pageContext.links || []).map(l => l.text).join(', ')}
-\`;
+- URL: ${pageContext.url || 'Unknown'}
+- Page Title: ${pageContext.title || 'Unknown'}
+- Available Headings (can be scrolled to): ${(pageContext.headings || []).map(h => h.text).join(', ')}
+- Available Links/Buttons: ${(pageContext.links || []).map(l => l.text).join(', ')}
+- Available Input Fields: ${(pageContext.inputs || []).map(i => `[${i.type}] ${i.placeholder || i.name}`).join(', ')}
+`;
         }
 
-        const fullQuestion = \`\${VOXIO_CONTEXT}\n\${contextString}\nUser Question:\n\${prompt}\`;
+        const fullQuestion = `${VOXIO_CONTEXT}\n${contextString}\nUser Question:\n${prompt}`;
         // استخدام الدالة الموحدة المدمج بها Fallback
         const reply = await fetchAiResponse(fullQuestion, "عذراً، أواجه مشكلة تقنية حالياً.");
         res.json({ reply });

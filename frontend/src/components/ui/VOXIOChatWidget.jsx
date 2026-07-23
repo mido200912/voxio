@@ -114,6 +114,11 @@ const VOXIOChatWidget = () => {
                 links: [...document.querySelectorAll('a[href]')].slice(0, 25).map(a => ({ text: a.innerText.trim(), href: a.getAttribute('href') })),
                 buttons: [...document.querySelectorAll('button, .btn, [role="button"]')].slice(0, 20).map(b => ({ text: b.innerText.trim() })),
                 headings: [...document.querySelectorAll('h1,h2,h3')].slice(0, 10).map(h => ({ text: h.innerText.trim() })),
+                inputs: [...document.querySelectorAll('input, textarea, select')].slice(0, 15).map(i => ({
+                    type: i.type || i.tagName.toLowerCase(),
+                    name: i.name || i.id,
+                    placeholder: i.placeholder || ''
+                })),
             };
         } catch { return null; }
     };
@@ -125,8 +130,11 @@ const VOXIOChatWidget = () => {
             if (el) return el;
             el = document.getElementById(selector);
             if (el) return el;
-            const all = [...document.querySelectorAll('a, button, [role="button"]')];
-            return all.find(e => e.innerText.trim().toLowerCase() === selector.toLowerCase());
+            const all = [...document.querySelectorAll('a, button, [role="button"], input, textarea, select')];
+            return all.find(e => {
+                const text = (e.innerText || e.placeholder || e.name || e.id || '').trim().toLowerCase();
+                return text === selector.toLowerCase();
+            });
         } catch { return null; }
     };
 
@@ -191,6 +199,12 @@ const VOXIOChatWidget = () => {
         handle('\\[SCROLL:\\s*(.*?)\\]', 'SCROLL');
         handle('\\[CLICK:\\s*(.*?)\\]', 'CLICK');
 
+        reply = reply.replace(/\[TYPE:\s*(.*?)\s*,\s*(.*?)\]/g, (match, selector, text) => {
+            commands.push({ type: 'TYPE', selector: selector.trim(), text: text.trim() });
+            hasAction = true;
+            return '';
+        });
+
         reply = reply.replace(/\[AUTO_PROMPT:\s*(.*?)\]/g, (match, text) => {
             autoPromptText = text.trim(); return '';
         });
@@ -223,6 +237,22 @@ const VOXIOChatWidget = () => {
                         showAiCursor(el);
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         setTimeout(() => { el.click(); executeNext(index + 1); }, 600);
+                    } else { executeNext(index + 1); }
+                } else if (cmd.type === 'TYPE') {
+                    const el = findElement(cmd.selector);
+                    if (el) {
+                        showAiCursor(el);
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => { 
+                            el.focus();
+                            // React specific value setter
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+                            if (nativeInputValueSetter) { nativeInputValueSetter.call(el, cmd.text); }
+                            else { el.value = cmd.text; }
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                            executeNext(index + 1); 
+                        }, 600);
                     } else { executeNext(index + 1); }
                 }
             };
