@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { secureStorage } from '../../utils/secureStorage';
-import { useToast } from '../components/ui/Toast';
+import { useToast } from '../../components/ui/Toast';
  
 import { motion } from 'framer-motion';
 import '../../pages/auth/Auth.css';
