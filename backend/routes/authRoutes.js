@@ -9,6 +9,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { cacheDelete } from "../utils/cache.js";
 
 import { OAuth2Client } from 'google-auth-library';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -255,7 +256,8 @@ router.post("/verify-otp", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "Invalid request" });
 
-    if (!user.otp || user.otp !== otp) {
+    // Control 20: Constant-Time Operations
+    if (!user.otp || user.otp.length !== otp.length || !crypto.timingSafeEqual(Buffer.from(user.otp), Buffer.from(otp))) {
       return res.status(400).json({ error: "Invalid OTP" });
     }
 
@@ -338,7 +340,7 @@ router.post("/reset-password", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "Invalid request" });
 
-    if (!user.otp || user.otp !== otp) return res.status(400).json({ error: "Invalid OTP" });
+    if (!user.otp || user.otp.length !== otp.length || !crypto.timingSafeEqual(Buffer.from(user.otp), Buffer.from(otp))) return res.status(400).json({ error: "Invalid OTP" });
     if (user.otpExpires < Date.now()) return res.status(400).json({ error: "OTP expired" });
 
     // ⚡ bcrypt rounds 8
@@ -387,7 +389,7 @@ router.post("/refresh", (req, res) => {
     const token = req.cookies.refreshToken;
     if (!token) return res.status(401).json({ error: "No token" });
 
-    jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
+    jwt.verify(token, process.env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }, (err, decoded) => {
       if (err) return res.status(403).json({ error: "Invalid refresh token" });
 
       const { accessToken, refreshToken } = generateTokens(decoded.id);
@@ -429,6 +431,10 @@ router.post("/google-login", async (req, res) => {
         audience: process.env.GOOGLE_CLIENT_ID,
       });
       const payload = ticket.getPayload();
+      // Control 19: Identity Verification
+      if (!payload.email_verified) {
+          return res.status(401).json({ error: "Google email is not verified" });
+      }
       email = payload.email;
       name = payload.name;
       googleId = payload.sub;

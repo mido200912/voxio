@@ -65,6 +65,18 @@ const allowedOrigins = [
     "https://aithor2.vercel.app"
 ];
 
+// 🔒 Control 1 & 10: Request Synchronization & Domain Boundary Validation
+app.use((req, res, next) => {
+    if (req.headers['transfer-encoding'] && req.headers['content-length']) {
+        return res.status(400).json({ error: 'Ambiguous Headers' });
+    }
+    const host = req.get('host');
+    if (host && host.includes('internal')) {
+        return res.status(403).json({ error: 'Invalid Host Header' });
+    }
+    next();
+});
+
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("localhost")) {
@@ -83,9 +95,17 @@ app.use('/api/integrations/webhooks/shopify', express.raw({ type: '*/*' }));
 app.use('/api/integrations/webhooks/meta', express.raw({ type: '*/*' }));
 app.use('/api/integrations/meta/data-deletion', express.raw({ type: '*/*' }));
 
-// ✅ إعداد JSON Body
-app.use(express.json({ limit: '2mb' }));
+// ✅ إعداد JSON Body (Control 28: Stricter Resource Depth Limits)
+app.use(express.json({ limit: '1mb' }));
 app.use(hpp());
+
+// 🔒 Control 5: Cache Key Isolation for APIs
+app.use('/api', (req, res, next) => {
+    if (!req.originalUrl.includes('/public') && !req.originalUrl.includes('/widget')) {
+        res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    }
+    next();
+});
 app.use(mongoSanitize()); // Prevent NoSQL Injection globally
 // Custom XSS Middleware (Prevents Node 20+ getter error)
 const skipKeys = ['password', 'htmlContent', 'customHtml', 'customCss', 'code', 'userRequest', 'prompt'];
@@ -510,7 +530,11 @@ app.get('/api/health', async (req, res) => {
 
 // ✅ التعامل مع الأخطاء
 app.use((err, req, res, next) => {
-    const errorLog = `[${new Date().toISOString()}] ${req.method} ${req.url}\n${err.stack || err.message}\n\n`;
+    let errorLog = `[${new Date().toISOString()}] ${req.method} ${req.url}\n${err.stack || err.message}\n\n`;
+    // Control 22: Data Anonymization
+    errorLog = errorLog.replace(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi, '[EMAIL_REDACTED]');
+    errorLog = errorLog.replace(/(password|token|secret)["\s:=]+([^\s,;"'&]+)/gi, '$1=***');
+    
     try {
         fs.appendFileSync(path.join(process.cwd(), 'error.log'), errorLog);
     } catch (fsErr) {

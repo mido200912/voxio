@@ -7,7 +7,8 @@ export const requireAuth = async (req, res, next) => {
     const auth = req.headers.authorization;
     if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "No token" });
     const token = auth.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Control 7: Token Verification Integrity
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
     // ⚡ Check user cache first — avoids Firestore on every request
     const cacheKey = `user:${decoded.id}`;

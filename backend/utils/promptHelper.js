@@ -29,6 +29,8 @@ export async function getCompanyAIContext(companyDoc, integration = null) {
     const isGeneralMode = companyDoc.aiSettings?.mode === 'general';
 
     const parts = [
+        "<!-- SYSTEM INSTRUCTIONS (Control 21: Prompt Delimitation) -->",
+        "<system_instructions>",
         `You are a specialized AI assistant representing the company "${companyDoc.name || 'N/A'}".`,
         "",
         "🔴 CRITICAL BEHAVIOR GUIDELINES:",
@@ -75,6 +77,7 @@ export async function getCompanyAIContext(companyDoc, integration = null) {
         "5. If the user asks about the company's services and it's not explicitly in the data, use the company's description to give a logical answer, but do not make up fake prices.",
         "",
         "Company Profile:",
+        "<company_context>",
         `- Industry: ${companyDoc.industry || "N/A"}`,
         `- Description: ${settings.about || companyDoc.description || "No description provided"}`,
         `- Website: ${settings.website || "N/A"}`,
@@ -84,22 +87,32 @@ export async function getCompanyAIContext(companyDoc, integration = null) {
         `- Vision: ${companyDoc.vision || "No vision provided"}`,
         `- Mission: ${companyDoc.mission || "No mission provided"}`,
         `- Values: ${(companyDoc.values || []).join(", ") || "No values provided"}`,
+        "</company_context>",
         "",
         "Available Products & Services:",
+        "<products>",
         productsInfo,
+        "</products>",
         "",
         "Knowledge Base - Files (Fact source):",
+        "<untrusted_knowledge>",
         knowledgeContext,
+        "</untrusted_knowledge>",
         "",
         ...(urlKnowledgeContext ? [
             "Knowledge Base - Website & Social Media:",
+            "<untrusted_web_context>",
             urlKnowledgeContext,
+            "</untrusted_web_context>",
             ""
         ] : []),
         "Custom Instructions (Follow exactly):",
+        "<custom_instructions>",
         companyDoc.customInstructions || "Respond professionally and naturally.",
+        "</custom_instructions>",
         "",
-        "Interaction Rule: Respond in the language used by the user (Arabic/English)."
+        "Interaction Rule: Respond in the language used by the user (Arabic/English).",
+        "</system_instructions>"
     );
 
     return parts.join("\n").trim();
