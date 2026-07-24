@@ -40,7 +40,10 @@ const sendRefreshCookie = (res, token) => {
 router.post("/register", async (req, res) => {
   try {
     let { name, email, password } = req.body;
-    email = email?.trim();
+    if (typeof email !== 'string' || typeof password !== 'string' || typeof name !== 'string') {
+      return res.status(400).json({ error: "Invalid input format" });
+    }
+    email = email.trim();
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Missing fields" });
     }
@@ -146,7 +149,10 @@ const BYPASS_ACCOUNTS = [];
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
-    email = email?.trim();
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: "Invalid input format" });
+    }
+    email = email.trim();
     if (!email || !password)
       return res.status(400).json({ error: "Missing fields" });
 
@@ -239,7 +245,11 @@ router.post("/login", async (req, res) => {
 router.post("/verify-otp", async (req, res) => {
   try {
     let { email, otp } = req.body;
-    email = email?.trim();
+    if (typeof email !== 'string' || typeof otp !== 'string') {
+      return res.status(400).json({ error: "Invalid input format" });
+    }
+    email = email.trim();
+    otp = otp.trim();
     if (!email || !otp) return res.status(400).json({ error: "Missing email or OTP" });
 
     const user = await User.findOne({ email });
@@ -274,7 +284,10 @@ router.post("/verify-otp", async (req, res) => {
 router.post("/forgot-password", async (req, res) => {
   try {
     let { email } = req.body;
-    email = email?.trim();
+    if (typeof email !== 'string') {
+      return res.status(400).json({ error: "Invalid input format" });
+    }
+    email = email.trim();
     if (!email) return res.status(400).json({ error: "Missing email" });
 
     const user = await User.findOne({ email });
@@ -314,7 +327,11 @@ router.post("/forgot-password", async (req, res) => {
 router.post("/reset-password", async (req, res) => {
   try {
     let { email, otp, newPassword } = req.body;
-    email = email?.trim();
+    if (typeof email !== 'string' || typeof otp !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({ error: "Invalid input format" });
+    }
+    email = email.trim();
+    otp = otp.trim();
     if (!email || !otp || !newPassword) return res.status(400).json({ error: "Missing fields" });
     if (newPassword.length < 8) return res.status(400).json({ error: "Password must be at least 8 chars" });
 
@@ -341,6 +358,9 @@ router.post("/reset-password", async (req, res) => {
 router.post("/change-password", requireAuth, async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
+    if (typeof oldPassword !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({ error: "Invalid input format" });
+    }
     if (!oldPassword || !newPassword) return res.status(400).json({ error: "Missing fields" });
     if (newPassword.length < 8) return res.status(400).json({ error: "New password must be at least 8 chars" });
 

@@ -6,6 +6,7 @@ import path from "path";
 import helmet from "helmet";
 import hpp from "hpp";
 import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
@@ -85,6 +86,7 @@ app.use('/api/integrations/meta/data-deletion', express.raw({ type: '*/*' }));
 // ✅ إعداد JSON Body
 app.use(express.json({ limit: '2mb' }));
 app.use(hpp());
+app.use(mongoSanitize()); // Prevent NoSQL Injection globally
 // Custom XSS Middleware (Prevents Node 20+ getter error)
 const skipKeys = ['password', 'htmlContent', 'customHtml', 'customCss', 'code', 'userRequest', 'prompt'];
 
@@ -132,7 +134,7 @@ app.use(helmet({
 
 app.set('trust proxy', 1);
 const limiter = rateLimit({
-    max: 5000, // رفع الحد لضمان عدم حظر الطلبات في الـ Dashboard
+    max: 800, // Reduced from 5000 to prevent DoS attacks
     windowMs: 15 * 60 * 1000,
     message: "Too many requests from this IP, please try again in 15 minutes.",
     standardHeaders: true,
@@ -142,11 +144,27 @@ app.use('/api', limiter);
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Increase to 100 attempts
-    message: "Too many attempts, please try again later."
+    max: 50, // Reduced for standard login
+    message: "Too many login attempts, please try again later."
 });
 app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/google-login", authLimiter); // Also apply to Google login
+app.use("/api/auth/google-login", authLimiter);
+
+const strictAuthLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Very strict for password resets
+    message: "Too many password reset attempts, please try again later."
+});
+app.use("/api/auth/forgot-password", strictAuthLimiter);
+app.use("/api/auth/reset-password", strictAuthLimiter);
+app.use("/api/auth/register", strictAuthLimiter);
+
+const otpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 30, // Strict for OTP verification
+    message: "Too many OTP attempts, please try again later."
+});
+app.use("/api/auth/verify-otp", otpLimiter);
 
 // ✅ Routes (Load Balanced based on SERVICE_TYPE)
 const serviceType = (process.env.SERVICE_TYPE || 'all').trim(); // can be 'core', 'webhook', or 'all'
