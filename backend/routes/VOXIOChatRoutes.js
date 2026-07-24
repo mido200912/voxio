@@ -41,7 +41,7 @@ Respond in the same language the user uses (Arabic or English).
 
 router.post('/', async (req, res) => {
     try {
-        const { prompt, pageContext } = req.body;
+        const { prompt, pageContext, history } = req.body;
 
         let contextString = '';
         if (pageContext) {
@@ -55,7 +55,12 @@ router.post('/', async (req, res) => {
 `;
         }
 
-        const fullQuestion = `${VOXIO_CONTEXT}\n${contextString}\nUser Question:\n${prompt}`;
+        let historyString = '';
+        if (history && Array.isArray(history) && history.length > 0) {
+            historyString = '\n## CONVERSATION HISTORY:\n' + history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n') + '\n';
+        }
+
+        const fullQuestion = `${VOXIO_CONTEXT}\n${contextString}${historyString}\nUser Question:\n${prompt}`;
         // استخدام الدالة الموحدة المدمج بها Fallback
         const reply = await fetchAiResponse(fullQuestion, "عذراً، أواجه مشكلة تقنية حالياً.");
         res.json({ reply });

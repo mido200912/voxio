@@ -316,8 +316,14 @@ const VOXIOChatWidget = () => {
 
         // ── AI Chat Mode ──
         try {
+            const history = messages
+                .filter(m => !m.isError && !m.content.includes('رسالتك لفريق الدعم'))
+                .slice(-10)
+                .map(m => ({ role: m.role.startsWith('assistant') ? 'assistant' : 'user', content: m.content }));
+
             const res = await axios.post(`${BACKEND_URL}/voxio-chat`, {
                 prompt: textValue,
+                history,
                 sessionId,
                 pageContext: collectPageContext(),
                 isAutoPrompt
