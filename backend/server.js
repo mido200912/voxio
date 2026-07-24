@@ -106,8 +106,7 @@ app.use('/api', (req, res, next) => {
     }
     next();
 });
-app.use(mongoSanitize()); // Prevent NoSQL Injection globally
-// Custom XSS Middleware (Prevents Node 20+ getter error)
+// Custom XSS & NoSQL Middleware (Prevents Node 20+ Express 5 getter error)
 const skipKeys = ['password', 'htmlContent', 'customHtml', 'customCss', 'code', 'userRequest', 'prompt'];
 
 const sanitizeObj = (obj) => {
@@ -121,15 +120,25 @@ const sanitizeObj = (obj) => {
     }
   }
 };
+
 app.use((req, res, next) => {
   // Completely skip sanitization for chatbot editor routes that rely on HTML
   if (req.originalUrl && req.originalUrl.includes('/chatbot-editor')) {
       return next();
   }
 
-  if (req.body) sanitizeObj(req.body);
-  if (req.query) sanitizeObj(req.query);
-  if (req.params) sanitizeObj(req.params);
+  if (req.body) {
+      mongoSanitize.sanitize(req.body, { replaceWith: '_' });
+      sanitizeObj(req.body);
+  }
+  if (req.query) {
+      mongoSanitize.sanitize(req.query, { replaceWith: '_' });
+      sanitizeObj(req.query);
+  }
+  if (req.params) {
+      mongoSanitize.sanitize(req.params, { replaceWith: '_' });
+      sanitizeObj(req.params);
+  }
   next();
 });
 

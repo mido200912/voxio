@@ -45,8 +45,6 @@ const notificationSettingsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index for fast lookup
-notificationSettingsSchema.index({ user: 1 });
 
 const NotificationSettings = mongoose.model("NotificationSettings", notificationSettingsSchema);
 
